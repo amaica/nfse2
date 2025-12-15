@@ -2,29 +2,51 @@ package io.github.t3wv.nacional.webservices;
 
 import io.github.t3wv.NFSeConfig;
 import io.github.t3wv.nacional.classes.nfsenacional.NFSeSefinNacionalDPS;
-import io.github.t3wv.nacional.classes.nfsenacional.NFSeSefinNacionalGetResponse;
 import io.github.t3wv.nacional.classes.nfsenacional.NFSeSefinNacionalPostResponseSucesso;
 import io.github.t3wv.nacional.classes.parametrosmunicipais.consulta.*;
 
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
 import java.time.LocalDate;
 
+/**
+ *
+ */
 public class WSFacade {
 
     private final WSParametrosMunicipais wsParametrosMunicipais;
     private final WSDANFSe wsDANFSe;
     private final WSSefinNFSe wsSefinNFSe;
 
-    public WSFacade(final NFSeConfig config) throws KeyManagementException, UnrecoverableKeyException, KeyStoreException, NoSuchAlgorithmException {
-
-        // inicia os servicos disponiveis da nfe
+    public WSFacade(final NFSeConfig config) {
         this.wsParametrosMunicipais = new WSParametrosMunicipais(config);
         this.wsDANFSe = new WSDANFSe(config);
         this.wsSefinNFSe = new WSSefinNFSe(config);
     }
+
+    /**
+     * Faz o download do DANFSe em PDF utilizando a chave de acesso da NFSe.
+     *
+     * @param nfseChaveAcesso Chave de acesso da NFSe com 50 dígitos.
+     * @return Array de bytes representando o arquivo PDF do DANFSe.
+     * @throws Exception Se ocorrer um erro durante a requisição ou no processamento da resposta.
+     */
+    public byte[] downloadNotaPdf(final String nfseChaveAcesso) throws Exception {
+        return wsDANFSe.downloadDANFSePdfByChaveAcesso(nfseChaveAcesso);
+    }
+
+    /**
+     * Faz o download do XML da NFSe utilizando a chave de acesso da NFSe.
+     *
+     * @param nfseChaveAcesso Chave de acesso da NFSe com 50 dígitos.
+     * @return Array de bytes representando o arquivo XML da NFSe.
+     * @throws Exception Se ocorrer um erro durante a requisição ou no processamento da resposta.
+     */
+    public String downloadNotaXml(final String nfseChaveAcesso) throws Exception {
+        return wsSefinNFSe.buscarNFSeXmlByChaveAcesso(nfseChaveAcesso);
+    }
+
+
+    //REVISAR
+
 
     /**
      * Consulta o status do convênio de um município na API de Parâmetros Municipais do Governo Federal.
@@ -98,21 +120,6 @@ public class WSFacade {
      */
     public NFSeParametrosMunicipaisRetencoesResponse consultaRetencoesMunicipioCompetencia(final String codigoMunicipio, final LocalDate competencia) throws Exception {
         return wsParametrosMunicipais.consultaRetencoesMunicipioCompetencia(codigoMunicipio, competencia);
-    }
-
-    /**
-     * Faz o download do DANFSe em PDF utilizando a chave de acesso da NFSe.
-     *
-     * @param nfseChaveAcesso Chave de acesso da NFSe com 50 dígitos.
-     * @return Array de bytes representando o arquivo PDF do DANFSe.
-     * @throws Exception Se ocorrer um erro durante a requisição ou no processamento da resposta.
-     */
-    public byte[] downloadDANFSePdfByChaveAcesso(final String nfseChaveAcesso) throws Exception {
-        return wsDANFSe.downloadDANFSePdfByChaveAcesso(nfseChaveAcesso);
-    }
-
-    public NFSeSefinNacionalGetResponse getNFSeByChaveAcesso(final String nfseChaveAcesso) throws Exception {
-        return wsSefinNFSe.getNFSeByChaveAcesso(nfseChaveAcesso);
     }
 
     public NFSeSefinNacionalPostResponseSucesso emitirNFSeByDPS(final NFSeSefinNacionalDPS dps) throws Exception {

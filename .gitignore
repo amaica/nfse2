@@ -240,3 +240,6 @@ buildNumber.properties
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
+# Classes de testes de envio
+T3wTest.java

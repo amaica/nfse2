@@ -1,14 +1,21 @@
 package io.github.t3wv.nacional.webservices;
 
-import io.github.t3wv.*;
+import io.github.t3wv.NFSeConfig;
+import io.github.t3wv.NFSeHttpClient;
+import io.github.t3wv.NFSeLogger;
+import io.github.t3wv.NFSeObjectMapper;
 import io.github.t3wv.nacional.classes.nfsenacional.*;
 import io.github.t3wv.utils.NFSeAssinaturaDigital;
 import io.github.t3wv.utils.NFSeUtils;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.zip.GZIPInputStream;
 
 public class WSSefinNFSe implements NFSeLogger {
 
@@ -20,24 +27,52 @@ public class WSSefinNFSe implements NFSeLogger {
     private final NFSeObjectMapper objectMapper = new NFSeObjectMapper();
     private final NFSeConfig config;
 
-
-    public WSSefinNFSe(final NFSeConfig config) {
+     WSSefinNFSe(final NFSeConfig config) {
         this.config = config;
-//        this.client = ;
     }
 
     /**
      * Consulta NFSe pela chave de acesso
-     * @param nfseChaveAcesso chave de acesso da nfse
+     *
+     * @param chaveAcesso chave de acesso da nfse
      * @return objeto de resposta da consulta
      * @throws Exception
      */
-    public NFSeSefinNacionalGetResponse getNFSeByChaveAcesso(final String nfseChaveAcesso) throws Exception {
-        final var url = new URI(String.format("%s/%s", config.isTeste() ? URL_HOMOLOGACAO_NFSE : URL_PRODUCAO_NFSE, nfseChaveAcesso));
+    NFSeSefinNacionalGetResponse buscarNFSeByChaveAcesso(final String chaveAcesso) throws Exception {
+        //normaliza a chave de acesso removendo quaisquer caracteres não numéricos
+        final var chaveAcessoNormalizada = chaveAcesso.replaceAll("\\D", "");
+
+        //valida o tamanho da chave de acesso, pois precisa ser exatamente 50 caracteres numericos
+        if (!chaveAcessoNormalizada.matches("\\d{50}")) {
+            throw new IllegalArgumentException("Chave de acesso da NFSe deve conter exatamente 50 dígitos numéricos!");
+        }
+
+        //busca os dados
+        final var url = new URI(String.format("%s/%s", config.isTeste() ? URL_HOMOLOGACAO_NFSE : URL_PRODUCAO_NFSE, chaveAcesso));
         final var response = new NFSeHttpClient(config).sendGetRequest(url);
-        this.getLogger().info(response.body());
-        return this.objectMapper.convertValue(this.objectMapper.readTree(response.body()), NFSeSefinNacionalGetResponse.class);
+        this.getLogger().info("Response: {}", response);
+        if (response.statusCode() != 200) {
+            throw new Exception("Consulta de XML do NFSe '%s' retornou erro '%d'!".formatted(chaveAcessoNormalizada, response.statusCode()));
+        } else {
+            return this.objectMapper.convertValue(this.objectMapper.readTree(response.body()), NFSeSefinNacionalGetResponse.class);
+        }
     }
+
+    String buscarNFSeXmlByChaveAcesso(final String nfseChaveAcesso) throws Exception {
+        final var nfse = this.buscarNFSeByChaveAcesso(nfseChaveAcesso);
+        final byte[] conteudo = Base64.getDecoder().decode(nfse.getNfseXmlGZipB64());//java 8
+        try (GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(conteudo))) {
+            try (BufferedReader bf = new BufferedReader(new InputStreamReader(gis, StandardCharsets.UTF_8))) {
+                StringBuilder outStr = new StringBuilder();
+                String line;
+                while ((line = bf.readLine()) != null) {
+                    outStr.append(line);
+                }
+                return outStr.toString();
+            }
+        }
+    }
+
 
     /**
      * Emite NFSe a partir do DPS
@@ -51,7 +86,8 @@ public class WSSefinNFSe implements NFSeLogger {
             gos.write(new NFSeAssinaturaDigital(this.config).setOmitirDeclaracaoXML(false).setUsarIdComoReferencia(false).assinarDocumento(dps.toXml()).getBytes(StandardCharsets.UTF_8));
             gos.finish();
             gzipped = baos.toByteArray();
-        };
+        }
+        ;
 
         final var uri = new URI(String.format("%s", config.isTeste() ? URL_HOMOLOGACAO_NFSE : URL_PRODUCAO_NFSE));
         final var body = String.format("{dpsXmlGZipB64:\"%s\"}", Base64.getEncoder().encodeToString(gzipped));

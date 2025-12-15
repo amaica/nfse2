@@ -1,12 +1,9 @@
-package io.github.t3wv.nacional;
+package io.github.t3wv.nacional.webservices;
 
 
 import io.github.t3wv.NFSeConfig;
 import io.github.t3wv.NFSeLogger;
 import io.github.t3wv.nacional.classes.nfsenacional.*;
-import io.github.t3wv.nacional.webservices.WSDANFSe;
-import io.github.t3wv.nacional.webservices.WSParametrosMunicipais;
-import io.github.t3wv.nacional.webservices.WSSefinNFSe;
 import io.github.t3wv.utils.NFSeCadeiaCertificadosTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -118,37 +115,6 @@ public class NFSeNacionalTest implements NFSeLogger {
         final var codigoDoMunicipio = "4205407";
         final var consulta = new WSParametrosMunicipais(config).consultaRetencoesMunicipioCompetencia(codigoDoMunicipio, LocalDate.now().minusMonths(12));
         System.out.println(consulta);
-    }
-
-    @Disabled
-    @Test
-    public void downloadDANFSePdfChaveAcessoTest() throws Exception {
-        System.out.println("Teste de download do DANFSe em PDF utilizando a chave de acesso da NFSe");
-        final var nfseChaveAcesso = "";
-        final var pathToSave = "";
-        final var danfsePDF = new WSDANFSe(config).downloadDANFSePdfByChaveAcesso(nfseChaveAcesso);
-        Files.write(Paths.get("%s/%s.pdf".formatted(pathToSave, nfseChaveAcesso)), danfsePDF);
-    }
-
-    @Disabled
-    @Test
-    public void downloadXmlNFSeViaChaveAcessoTest() throws Exception {
-        System.out.println("Teste de download do xml da NFSe");
-        final var nfseChaveAcesso = "";
-        final var pathToSave = "";
-        final var responseXml = new WSSefinNFSe(config).getNFSeByChaveAcesso(nfseChaveAcesso);
-
-        final byte[] conteudo = Base64.getDecoder().decode(responseXml.getNfseXmlGZipB64());//java 8
-        try (GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(conteudo))) {
-            try (BufferedReader bf = new BufferedReader(new InputStreamReader(gis, StandardCharsets.UTF_8))) {
-                StringBuilder outStr = new StringBuilder();
-                String line;
-                while ((line = bf.readLine()) != null) {
-                    outStr.append(line);
-                }
-                Files.writeString(Paths.get("%s/%s.xml".formatted(pathToSave, nfseChaveAcesso)), config.getPersister().read(NFSeSefinNacionalNFSe.class, outStr.toString()).toXml());
-            }
-        }
     }
 
     @Test
