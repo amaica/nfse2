@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class NFSeCadeiaCertificadosTest {
+
     private static NFSeConfig config;
 
     @Disabled
@@ -18,14 +19,8 @@ public class NFSeCadeiaCertificadosTest {
     }
 
     @Test
-    @Disabled("Geracao de cacerts de homologacao. Executar sob demanda.")
-    public void geraCadeiaCertificadoHomologacao() throws Exception {
-        Files.write(Paths.get("/tmp/cacerts_homologacao.jks"), NFSeCadeiaCertificados.geraCadeiaCertificados(config));
-    }
-
-    @Test
-    @Disabled("Geracao de cacerts de producao. Executar sob demanda.")
-    public void geraCadeiaCertificadoProducao() throws Exception {
-        Files.write(Paths.get("/tmp/cacerts_homologacao.jks"), NFSeCadeiaCertificados.geraCadeiaCertificados(config));
+    @Disabled("Geracao de cacerts. Executar sob demanda.")
+    public void geraCadeiaCertificados() throws Exception {
+        Files.write(Paths.get("/tmp/nfse_cacerts.jks"), NFSeCadeiaCertificados.geraCadeiaCertificados(config));
     }
 }

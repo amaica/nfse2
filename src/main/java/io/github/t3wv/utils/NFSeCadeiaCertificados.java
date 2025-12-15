@@ -18,6 +18,9 @@ import java.security.MessageDigest;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
+/**
+ * Classe utilitaria para gerar a cadeia de certificados (cacerts) necessaria para comunicacao com os webservices de NFSe.
+ */
 public abstract class NFSeCadeiaCertificados implements NFSeLogger {
 
     private static final int PORT = 443;
@@ -50,7 +53,6 @@ public abstract class NFSeCadeiaCertificados implements NFSeLogger {
             final var host = new URI(url).getHost();
 
             final TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            //trustManagerFactory.init((KeyStore) null);
             trustManagerFactory.init((KeyStore) null);
 
             final X509TrustManager defaultTrustManager = (X509TrustManager) trustManagerFactory.getTrustManagers()[0];
