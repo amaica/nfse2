@@ -2,8 +2,11 @@ package io.github.t3wv.nacional.webservices;
 
 import io.github.t3wv.NFSeConfig;
 import io.github.t3wv.nacional.classes.nfsenacional.NFSeSefinNacionalDPS;
+import io.github.t3wv.nacional.classes.nfsenacional.NFSeSefinNacionalGetResponse;
+import io.github.t3wv.nacional.classes.nfsenacional.NFSeSefinNacionalPedRegEvt;
 import io.github.t3wv.nacional.classes.nfsenacional.NFSeSefinNacionalPostResponseSucesso;
-import io.github.t3wv.nacional.classes.parametrosmunicipais.consulta.*;
+import io.github.t3wv.nacional.classes.parametrosmunicipais.consulta.NFSeParametrosMunicipaisConvenio;
+import io.github.t3wv.nacional.classes.parametrosmunicipais.consulta.NFSeParametrosMunicipaisConvenioResponse;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -78,6 +81,37 @@ public class WSFacade {
     public NFSeSefinNacionalPostResponseSucesso emitirNFSe(final NFSeSefinNacionalDPS dps) throws Exception {
         return wsSefinNFSe.emitirNFSeByDPS(dps);
     }
+
+    /**
+     * Cancela uma NFSe utilizando um evento de cancelamento na API de NFSe da SEFIN Nacional.
+     *
+     * @param eventoCancelamento Objeto {@link NFSeSefinNacionalPedRegEvt} representando o evento de cancelamento da NFSe.
+     * @return Objeto {@link NFSeSefinNacionalPostResponseSucesso} contendo as informações sobre o cancelamento da NFSe.
+     * @throws Exception Se ocorrer um erro durante a requisição ou no processamento da resposta.
+     */
+    public NFSeSefinNacionalPostResponseSucesso cancelarNFSe(final NFSeSefinNacionalPedRegEvt eventoCancelamento) throws Exception {
+        return wsSefinNFSe.enviarPedidoRegistroEvento(eventoCancelamento);
+    }
+
+    /**
+     * Consulta os eventos associados a uma NFSe utilizando a chave de acesso da NFSe na API de NFSe da SEFIN Nacional.
+     *
+     * @param chave Chave de acesso da NFSe com 50 dígitos.
+     * @return String contendo os eventos associados à NFSe.
+     * @throws Exception Se ocorrer um erro durante a requisição ou no processamento da resposta.
+     */
+    public String eventosNFSe(final String chave) throws Exception {
+        return wsSefinNFSe.solicitarEventos(chave);
+    }
+
+    public String eventosNFSe(final String chave, final String evento) throws Exception {
+        return wsSefinNFSe.solicitarEventos(chave, evento);
+    }
+
+    public String eventosNFSe(final String chave, final String evento, final int sequencial) throws Exception {
+        return wsSefinNFSe.solicitarEventos(chave);
+    }
+
 
 
     //REVISAR

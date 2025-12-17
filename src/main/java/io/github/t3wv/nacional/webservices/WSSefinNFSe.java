@@ -21,6 +21,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Objects;
+import java.util.ResourceBundle;
 
 public class WSSefinNFSe implements NFSeLogger {
 
@@ -55,7 +56,7 @@ public class WSSefinNFSe implements NFSeLogger {
         //busca os dados
         final var url = new URI(String.format("%s/%s", config.isTeste() ? URL_HOMOLOGACAO_NFSE : URL_PRODUCAO_NFSE, chaveAcesso));
         final var response = new NFSeHttpClient(config).sendGetRequest(url);
-        this.getLogger().info("Response: {}", response);
+        this.getLogger().info("Response {}: {}", response.statusCode(), response.body());
         if (response.statusCode() != 200) {
             throw new Exception("Consulta de XML do NFSe '%s' retornou erro '%d'!".formatted(chaveAcessoNormalizada, response.statusCode()));
         } else {
@@ -75,7 +76,6 @@ public class WSSefinNFSe implements NFSeLogger {
         return NFSeUtils.decodeXmlGZipB64(nfse.getNfseXmlGZipB64());
     }
 
-
     /**
      * Emite uma NFSe a partir de um DPS
      *
@@ -84,15 +84,10 @@ public class WSSefinNFSe implements NFSeLogger {
      * @throws Exception Caso erro.
      */
     public NFSeSefinNacionalPostResponseSucesso emitirNFSeByDPS(final NFSeSefinNacionalDPS dps) throws Exception {
-        final var dpsHomologacao = NFSeSefinNacionalTipoAmbiente.HOMOLOGACAO.equals(dps.getInfDPS().getTipoAmbiente());
-        final var sistemaHomologacao = this.config.isTeste();
-        if (dpsHomologacao != sistemaHomologacao) {
-            throw new IllegalStateException("O ambiente do DPS (%s) não corresponde ao ambiente do sistema (%s)!".formatted(
-                    dpsHomologacao ? "HOMOLOGAÇÃO" : "PRODUÇÃO",
-                    sistemaHomologacao ? "HOMOLOGAÇÃO" : "PRODUÇÃO"));
-        }
-
         //gera os defaults
+        if (dps.getInfDPS().getTipoAmbiente() == null) {
+            dps.getInfDPS().setTipoAmbiente(this.config.isTeste() ? NFSeSefinNacionalTipoAmbiente.HOMOLOGACAO : NFSeSefinNacionalTipoAmbiente.PRODUCAO);
+        }
         if (dps.getInfDPS().getDataHoraEmissao() == null) {
             dps.getInfDPS().setDataHoraEmissao(ZonedDateTime.of(LocalDateTime.now(), ZoneId.of("-03:00")));
         }
@@ -104,6 +99,13 @@ public class WSSefinNFSe implements NFSeLogger {
         }
         if (dps.getInfDPS().getDataInicioPrestacaoServico() == null) {
             dps.getInfDPS().setDataInicioPrestacaoServico(LocalDate.now());
+        }
+
+        //valida o ambiente
+        final var dpsHomologacao = NFSeSefinNacionalTipoAmbiente.HOMOLOGACAO.equals(dps.getInfDPS().getTipoAmbiente());
+        final var sistemaHomologacao = this.config.isTeste();
+        if (dpsHomologacao != sistemaHomologacao) {
+            throw new IllegalStateException("O ambiente do DPS (%s) não corresponde ao ambiente do sistema (%s)!".formatted(dpsHomologacao ? "HOMOLOGAÇÃO" : "PRODUÇÃO", sistemaHomologacao ? "HOMOLOGAÇÃO" : "PRODUÇÃO"));
         }
 
         // Gera o id e seta no objeto para preenchimento no xml
@@ -138,7 +140,7 @@ public class WSSefinNFSe implements NFSeLogger {
         final var uri = new URI(String.format("%s", config.isTeste() ? URL_HOMOLOGACAO_NFSE : URL_PRODUCAO_NFSE));
         final var body = String.format("{dpsXmlGZipB64:\"%s\"}", Base64.getEncoder().encodeToString(gzipped));
         final var response = new NFSeHttpClient(config).sendPostRequest(uri, body);
-        getLogger().info("Response: {}", response);
+        this.getLogger().info("Response {}: {}", response.statusCode(), response.body());
         if (response.statusCode() != 201) {
             final var responseError = this.objectMapper.convertValue(this.objectMapper.readTree(response.body()), NFSeSefinNacionalPostResponseErro.class);
             throw new IllegalStateException("Erro ao enviar DPS: %s".formatted(responseError.getErros()));
@@ -150,26 +152,64 @@ public class WSSefinNFSe implements NFSeLogger {
      * Emite um evento de cancelamento para uma NFSe
      */
     public NFSeSefinNacionalPostResponseSucesso enviarPedidoRegistroEvento(final NFSeSefinNacionalPedRegEvt pedidoRegistroEvento) throws Exception {
+        //gera os defaults
+        if (pedidoRegistroEvento.getInfPedReg().getTpAmb() == null) {
+            pedidoRegistroEvento.getInfPedReg().setTpAmb(this.config.isTeste() ? NFSeSefinNacionalTipoAmbiente.HOMOLOGACAO : NFSeSefinNacionalTipoAmbiente.PRODUCAO);
+        }
+        if (pedidoRegistroEvento.getInfPedReg().getDhEvento() == null) {
+            pedidoRegistroEvento.getInfPedReg().setDhEvento(ZonedDateTime.of(LocalDateTime.now(), ZoneId.of("-03:00")));
+        }
+        if (StringUtils.isBlank(pedidoRegistroEvento.getInfPedReg().getVerAplic())) {
+            pedidoRegistroEvento.getInfPedReg().setVerAplic("T3W %s".formatted(pedidoRegistroEvento.getInfPedReg().getTpAmb().getDescricao()));
+        }
+        if (StringUtils.isBlank(pedidoRegistroEvento.getInfPedReg().getNPedRegEvento())) {
+            pedidoRegistroEvento.getInfPedReg().setNPedRegEvento("1");
+        }
+        if (pedidoRegistroEvento.getInfPedReg().getEvento() == null) {
+            pedidoRegistroEvento.getInfPedReg().setEvento(new NFSeSefinNacionalInfPedRegTE101101()
+                    .setcMotivo(NFSeSefinNacionalTSCodJustCanc.OUTROS)
+                    .setxMotivo("Motivo não especificado"));
+        }
+
+        //valida o ambiente
+        final var solicitacaoHomologacao = NFSeSefinNacionalTipoAmbiente.HOMOLOGACAO.equals(pedidoRegistroEvento.getInfPedReg().getTpAmb());
+        final var sistemaHomologacao = this.config.isTeste();
+        if (solicitacaoHomologacao != sistemaHomologacao) {
+            throw new IllegalStateException("O ambiente do evento (%s) não corresponde ao ambiente do sistema (%s)!".formatted(solicitacaoHomologacao ? "HOMOLOGAÇÃO" : "PRODUÇÃO", sistemaHomologacao ? "HOMOLOGAÇÃO" : "PRODUÇÃO"));
+        }
+
         // Gera o id e seta no objeto para preenchimento no xml
         pedidoRegistroEvento.getInfPedReg().setId(NFSeUtils.gerarEventoId(pedidoRegistroEvento));
 
-        byte[] gzipped;
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             java.util.zip.GZIPOutputStream gos = new java.util.zip.GZIPOutputStream(baos)) {
+        final String body;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); java.util.zip.GZIPOutputStream gos = new java.util.zip.GZIPOutputStream(baos)) {
             gos.write(new NFSeAssinaturaDigital(this.config).setOmitirDeclaracaoXML(false).setUsarIdComoReferencia(false).assinarDocumento(pedidoRegistroEvento.toXml(), "infPedReg").getBytes(StandardCharsets.UTF_8));
             gos.finish();
-            gzipped = baos.toByteArray();
+            body = String.format("{pedidoRegistroEventoXmlGZipB64:\"%s\"}", Base64.getEncoder().encodeToString(baos.toByteArray()));
         }
 
         final var uri = new URI(String.format("%s/%s/eventos", config.isTeste() ? URL_HOMOLOGACAO_NFSE : URL_PRODUCAO_NFSE, pedidoRegistroEvento.getInfPedReg().getChaveAcessoNFSE()));
-        final var body = String.format("{pedidoRegistroEventoXmlGZipB64:\"%s\"}", Base64.getEncoder().encodeToString(gzipped));
         final var response = new NFSeHttpClient(config).sendPostRequest(uri, body);
-
         if (response.statusCode() != 201) {
             final var responseError = this.objectMapper.convertValue(this.objectMapper.readTree(response.body()), NFSeSefinNacionalPostResponseErro.class);
-            throw new IllegalStateException(String.format("Erro ao enviar pedido de registro de evento. Erros: %s", responseError.getErros()));
+            throw new IllegalStateException(String.format("Erro ao registrar evento: %s", responseError.getErros()));
         }
-
         return this.objectMapper.convertValue(this.objectMapper.readTree(response.body()), NFSeSefinNacionalPostResponseSucesso.class);
+    }
+
+    /**
+     * Solicita os eventos de uma NFSe pela chave de acesso.
+     * @param chave Chave de acesso da nfse.
+     * @return Eventos da NFSe.
+     * @throws Exception Caso erro.
+     */
+    public String solicitarEventos(final String chave, final String tipo, final int seq) throws Exception {
+        final var uri = new URI(String.format("%s/%s/eventos/%s/%s", config.isTeste() ? URL_HOMOLOGACAO_NFSE : URL_PRODUCAO_NFSE, chave, tipo, seq));
+        final var response = new NFSeHttpClient(config).sendGetRequest(uri);
+        if (response.statusCode() != 201) {
+            final var responseError = this.objectMapper.readTree(response.body()).get("message").asText();
+            throw new IllegalStateException(String.format("Erro ao buscar evento: %s", responseError));
+        }
+        return response.body();
     }
 }
