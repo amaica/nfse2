@@ -8,6 +8,7 @@ import io.github.t3wv.nacional.classes.nfsenacional.*;
 import io.github.t3wv.utils.NFSeAssinaturaDigital;
 import io.github.t3wv.utils.NFSeUtils;
 import io.github.t3wv.utils.NFSeXmlValidator;
+import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.xml.transform.stream.StreamSource;
@@ -21,7 +22,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Objects;
-import java.util.ResourceBundle;
 
 public class WSSefinNFSe implements NFSeLogger {
 
@@ -199,17 +199,30 @@ public class WSSefinNFSe implements NFSeLogger {
 
     /**
      * Solicita os eventos de uma NFSe pela chave de acesso.
+     *
      * @param chave Chave de acesso da nfse.
      * @return Eventos da NFSe.
      * @throws Exception Caso erro.
      */
-    public String solicitarEventos(final String chave, final String tipo, final int seq) throws Exception {
-        final var uri = new URI(String.format("%s/%s/eventos/%s/%s", config.isTeste() ? URL_HOMOLOGACAO_NFSE : URL_PRODUCAO_NFSE, chave, tipo, seq));
+    public NFSeSefinNacionalPostResponseSucesso solicitarEventos(final String chave, final String codigoEvento, final int seq) throws Exception {
+        final var uri = new URI(String.format("%s/%s/eventos/%s/%s", config.isTeste() ? URL_HOMOLOGACAO_NFSE : URL_PRODUCAO_NFSE, chave, codigoEvento, seq));
         final var response = new NFSeHttpClient(config).sendGetRequest(uri);
-        if (response.statusCode() != 201) {
-            final var responseError = this.objectMapper.readTree(response.body()).get("message").asText();
-            throw new IllegalStateException(String.format("Erro ao buscar evento: %s", responseError));
+        if (!Range.of(200, 299).contains(response.statusCode())) {
+            final var responseError = this.objectMapper.convertValue(this.objectMapper.readTree(response.body()), NFSeSefinNacionalPostResponseErro.class);
+            final var erroMensagem = responseError.getErros() != null && !responseError.getErros().isEmpty() ? responseError.getErros() : "Erro não informado";
+            switch (response.statusCode()) {
+                case 404:
+                    this.getLogger().debug("Nenhum evento encontrado para a NFS-e.");
+                    return null;
+                case 401:
+                    throw new IllegalAccessException(String.format("Usuário do certificado informado não tem permissão para acessar os eventos '%s' da NFS-e de chave '%s'.", codigoEvento, chave));
+                case 422:
+                    throw new IllegalStateException(String.format("A requisição violou alguma regra de negócio: %s", erroMensagem));
+                default:
+                    throw new IllegalStateException(String.format("Erro ao buscar evento: %s", erroMensagem));
+            }
         }
-        return response.body();
+
+        return this.objectMapper.convertValue(this.objectMapper.readTree(response.body()), NFSeSefinNacionalPostResponseSucesso.class);
     }
 }
