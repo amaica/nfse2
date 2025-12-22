@@ -39,6 +39,8 @@ public class NFSeSefinNacionalInfDPS {
     protected NFSeSefinNacionalServ servicoPrestado;
     @Element(name = "valores")
     protected NFSeSefinNacionalInfoValores valores;
+    @Element(name = "IBSCBS", required = true)
+    protected NFSeSefinNacionalInfoIBSCBS infoIBSCBS;
     @Attribute(name = "Id", empty = "") //todo: implementar a validação da regra (método + teste unitário)
     protected String id;
 
@@ -248,6 +250,20 @@ public class NFSeSefinNacionalInfDPS {
      */
     public NFSeSefinNacionalInfDPS setServicoPrestado(NFSeSefinNacionalServ servicoPrestado) {
         this.servicoPrestado = servicoPrestado;
+        return this;
+    }
+
+    public NFSeSefinNacionalInfDPS setSubstituicaoNfse(NFSeSefinNacionalSubstituicao substituicaoNfse) {
+        this.substituicaoNfse = substituicaoNfse;
+        return this;
+    }
+
+    public NFSeSefinNacionalInfoIBSCBS getInfoIBSCBS() {
+        return infoIBSCBS;
+    }
+
+    public NFSeSefinNacionalInfDPS setInfoIBSCBS(NFSeSefinNacionalInfoIBSCBS infoIBSCBS) {
+        this.infoIBSCBS = infoIBSCBS;
         return this;
     }
 
