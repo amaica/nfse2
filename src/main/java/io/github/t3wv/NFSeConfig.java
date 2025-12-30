@@ -1,7 +1,6 @@
 package io.github.t3wv;
 
 import org.apache.commons.lang3.StringUtils;
-import org.simpleframework.xml.core.Persister;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -13,12 +12,12 @@ import java.security.cert.CertificateException;
 
 public class NFSeConfig {
 
-    private Persister persister;
     private final String certificadoPath;
     private final String certificadoSenha;
     private final String cadeiaCertificadosPath;
     private final String cadeiaCertificadosSenha;
     private final boolean isTeste;
+
     private KeyStore keyStoreCertificado = null;
     private KeyStore keyStoreCadeia = null;
 
@@ -30,16 +29,8 @@ public class NFSeConfig {
         this.isTeste = isTeste;
     }
 
-    public String getCertificadoPath() {
-        return certificadoPath;
-    }
-
     public String getCertificadoSenha() {
         return certificadoSenha;
-    }
-
-    public String getCadeiaCertificadosPath() {
-        return cadeiaCertificadosPath;
     }
 
     public String getCadeiaCertificadosSenha() {
@@ -59,11 +50,6 @@ public class NFSeConfig {
         return this.keyStoreCertificado;
     }
 
-    public NFSeConfig setKeyStoreCertificado(KeyStore keyStoreCertificado) {
-        this.keyStoreCertificado = keyStoreCertificado;
-        return this;
-    }
-
     public KeyStore getKeyStoreCadeia() throws KeyStoreException {
         if (this.keyStoreCadeia == null && StringUtils.isNotBlank(this.cadeiaCertificadosPath)) {
             this.keyStoreCadeia = KeyStore.getInstance("JKS");
@@ -77,21 +63,7 @@ public class NFSeConfig {
         return this.keyStoreCadeia;
     }
 
-    public NFSeConfig setKeyStoreCadeia(KeyStore keyStoreCadeia) {
-        this.keyStoreCadeia = keyStoreCadeia;
-        return this;
-    }
-
     public boolean isTeste() {
         return isTeste;
-    }
-
-    public Persister getPersister() {
-        return persister;
-    }
-
-    public NFSeConfig setPersister(Persister persister) {
-        this.persister = persister;
-        return this;
     }
 }

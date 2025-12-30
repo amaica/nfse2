@@ -26,8 +26,8 @@ public class NFSeSefinNacionalPostResponseSucesso {
     @JsonProperty("nfseXmlGZipB64")
     private String nfseXmlGZipB64;
 
-    @JsonProperty("eventoXmlGZipB64")
-    private String eventoXmlGZipB64;
+    @JsonProperty("eventos")
+    private List<NFSeSefinNacionalEventoJson> eventos;
 
     @JsonProperty("alertas")
     private List<NFSeSefinNacionalPostMensagemProcessamento> alertas;
@@ -80,12 +80,12 @@ public class NFSeSefinNacionalPostResponseSucesso {
         this.nfseXmlGZipB64 = nfseXmlGZipB64;
     }
 
-    public String getEventoXmlGZipB64() {
-        return eventoXmlGZipB64;
+    public List<NFSeSefinNacionalEventoJson> getEventos() {
+        return eventos;
     }
 
-    public NFSeSefinNacionalPostResponseSucesso setEventoXmlGZipB64(String eventoXmlGZipB64) {
-        this.eventoXmlGZipB64 = eventoXmlGZipB64;
+    public NFSeSefinNacionalPostResponseSucesso setEventos(List<NFSeSefinNacionalEventoJson> eventos) {
+        this.eventos = eventos;
         return this;
     }
 
@@ -106,7 +106,7 @@ public class NFSeSefinNacionalPostResponseSucesso {
                ", idDps='" + idDps + '\'' +
                ", chaveAcesso='" + chaveAcesso + '\'' +
                ", nfseXmlGZipB64='" + nfseXmlGZipB64 + '\'' +
-               ", eventoXmlGZipB64='" + eventoXmlGZipB64 + '\'' +
+               ", eventos='" + eventos + '\'' +
                ", alertas=" + alertas +
                '}';
     }

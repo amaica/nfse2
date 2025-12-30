@@ -1,9 +1,9 @@
-package io.github.t3wv.nacional.webservices;
+package io.github.t3wv.nacional;
 
 import io.github.t3wv.NFSeConfig;
-import io.github.t3wv.nacional.classes.nfsenacional.NFSeSefinNacionalDPS;
-import io.github.t3wv.nacional.classes.nfsenacional.NFSeSefinNacionalPostResponseSucesso;
-import io.github.t3wv.nacional.classes.parametrosmunicipais.consulta.*;
+import io.github.t3wv.nacional.classes.nfsenacional.*;
+import io.github.t3wv.nacional.classes.parametrosmunicipais.consulta.NFSeParametrosMunicipaisConvenio;
+import io.github.t3wv.nacional.classes.parametrosmunicipais.consulta.NFSeParametrosMunicipaisConvenioResponse;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -77,6 +77,40 @@ public class WSFacade {
      */
     public NFSeSefinNacionalPostResponseSucesso emitirNFSe(final NFSeSefinNacionalDPS dps) throws Exception {
         return wsSefinNFSe.emitirNFSeByDPS(dps);
+    }
+
+    /**
+     * Cancela uma NFSe utilizando um evento de cancelamento na API de NFSe da SEFIN Nacional.
+     *
+     * @param eventoCancelamento Objeto {@link NFSeSefinNacionalPedRegEvt} representando o evento de cancelamento da NFSe.
+     * @return Objeto {@link NFSeSefinNacionalPostResponseSucesso} contendo as informações sobre o cancelamento da NFSe.
+     * @throws Exception Se ocorrer um erro durante a requisição ou no processamento da resposta.
+     */
+    public NFSeSefinNacionalPostResponseSucesso cancelarNFSe(final NFSeSefinNacionalPedRegEvt eventoCancelamento) throws Exception {
+        return wsSefinNFSe.enviarPedidoRegistroEvento(eventoCancelamento);
+    }
+
+    public NFSeSefinNacionalPostResponseSucesso consultaEventoNFSe(final String chave, final String evento, final int sequencial) throws Exception {
+        return wsSefinNFSe.solicitarEventos(chave, evento, sequencial);
+    }
+
+    /**
+     * Consulta os eventos de cancelamento de uma NFSe na API de NFSe da SEFIN Nacional.
+     * Itera os possíveis eventos de cancelamento
+     * Caso encontre um evento correspondente, retorna o xml do evento.
+     *
+     * @param chave da NFSe
+     * @return Objeto {@link NFSeSefinNacionalEvento} contendo as informações sobre o evento de cancelamento da NFSe.
+     * @throws Exception Caso erro.
+     */
+    public NFSeSefinNacionalPostResponseSucesso consultaEventoCancelamentoNFSe(final String chave) throws Exception {
+        for (String codigoEvento : NFSeSefinNacionalInfPedRegEventoTE.EVENTOS_CANCELAMENTO) {
+            NFSeSefinNacionalPostResponseSucesso resposta = consultaEventoNFSe(chave, codigoEvento, 1);
+            if (resposta != null) {
+                return resposta;
+            }
+        }
+        return null;
     }
 
 
