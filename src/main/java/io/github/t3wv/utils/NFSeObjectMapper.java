@@ -1,4 +1,4 @@
-package io.github.t3wv;
+package io.github.t3wv.utils;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;

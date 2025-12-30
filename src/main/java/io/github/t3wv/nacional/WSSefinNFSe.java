@@ -1,13 +1,9 @@
-package io.github.t3wv.nacional.webservices;
+package io.github.t3wv.nacional;
 
 import io.github.t3wv.NFSeConfig;
-import io.github.t3wv.NFSeHttpClient;
 import io.github.t3wv.NFSeLogger;
-import io.github.t3wv.NFSeObjectMapper;
 import io.github.t3wv.nacional.classes.nfsenacional.*;
-import io.github.t3wv.utils.NFSeAssinaturaDigital;
-import io.github.t3wv.utils.NFSeUtils;
-import io.github.t3wv.utils.NFSeXmlValidator;
+import io.github.t3wv.utils.*;
 import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.StringUtils;
 
@@ -33,7 +29,7 @@ public class WSSefinNFSe implements NFSeLogger {
     private final NFSeObjectMapper objectMapper = new NFSeObjectMapper();
     private final NFSeConfig config;
 
-    WSSefinNFSe(final NFSeConfig config) {
+    public WSSefinNFSe(final NFSeConfig config) {
         this.config = config;
     }
 
@@ -44,7 +40,7 @@ public class WSSefinNFSe implements NFSeLogger {
      * @return objeto de resposta da consulta
      * @throws Exception
      */
-    NFSeSefinNacionalGetResponse buscarNFSeByChaveAcesso(final String chaveAcesso) throws Exception {
+    public NFSeSefinNacionalGetResponse buscarNFSeByChaveAcesso(final String chaveAcesso) throws Exception {
         //normaliza a chave de acesso removendo quaisquer caracteres não numéricos
         final var chaveAcessoNormalizada = chaveAcesso.replaceAll("\\D", "");
 
@@ -71,7 +67,7 @@ public class WSSefinNFSe implements NFSeLogger {
      * @return XML da NFSe
      * @throws Exception Caso erro.
      */
-    String buscarNFSeXmlByChaveAcesso(final String nfseChaveAcesso) throws Exception {
+    public String buscarNFSeXmlByChaveAcesso(final String nfseChaveAcesso) throws Exception {
         final var nfse = this.buscarNFSeByChaveAcesso(nfseChaveAcesso);
         return NFSeUtils.decodeXmlGZipB64(nfse.getNfseXmlGZipB64());
     }

@@ -3,6 +3,8 @@ package io.github.t3wv.nacional.webservices;
 
 import io.github.t3wv.NFSeConfig;
 import io.github.t3wv.NFSeLogger;
+import io.github.t3wv.nacional.WSParametrosMunicipais;
+import io.github.t3wv.nacional.WSSefinNFSe;
 import io.github.t3wv.nacional.classes.nfsenacional.*;
 import io.github.t3wv.utils.NFSeCadeiaCertificadosTest;
 import org.junit.jupiter.api.Assertions;

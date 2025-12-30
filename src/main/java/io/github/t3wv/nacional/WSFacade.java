@@ -1,4 +1,4 @@
-package io.github.t3wv.nacional.webservices;
+package io.github.t3wv.nacional;
 
 import io.github.t3wv.NFSeConfig;
 import io.github.t3wv.nacional.classes.nfsenacional.*;
@@ -101,7 +101,7 @@ public class WSFacade {
      *
      * @param chave da NFSe
      * @return Objeto {@link NFSeSefinNacionalEvento} contendo as informações sobre o evento de cancelamento da NFSe.
-     * @throws Exception
+     * @throws Exception Caso erro.
      */
     public NFSeSefinNacionalPostResponseSucesso consultaEventoCancelamentoNFSe(final String chave) throws Exception {
         for (String codigoEvento : NFSeSefinNacionalInfPedRegEventoTE.EVENTOS_CANCELAMENTO) {
@@ -112,7 +112,6 @@ public class WSFacade {
         }
         return null;
     }
-
 
 
     //REVISAR
