@@ -1,9 +1,9 @@
-package io.github.t3wv.nacional.webservices;
+package io.github.t3wv.nacional;
 
 import io.github.t3wv.NFSeConfig;
-import io.github.t3wv.NFSeHttpClient;
+import io.github.t3wv.utils.NFSeHttpClient;
 import io.github.t3wv.NFSeLogger;
-import io.github.t3wv.NFSeObjectMapper;
+import io.github.t3wv.utils.NFSeObjectMapper;
 import io.github.t3wv.nacional.classes.parametrosmunicipais.consulta.*;
 
 import java.net.URI;

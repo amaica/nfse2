@@ -1,13 +1,11 @@
 package io.github.t3wv.utils;
 
 import io.github.t3wv.NFSeConfig;
-import io.github.t3wv.NFSeHttpClient;
 import io.github.t3wv.NFSeLogger;
-import io.github.t3wv.municipal.nfseSPBarueri.webservices.WSRPS;
-
-import io.github.t3wv.nacional.webservices.WSDANFSe;
-import io.github.t3wv.nacional.webservices.WSParametrosMunicipais;
-import io.github.t3wv.nacional.webservices.WSSefinNFSe;
+import io.github.t3wv.municipal.nfseSPBarueri.WSRPS;
+import io.github.t3wv.nacional.WSDANFSe;
+import io.github.t3wv.nacional.WSParametrosMunicipais;
+import io.github.t3wv.nacional.WSSefinNFSe;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.*;
@@ -38,7 +36,7 @@ public abstract class NFSeCadeiaCertificados implements NFSeLogger {
             NFSeCadeiaCertificados.get(keyStore, WSParametrosMunicipais.URL_BASE_HOMOLOGACAO);
             NFSeCadeiaCertificados.get(keyStore, WSRPS.URL_BASE_PRODUCAO);
             NFSeCadeiaCertificados.get(keyStore, WSRPS.URL_BASE_HOMOLOGACAO);
-            NFSeCadeiaCertificados.get(keyStore, io.github.t3wv.municipal.nfseSPSaoPaulo.webservices.WSRPS.URL_BASE);
+            NFSeCadeiaCertificados.get(keyStore, io.github.t3wv.municipal.nfseSPSaoPaulo.WSRPS.URL_BASE);
 
             // grava o keystore em um array de bytes
             keyStore.store(out, cadeiaCertificadosSenha.toCharArray());
@@ -61,7 +59,7 @@ public abstract class NFSeCadeiaCertificados implements NFSeLogger {
             final SSLContext sslContext = SSLContext.getInstance(NFSeHttpClient.PROTOCOL);
             sslContext.init(null, new TrustManager[]{savingTrustManager}, null);
 
-            NFSeLogger.getLogger(NFSeCadeiaCertificados.class).debug("Abrindo conexao para o servidor: {}:{}", host, NFSeCadeiaCertificados.PORT );
+            NFSeLogger.getLogger(NFSeCadeiaCertificados.class).debug("Abrindo conexao para o servidor: {}:{}", host, NFSeCadeiaCertificados.PORT);
             try (SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket(host, NFSeCadeiaCertificados.PORT)) {
                 sslSocket.setSoTimeout(10000);
                 sslSocket.startHandshake();
