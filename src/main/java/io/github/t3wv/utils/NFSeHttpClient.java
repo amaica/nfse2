@@ -1,4 +1,7 @@
-package io.github.t3wv;
+package io.github.t3wv.utils;
+
+import io.github.t3wv.NFSeConfig;
+import io.github.t3wv.NFSeLogger;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;

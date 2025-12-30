@@ -3,7 +3,7 @@ package io.github.t3wv.municipal;
 import io.github.t3wv.NFSeConfig;
 import io.github.t3wv.municipal.nfseSPBarueri.classes.*;
 import io.github.t3wv.municipal.nfseSPBarueri.enums.*;
-import io.github.t3wv.municipal.nfseSPBarueri.webservices.WSRPS;
+import io.github.t3wv.municipal.nfseSPBarueri.WSRPS;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -78,17 +78,17 @@ public class NFSeSPBarueriTest {
 
         // Envio o lote para emissão
         NFSeBarueriLoteEnviarArquivoRequest request = new NFSeBarueriLoteEnviarArquivoRequest(arquivoRps);
-        final NFSeBarueriLoteEnviarArquivoResponse responseEnvioEmissao = new WSRPS(config).NFeLoteEnviarArquivo(request);
+        final NFSeBarueriLoteEnviarArquivoResponse responseEnvioEmissao = new WSRPS(config).loteEnviarArquivo(request);
         Files.write(Paths.get("".formatted(responseEnvioEmissao.getResultado().getProtocoloRemessa())), arquivoRps.geraConteudoArquivo().toByteArray());
         Thread.sleep(2000);
 
         // Consulto o status do arquivo enviado
-        final NFSeBarueriLoteStatusArquivoResponse responseStatusEmissao = new WSRPS(config).NFeLoteStatusArquivo(new NFSeBarueriLoteStatusArquivoRequest("", "", responseEnvioEmissao.getResultado().getProtocoloRemessa()));
+        final NFSeBarueriLoteStatusArquivoResponse responseStatusEmissao = new WSRPS(config).loteStatusArquivo(new NFSeBarueriLoteStatusArquivoRequest("", "", responseEnvioEmissao.getResultado().getProtocoloRemessa()));
         Files.writeString(Paths.get("".formatted(responseEnvioEmissao.getResultado().getProtocoloRemessa())), responseStatusEmissao.toXml());
         Thread.sleep(2000);
 
         // Baixo o arquivo de retorno da emissão
-        final NFSeBarueriLoteBaixarArquivoResponse responseBaixarEmissao = new WSRPS(config).NFeLoteBaixarArquivo(new NFSeBarueriLoteBaixarArquivoRequest("", "", responseStatusEmissao.getResultado().getListaNfeArquivosRPS().getNomeArqRetorno()));
+        final NFSeBarueriLoteBaixarArquivoResponse responseBaixarEmissao = new WSRPS(config).loteBaixarArquivo(new NFSeBarueriLoteBaixarArquivoRequest("", "", responseStatusEmissao.getResultado().getListaNfeArquivosRPS().getNomeArqRetorno()));
         Files.writeString(Paths.get("".formatted(responseEnvioEmissao.getResultado().getProtocoloRemessa())), responseBaixarEmissao.toXml());
 
         final NFSeBarueriLoteBaixarArquivoResult resultadoEmissao = responseBaixarEmissao.getResultado();
@@ -118,15 +118,15 @@ public class NFSeSPBarueriTest {
         final var arquivoRpsCancelamento = new NFSeBarueriRPSArquivo("", "", "PMB003", LocalDateTime.now(), List.of(rps));
 
         // Envio o lote para cancelamento
-        final NFSeBarueriLoteEnviarArquivoResponse responseEnvioCancelamento = new WSRPS(config).NFeLoteEnviarArquivo(new NFSeBarueriLoteEnviarArquivoRequest(arquivoRpsCancelamento));
+        final NFSeBarueriLoteEnviarArquivoResponse responseEnvioCancelamento = new WSRPS(config).loteEnviarArquivo(new NFSeBarueriLoteEnviarArquivoRequest(arquivoRpsCancelamento));
         Thread.sleep(5000);
 
         // Consulto o status do arquivo de cancelamento enviado
-        final NFSeBarueriLoteStatusArquivoResponse responseStatusCancelamento = new WSRPS(config).NFeLoteStatusArquivo(new NFSeBarueriLoteStatusArquivoRequest("", "", responseEnvioCancelamento.getResultado().getProtocoloRemessa()));
+        final NFSeBarueriLoteStatusArquivoResponse responseStatusCancelamento = new WSRPS(config).loteStatusArquivo(new NFSeBarueriLoteStatusArquivoRequest("", "", responseEnvioCancelamento.getResultado().getProtocoloRemessa()));
         Thread.sleep(5000);
 
         // Baixo o arquivo de retorno do cancelamento
-        final NFSeBarueriLoteBaixarArquivoResponse responseBaixarCancelamento = new WSRPS(config).NFeLoteBaixarArquivo(new NFSeBarueriLoteBaixarArquivoRequest("", "", responseStatusCancelamento.getResultado().getListaNfeArquivosRPS().getNomeArqRetorno()));
+        final NFSeBarueriLoteBaixarArquivoResponse responseBaixarCancelamento = new WSRPS(config).loteBaixarArquivo(new NFSeBarueriLoteBaixarArquivoRequest("", "", responseStatusCancelamento.getResultado().getListaNfeArquivosRPS().getNomeArqRetorno()));
         final NFSeBarueriLoteBaixarArquivoResult resultadoCancelamento = responseBaixarCancelamento.getResultado();
         final byte[] arquivoCancelamentoB64 = Base64.getDecoder().decode(resultadoCancelamento.getArquivoRPSBase64());
         Files.write(Paths.get(String.format("",arquivoRps.getNomeArquivo())), arquivoCancelamentoB64);
@@ -184,13 +184,13 @@ public class NFSeSPBarueriTest {
 
         final var arquivoRps = new NFSeBarueriRPSArquivo("", "", "PMB002", LocalDateTime.now(), List.of(rps));
         Files.write(Paths.get("".formatted(arquivoRps.getNomeArquivo())), arquivoRps.geraConteudoArquivo().toByteArray());
-        final NFSeBarueriLoteEnviarArquivoResponse responseEnvioCancelamento = new WSRPS(config).NFeLoteEnviarArquivo(new NFSeBarueriLoteEnviarArquivoRequest(arquivoRps));
+        final NFSeBarueriLoteEnviarArquivoResponse responseEnvioCancelamento = new WSRPS(config).loteEnviarArquivo(new NFSeBarueriLoteEnviarArquivoRequest(arquivoRps));
         Files.writeString(Paths.get("".formatted(responseEnvioCancelamento.getResultado().getProtocoloRemessa())), responseEnvioCancelamento.toXml());
         Thread.sleep(5000);
-        final NFSeBarueriLoteStatusArquivoResponse responseStatusCancelamento = new WSRPS(config).NFeLoteStatusArquivo(new NFSeBarueriLoteStatusArquivoRequest("", "", responseEnvioCancelamento.getResultado().getProtocoloRemessa()));
+        final NFSeBarueriLoteStatusArquivoResponse responseStatusCancelamento = new WSRPS(config).loteStatusArquivo(new NFSeBarueriLoteStatusArquivoRequest("", "", responseEnvioCancelamento.getResultado().getProtocoloRemessa()));
         Files.writeString(Paths.get("".formatted(responseEnvioCancelamento.getResultado().getProtocoloRemessa())), responseStatusCancelamento.toXml());
         Thread.sleep(5000);
-        final NFSeBarueriLoteBaixarArquivoResponse responseBaixarCancelamento = new WSRPS(config).NFeLoteBaixarArquivo(new NFSeBarueriLoteBaixarArquivoRequest("", "", responseStatusCancelamento.getResultado().getListaNfeArquivosRPS().getNomeArqRetorno()));
+        final NFSeBarueriLoteBaixarArquivoResponse responseBaixarCancelamento = new WSRPS(config).loteBaixarArquivo(new NFSeBarueriLoteBaixarArquivoRequest("", "", responseStatusCancelamento.getResultado().getListaNfeArquivosRPS().getNomeArqRetorno()));
         Files.writeString(Paths.get("".formatted(responseEnvioCancelamento.getResultado().getProtocoloRemessa())), responseBaixarCancelamento.toXml());
 
     }

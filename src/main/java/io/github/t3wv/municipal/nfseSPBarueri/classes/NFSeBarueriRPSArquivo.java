@@ -70,9 +70,9 @@ public class NFSeBarueriRPSArquivo {
     BigDecimal getValorTotalServico() {
         BigDecimal retValue = BigDecimal.ZERO;
         for (final var rps : this.rpsList) {
-            retValue = retValue.add(rps.getRPSValorServico());
+            retValue = rps.getRPSValorServico() != null ? retValue.add(rps.getRPSValorServico()) : retValue;
         }
-        return retValue.subtract(this.getValorTotalNaoIncluidoBasecalculoISS());
+        return this.getValorTotalNaoIncluidoBasecalculoISS() != null ? retValue.subtract(this.getValorTotalNaoIncluidoBasecalculoISS()) : retValue;
     }
 
     BigDecimal getValorTotalNaoIncluidoBasecalculoISS() {

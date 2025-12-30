@@ -1,7 +1,7 @@
-package io.github.t3wv.municipal.nfseSPSaoPaulo.webservices;
+package io.github.t3wv.municipal.nfseSPSaoPaulo;
 
 import io.github.t3wv.NFSeConfig;
-import io.github.t3wv.NFSeHttpClient;
+import io.github.t3wv.utils.NFSeHttpClient;
 import io.github.t3wv.municipal.nfseSPSaoPaulo.requests.NFSeSPSaoPauloRequestCancelamentoNFe;
 import io.github.t3wv.municipal.nfseSPSaoPaulo.requests.NFSeSPSaoPauloRequestConsultaNFe;
 import io.github.t3wv.municipal.nfseSPSaoPaulo.requests.NFSeSPSaoPauloRequestEnvioRPS;

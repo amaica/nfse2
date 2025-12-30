@@ -78,11 +78,15 @@ public class NFSeBarueriRPSArquivoRegistroTipo2 {
     }
 
     private String getRPSDataEmissao() {
-        return this.rps.getRPSDataEmissao().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        return this.rps.getRPSDataEmissao() != null ?
+                this.rps.getRPSDataEmissao().format(DateTimeFormatter.ofPattern("yyyyMMdd")) :
+                "";
     }
 
     private String getRPSHoraEmissao() {
-        return new DateTimeFormatterBuilder().appendPattern("HHmmss").toFormatter().format(this.rps.getRPSHoraEmissao());
+        return this.rps.getRPSHoraEmissao() != null ?
+                new DateTimeFormatterBuilder().appendPattern("HHmmss").toFormatter().format(this.rps.getRPSHoraEmissao()) :
+                "";
     }
 
     private String getRPSSituacao() {
@@ -94,7 +98,7 @@ public class NFSeBarueriRPSArquivoRegistroTipo2 {
     }
 
     private String getNFSubstituidaNumero() {
-        return StringUtils.leftPad(StringUtils.trimToEmpty(this.rps.getNFSubstituidaNumero()), 7,"0");
+        return StringUtils.leftPad(StringUtils.trimToEmpty(this.rps.getNFSubstituidaNumero()), 7, "0");
     }
 
     private String getNFSubstituidaSerie() {
@@ -102,7 +106,7 @@ public class NFSeBarueriRPSArquivoRegistroTipo2 {
     }
 
     private String getNFSubstituidaDataEmissao() {
-        return StringUtils.rightPad(this.rps.getNFSubstituidaDataEmissao() != null ?this.rps.getNFSubstituidaDataEmissao().format(DateTimeFormatter.ofPattern("yyyyMMdd")) : "", 8);
+        return StringUtils.rightPad(this.rps.getNFSubstituidaDataEmissao() != null ? this.rps.getNFSubstituidaDataEmissao().format(DateTimeFormatter.ofPattern("yyyyMMdd")) : "", 8);
     }
 
     private String getNFSubstituidaDescricaoCancelamento() {
@@ -114,11 +118,11 @@ public class NFSeBarueriRPSArquivoRegistroTipo2 {
     }
 
     private String getRPSLocalPrestacaoServico() {
-        return this.rps.getRPSLocalPrestacaoServico().getCodigo();
+        return this.rps.getRPSLocalPrestacaoServico() != null ? this.rps.getRPSLocalPrestacaoServico().getCodigo() : "";
     }
 
     private String getRPSServicoPrestadoEmViaPublica() {
-        return this.rps.getRPSServicoPrestadoEmViasPublicas().getCodigo();
+        return this.rps.getRPSServicoPrestadoEmViasPublicas() != null ? this.rps.getRPSServicoPrestadoEmViasPublicas().getCodigo() : "";
     }
 
     private String getRPSEnderecoServicoPrestado() {
@@ -154,7 +158,7 @@ public class NFSeBarueriRPSArquivoRegistroTipo2 {
     }
 
     private String getRPSValorServico() {
-        return StringUtils.leftPad(this.rps.getRPSValorServico().toPlainString().replaceAll("[^0-9]", ""), 15, "0");
+        return StringUtils.leftPad(this.rps.getRPSValorServico() != null ? this.rps.getRPSValorServico().toPlainString().replaceAll("[^0-9]", "") : "", 15, "0");
     }
 
     private String getCampoReservado() {
@@ -166,7 +170,7 @@ public class NFSeBarueriRPSArquivoRegistroTipo2 {
     }
 
     private String getRPSTomadorTipo() {
-        return this.rps.getRPSTomadorTipo().getCodigo();
+        return this.rps.getRPSTomadorTipo() != null ? this.rps.getRPSTomadorTipo().getCodigo() : "";
     }
 
     private String getRPSTomadorEstrangeiroCodigoPais() {
@@ -174,7 +178,7 @@ public class NFSeBarueriRPSArquivoRegistroTipo2 {
     }
 
     private String getRPSServicoExportacao() {
-        return this.rps.getRPSServicoExportacao().getCodigo();
+        return this.rps.getRPSServicoExportacao() != null ? this.rps.getRPSServicoExportacao().getCodigo() : "";
     }
 
     private String getRPSTomadorDocumentoTipo() {
