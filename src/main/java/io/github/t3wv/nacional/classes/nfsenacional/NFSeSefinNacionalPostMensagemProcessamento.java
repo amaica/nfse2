@@ -8,10 +8,10 @@ public class NFSeSefinNacionalPostMensagemProcessamento {
     @JsonProperty("mensagem")
     private String mensagem;
 
-    @JsonProperty("Codigo")
+    @JsonProperty("codigo")
     private String codigo;
 
-    @JsonProperty("Descricao")
+    @JsonProperty("descricao")
     private String descricao;
 
     @JsonProperty("complemento")

@@ -16,12 +16,12 @@ public class NFSeBarueriRPSArquivoRegistroTipo4 {
     }
 
     public String getLinha() {
-        final var isTomadorEstrangeiro = this.rps.getRPSTomadorTipo().equals(NFSeBarueriRPSTomadorTipo.ESTRANGEIRO);
-        final var isExportacao = this.rps.getRPSServicoExportacao().equals(NFSeBarueriRPSServicoExportacao.SIM);
+        final var isTomadorEstrangeiro = NFSeBarueriRPSTomadorTipo.ESTRANGEIRO.equals(this.rps.getRPSTomadorTipo());
+        final var isExportacao = NFSeBarueriRPSServicoExportacao.SIM.equals(this.rps.getRPSServicoExportacao());
 
         final StringBuilder linha = new StringBuilder();
         linha.append(TIPO_REGISTRO_BODY); // 1/1/1
-        linha.append(this.rps.getOptanteSimplesNacional().getCodigo());// 1/2/2
+        linha.append(this.rps.getOptanteSimplesNacional() != null ? this.rps.getOptanteSimplesNacional().getCodigo() : " ");// 1/2/2
         linha.append(isExportacao ? this.rps.getRegimeApuracaoTributariaSimplesNacional().getCodigo() : " "); // 1/3/3
         linha.append(StringUtils.rightPad(StringUtils.trimToEmpty(isExportacao ? this.rps.getRPSCodigoPaisTomadorEstrangeiro() : ""), 3)); // 3/4/6
         linha.append(StringUtils.rightPad(StringUtils.trimToEmpty(!isExportacao ? this.rps.getServicoPrestadoCidadeCodigoIBGE() : ""), 7)); // 7/7/13
@@ -41,7 +41,7 @@ public class NFSeBarueriRPSArquivoRegistroTipo4 {
         linha.append(StringUtils.rightPad(StringUtils.trimToEmpty(this.rps.getCodigoIndicadorOperacaoFornecimento()), 6)); // 6/515/520
         linha.append(StringUtils.rightPad(StringUtils.trimToEmpty(this.rps.getCodigoClassificacaoTributariaIBSCBS()), 6)); // 6/521/526
         linha.append(StringUtils.rightPad(StringUtils.trimToEmpty(this.rps.getCodigoSituacaoTributariaIBSCBS()), 3)); // 3/527/529
-        linha.append(StringUtils.rightPad(this.rps.isOperacaoConsumoPessoal() ?  "1" : "0", 1)); // 1/530/530
+        linha.append(StringUtils.rightPad(this.rps.isOperacaoConsumoPessoal() ? "1" : "0", 1)); // 1/530/530
         linha.append(StringUtils.rightPad(StringUtils.trimToEmpty(this.rps.getIndicadorDestinatarioServico() != null ? this.rps.getIndicadorDestinatarioServico().getCodigo() : null), 1)); // 1/531/531
 
         return linha.toString();

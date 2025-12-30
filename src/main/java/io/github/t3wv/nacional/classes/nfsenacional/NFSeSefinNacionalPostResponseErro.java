@@ -20,7 +20,7 @@ public class NFSeSefinNacionalPostResponseErro {
     @JsonProperty("idDPS")
     private String idDPS;
 
-    @JsonProperty("erros")
+    @JsonProperty("erro")
     private List<NFSeSefinNacionalPostMensagemProcessamento> erros;
 
     public Integer getTipoAmbiente() {
@@ -61,5 +61,16 @@ public class NFSeSefinNacionalPostResponseErro {
 
     public void setErros(List<NFSeSefinNacionalPostMensagemProcessamento> erros) {
         this.erros = erros;
+    }
+
+    @Override
+    public String toString() {
+        return "NFSeSefinNacionalPostResponseErro{" +
+               "tipoAmbiente=" + tipoAmbiente +
+               ", versaoAplicativo='" + versaoAplicativo + '\'' +
+               ", dataHoraProcessamento=" + dataHoraProcessamento +
+               ", idDPS='" + idDPS + '\'' +
+               ", erros=" + erros +
+               '}';
     }
 }

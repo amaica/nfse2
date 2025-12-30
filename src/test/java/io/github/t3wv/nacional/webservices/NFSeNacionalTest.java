@@ -3,6 +3,8 @@ package io.github.t3wv.nacional.webservices;
 
 import io.github.t3wv.NFSeConfig;
 import io.github.t3wv.NFSeLogger;
+import io.github.t3wv.nacional.WSParametrosMunicipais;
+import io.github.t3wv.nacional.WSSefinNFSe;
 import io.github.t3wv.nacional.classes.nfsenacional.*;
 import io.github.t3wv.utils.NFSeCadeiaCertificadosTest;
 import org.junit.jupiter.api.Assertions;
@@ -113,12 +115,9 @@ public class NFSeNacionalTest implements NFSeLogger {
     public void testeCancelamentoNFSeByChaveAcesso() throws Exception {
         final var evento = new NFSeSefinNacionalPedRegEvt().setInfPedReg(
                 new NFSeSefinNacionalInfPedReg()
-                        .setTpAmb(NFSeSefinNacionalTipoAmbiente.HOMOLOGACAO)
-                        .setVerAplic("")
-                        .setDhEvento(ZonedDateTime.of(2025, 10, 30, 15, 59, 19, 0, ZoneId.of("-03:00")))
                         .setCNPJAutor("")
                         .setChaveAcessoNFSE("")
-                        .setNPedRegEvento("1")
+                        //.setNPedRegEvento("1")
                         .setEvento(new NFSeSefinNacionalInfPedRegTE101101()
                                 .setcMotivo(NFSeSefinNacionalTSCodJustCanc.OUTROS)
                                 .setxMotivo("Cancelamento de NFSe para testes"))

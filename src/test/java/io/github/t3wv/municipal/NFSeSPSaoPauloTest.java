@@ -5,7 +5,7 @@ import io.github.t3wv.NFSeConfig;
 import io.github.t3wv.municipal.nfseSPSaoPaulo.classes.*;
 import io.github.t3wv.municipal.nfseSPSaoPaulo.requests.*;
 import io.github.t3wv.municipal.nfseSPSaoPaulo.utils.NFSeSPSaoPauloUtils;
-import io.github.t3wv.municipal.nfseSPSaoPaulo.webservices.WSRPS;
+import io.github.t3wv.municipal.nfseSPSaoPaulo.WSRPS;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

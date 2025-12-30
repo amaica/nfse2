@@ -7,18 +7,8 @@ import io.github.t3wv.nacional.classes.nfsenacional.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -34,18 +24,6 @@ import java.util.Base64;
  * Teste de emissao de NFSe para o municipio de Sao Jose SC
  */
 class NFSeSCSaoJoseTest implements NFSeLogger {
-
-    private static NFSeConfig config;
-
-    @Disabled
-    @BeforeAll
-    static void prepara() {
-        config = new NFSeConfig(
-                System.getenv("CERTIFICADO_PATH"),
-                System.getenv("CERTIFICADO_SENHA"),
-                System.getenv("CADEIA_CERTIFICADOS_PATH"),
-                System.getenv("CADEIA_CERTIFICADOS_SENHA"), true);
-    }
 
     @Disabled
     @Test
@@ -133,33 +111,5 @@ class NFSeSCSaoJoseTest implements NFSeLogger {
                                         .setAliquotaItemListaServico(BigDecimal.ZERO)
                                         .setSituacaoTributaria("06")));
         return nfseSCSaoJose;
-    }
-
-    // Desescape básico de HTML para XML pra tirar a desgraça do cdata da maneira mais estupida possível
-    private static String unescapeBasicHtml(String str) {
-        return str
-                .replace("&lt;", "<")
-                .replace("&gt;", ">")
-                .replace("&amp;", "&")
-                .replace("&quot;", "\"")
-                .replace("&apos;", "'")
-                .replaceAll("<\\?xml[^>]+\\?>", "");
-    }
-
-    private static String prettyPrintXml(String inputRaw) throws Exception {
-        final var input = unescapeBasicHtml(inputRaw);
-
-        // Parse String XML to DOM
-        DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = db.parse(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
-
-        // Pretty print with Transformer
-        Transformer tf = TransformerFactory.newInstance().newTransformer();
-        tf.setOutputProperty(OutputKeys.INDENT, "yes");
-        tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-        tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-        StringWriter sw = new StringWriter();
-        tf.transform(new DOMSource(doc), new StreamResult(sw));
-        return sw.toString();
     }
 }
