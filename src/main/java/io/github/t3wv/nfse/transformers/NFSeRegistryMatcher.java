@@ -1,5 +1,7 @@
 package io.github.t3wv.nfse.transformers;
 
+import io.github.t3wv.nfse.municipal.nfseSPSaoPaulo.classes.TpOpcaoSimplesNFe;
+import io.github.t3wv.nfse.municipal.nfseSPSaoPaulo.transformers.NFSeSPSaoPauloTpOpcaoSimplesNFeTransformer;
 import io.github.t3wv.nfse.nacional.classes.nfsenacional.*;
 import io.github.t3wv.nfse.nacional.transformers.*;
 import org.simpleframework.xml.transform.RegistryMatcher;
@@ -51,5 +53,8 @@ public class NFSeRegistryMatcher extends RegistryMatcher {
         super.bind(NFSeSefinNacionalInfoIBSCBSIndDest.class, new NFSeSefinNacionalInfoIBSCBSIndDestTransformer());
         super.bind(NFSeSefinNacionalInfoIBSCBSTipoChaveDFe.class, new NFSeSefinNacionalInfoIBSCBSTipoChaveDFeTransformer());
         super.bind(NFSeSefinNacionalInfoIBSCBSTpReeRepRes.class, new NFSeSefinNacionalInfoIBSCBSTpReeRepResTransformer());
+
+        // NFSe São Paulo
+        super.bind(TpOpcaoSimplesNFe.class, new NFSeSPSaoPauloTpOpcaoSimplesNFeTransformer());
     }
 }

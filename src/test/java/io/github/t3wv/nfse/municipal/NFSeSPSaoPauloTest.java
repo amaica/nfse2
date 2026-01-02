@@ -2,10 +2,10 @@ package io.github.t3wv.nfse.municipal;
 
 
 import io.github.t3wv.nfse.NFSeConfig;
+import io.github.t3wv.nfse.municipal.nfseSPSaoPaulo.WSFacade;
 import io.github.t3wv.nfse.municipal.nfseSPSaoPaulo.classes.*;
 import io.github.t3wv.nfse.municipal.nfseSPSaoPaulo.requests.*;
 import io.github.t3wv.nfse.municipal.nfseSPSaoPaulo.utils.NFSeSPSaoPauloUtils;
-import io.github.t3wv.nfse.municipal.nfseSPSaoPaulo.WSRPS;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -62,7 +62,8 @@ public class NFSeSPSaoPauloTest {
         pedidoEnvioRPS.addRps(rps);
 
         // Gero e assino a assinatura digital de cada rps
-        new WSRPS(config).enviarTesteLoteRPS(NFSeSPSaoPauloUtils.assinarRPSs(config, pedidoEnvioRPS));
+        final var response = new WSFacade(config).enviarTesteLoteRPS(NFSeSPSaoPauloUtils.assinarRPSs(config, pedidoEnvioRPS));
+        System.out.println(response.toXml());
     }
 
     @Disabled
@@ -102,11 +103,12 @@ public class NFSeSPSaoPauloTest {
         rps.setPagamentoParceladoAntecipado(0);
         rps.setNBS("");
         rps.setCLocPrestacao("");
-        rps.setIBSCBS(new TpIBSCBS().setFinNFSe(0).setIndFinal(0).setCIndOp("").setIndDest(0).setValores(new TpValores().setTrib(new TpTrib().setGIBSCBS(new TpGIBSCBS().setCClassTrib("")))));
+        rps.setIBSCBS(new TpIBSCBS().setFinNFSe(0).setIndFinal(0).setCIndOp("").setIndDest(0).setValores(new TpValores().setTrib(new TpTrib().setGIBSCBS(new TpGIBSCBS().setCClassTrib("200001")))));
         pedidoEnvioRPS.addRps(rps);
 
         // Gero e assino a assinatura digital de cada rps
-        new WSRPS(config).enviarTesteLoteRPS(NFSeSPSaoPauloUtils.assinarRPSs(config, pedidoEnvioRPS));
+        final var response = new WSFacade(config).enviarTesteLoteRPS(NFSeSPSaoPauloUtils.assinarRPSs(config, pedidoEnvioRPS));
+        System.out.println(response.toXml());
     }
 
     @Disabled
@@ -130,7 +132,7 @@ public class NFSeSPSaoPauloTest {
         rps.setValorINSS(BigDecimal.ZERO);
         rps.setValorIR(BigDecimal.ZERO);
         rps.setValorCSLL(BigDecimal.ZERO);
-        rps.setCodigoServico("02496");
+        rps.setCodigoServico("");
         rps.setAliquotaServicos(BigDecimal.ZERO);
         rps.setISSRetido(false);
         rps.setCPFCNPJTomador(new TpCPFCNPJNIF().setCNPJ(""));
@@ -138,8 +140,8 @@ public class NFSeSPSaoPauloTest {
         rps.setDiscriminacao("Teste emissao NFSe");
         pedidoEnvioRPS.addRps(rps);
 
-        final var body = new WSRPS(config).enviarRPS(pedidoEnvioRPS);
-        System.out.println(body);
+        final var response = new WSFacade(config).enviarRPS(pedidoEnvioRPS);
+        System.out.println(response);
     }
 
     @Disabled
@@ -148,8 +150,8 @@ public class NFSeSPSaoPauloTest {
         final var pedidoConsultaNFe = new NFSeSPSaoPauloRequestConsultaNFe();
         pedidoConsultaNFe.setCabecalho(new NFSeSPSaoPauloRequestConsultaNFeCabecalho().setCpfCnpjRemetente(new TpCPFCNPJ().setCNPJ("")).setVersao("1"));
         pedidoConsultaNFe.addDetalhe(new NFSeSPSaoPauloRequestConsultaNFeDetalhe().setChaveNFe(new TpChaveNFe().setNumeroNFe("").setInscricaoPrestador("")));
-        final var body = new WSRPS(config).enviarPedidoConsultaNFe(pedidoConsultaNFe);
-        System.out.println(body);
+        final var response = new WSFacade(config).enviarPedidoConsultaNFe(pedidoConsultaNFe);
+        System.out.println(response.toXml());
     }
 
     @Disabled
@@ -158,10 +160,11 @@ public class NFSeSPSaoPauloTest {
         final var pedidoCancelamentoNFe = new NFSeSPSaoPauloRequestCancelamentoNFe();
         pedidoCancelamentoNFe.setCabecalho(new NFSeSPSaoPauloRequestCancelamentoNFeCabecalho().setCpfCnpjRemetente(new TpCPFCNPJ().setCNPJ("")).setTransacao(false).setVersao("1"));
 
-        NFSeSPSaoPauloRequestCancelamentoNFeDetalhe detalheItem = new  NFSeSPSaoPauloRequestCancelamentoNFeDetalhe().setChaveNFe(new TpChaveNFe().setNumeroNFe("").setInscricaoPrestador(""));
+        NFSeSPSaoPauloRequestCancelamentoNFeDetalhe detalheItem = new NFSeSPSaoPauloRequestCancelamentoNFeDetalhe().setChaveNFe(new TpChaveNFe().setNumeroNFe("").setInscricaoPrestador(""));
         detalheItem.setAssinaturaCancelamento(NFSeSPSaoPauloUtils.gerarAssinaturaDigital(config, detalheItem.getAssinaturaString()));
         pedidoCancelamentoNFe.addDetalhe(detalheItem);
 
-        new WSRPS(config).enviarPedidoCancelamentoNFe(pedidoCancelamentoNFe);
+        final var response = new WSFacade(config).enviarPedidoCancelamentoNFe(pedidoCancelamentoNFe);
+        System.out.println(response.toXml());
     }
 }
