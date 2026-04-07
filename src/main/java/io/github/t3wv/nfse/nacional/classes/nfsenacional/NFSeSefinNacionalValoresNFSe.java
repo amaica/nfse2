@@ -3,270 +3,109 @@ package io.github.t3wv.nfse.nacional.classes.nfsenacional;
 
 import org.simpleframework.xml.*;
 
-/**
- * <p>Java class for TCValoresNFSe complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
- * 
- * <pre>
- * &lt;complexType name="TCValoresNFSe"&gt;
- *   &lt;complexContent&gt;
- *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
- *       &lt;sequence&gt;
- *         &lt;element name="vCalcDR" type="{http://www.sped.fazenda.gov.br/nfse}TSDec15V2" minOccurs="0"/&gt;
- *         &lt;element name="tpBM" type="{http://www.sped.fazenda.gov.br/nfse}TSDesc40" minOccurs="0"/&gt;
- *         &lt;element name="vCalcBM" type="{http://www.sped.fazenda.gov.br/nfse}TSDec15V2" minOccurs="0"/&gt;
- *         &lt;element name="vBC" type="{http://www.sped.fazenda.gov.br/nfse}TSDec15V2" minOccurs="0"/&gt;
- *         &lt;element name="pAliqAplic" type="{http://www.sped.fazenda.gov.br/nfse}TSDec1V2" minOccurs="0"/&gt;
- *         &lt;element name="vISSQN" type="{http://www.sped.fazenda.gov.br/nfse}TSDec15V2" minOccurs="0"/&gt;
- *         &lt;element name="vTotalRet" type="{http://www.sped.fazenda.gov.br/nfse}TSDec15V2" minOccurs="0"/&gt;
- *         &lt;element name="vLiq" type="{http://www.sped.fazenda.gov.br/nfse}TSDec15V2"/&gt;
- *         &lt;element name="xOutInf" type="{http://www.sped.fazenda.gov.br/nfse}TSDesc2000" minOccurs="0"/&gt;
- *       &lt;/sequence&gt;
- *     &lt;/restriction&gt;
- *   &lt;/complexContent&gt;
- * &lt;/complexType&gt;
- * </pre>
- * 
- * 
- */
+import java.math.BigDecimal;
 
 @Root(name = "ValoresNFSe")
 public class NFSeSefinNacionalValoresNFSe {
     @Element(name = "vCalcDR", required = false)
-    protected String vCalcDR;
+    protected BigDecimal vCalcDR;
     @Element(name = "tpBM", required = false)
     protected String tpBM;
     @Element(name = "vCalcBM", required = false)
-    protected String vCalcBM;
+    protected BigDecimal vCalcBM;
     @Element(name = "vBC", required = false)
-    protected String vbc;
+    protected BigDecimal vbc;
     @Element(name = "pAliqAplic", required = false)
-    protected String pAliqAplic;
+    protected BigDecimal pAliqAplic;
     @Element(name = "vISSQN", required = false)
-    protected String vissqn;
+    protected BigDecimal vissqn;
     @Element(name = "vTotalRet", required = false)
-    protected String vTotalRet;
+    protected BigDecimal vTotalRet;
     @Element(name = "vLiq", required = false)
-    protected String vLiq;
+    protected BigDecimal vLiq;
     @Element(name = "xOutInf", required = false)
     protected String xOutInf;
 
 
-    /**
-     * Gets the value of the vCalcDR property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getVCalcDR() {
+    public BigDecimal getVCalcDR() {
         return vCalcDR;
     }
 
-    /**
-     * Sets the value of the vCalcDR property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setVCalcDR(String value) {
+    public NFSeSefinNacionalValoresNFSe setVCalcDR(BigDecimal value) {
         this.vCalcDR = value;
+        return this;
     }
 
-    /**
-     * Gets the value of the tpBM property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
     public String getTpBM() {
         return tpBM;
     }
 
-    /**
-     * Sets the value of the tpBM property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setTpBM(String value) {
+    public NFSeSefinNacionalValoresNFSe setTpBM(String value) {
         this.tpBM = value;
+        return this;
     }
 
-    /**
-     * Gets the value of the vCalcBM property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getVCalcBM() {
+    public BigDecimal getVCalcBM() {
         return vCalcBM;
     }
 
-    /**
-     * Sets the value of the vCalcBM property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setVCalcBM(String value) {
+    public NFSeSefinNacionalValoresNFSe setVCalcBM(BigDecimal value) {
         this.vCalcBM = value;
+        return this;
     }
 
-    /**
-     * Gets the value of the vbc property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getVBC() {
+    public BigDecimal getVBC() {
         return vbc;
     }
 
-    /**
-     * Sets the value of the vbc property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setVBC(String value) {
+    public NFSeSefinNacionalValoresNFSe setVBC(BigDecimal value) {
         this.vbc = value;
+        return this;
     }
 
-    /**
-     * Gets the value of the pAliqAplic property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getPAliqAplic() {
+    public BigDecimal getPAliqAplic() {
         return pAliqAplic;
     }
 
-    /**
-     * Sets the value of the pAliqAplic property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setPAliqAplic(String value) {
+    public NFSeSefinNacionalValoresNFSe setPAliqAplic(BigDecimal value) {
         this.pAliqAplic = value;
+        return this;
     }
 
-    /**
-     * Gets the value of the vissqn property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getVISSQN() {
+    public BigDecimal getVISSQN() {
         return vissqn;
     }
 
-    /**
-     * Sets the value of the vissqn property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setVISSQN(String value) {
+    public NFSeSefinNacionalValoresNFSe setVISSQN(BigDecimal value) {
         this.vissqn = value;
+        return this;
     }
 
-    /**
-     * Gets the value of the vTotalRet property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getVTotalRet() {
+    public BigDecimal getVTotalRet() {
         return vTotalRet;
     }
 
-    /**
-     * Sets the value of the vTotalRet property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setVTotalRet(String value) {
+    public NFSeSefinNacionalValoresNFSe setVTotalRet(BigDecimal value) {
         this.vTotalRet = value;
+        return this;
     }
 
-    /**
-     * Gets the value of the vLiq property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getVLiq() {
+    public BigDecimal getVLiq() {
         return vLiq;
     }
 
-    /**
-     * Sets the value of the vLiq property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setVLiq(String value) {
+    public NFSeSefinNacionalValoresNFSe setVLiq(BigDecimal value) {
         this.vLiq = value;
+        return this;
     }
 
-    /**
-     * Gets the value of the xOutInf property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
     public String getXOutInf() {
         return xOutInf;
     }
 
-    /**
-     * Sets the value of the xOutInf property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setXOutInf(String value) {
+    public NFSeSefinNacionalValoresNFSe setXOutInf(String value) {
         this.xOutInf = value;
+        return this;
     }
 
 }

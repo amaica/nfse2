@@ -3,6 +3,8 @@ package io.github.t3wv.nfse.nacional.classes.nfsenacional;
 
 import org.simpleframework.xml.*;
 
+import java.math.BigDecimal;
+
 /**
  * 
  */
@@ -21,7 +23,7 @@ public class NFSeSefinNacionalTribMunicipal {
     @Element(name = "tpImunidade", required = false)
     protected NFSeSefinNacionalTribMunicipalTipoImunidade tipoImunidade;
     @Element(name = "pAliq", required = false)
-    protected String percentualAliquota;
+    protected BigDecimal percentualAliquota;
     @Element(name = "tpRetISSQN")
     protected NFSeSefinNacionalTribMunicipalTipoRetencaoISSQN tipoRetencaoISSQN;
 
@@ -50,8 +52,9 @@ public class NFSeSefinNacionalTribMunicipal {
     /**
      * @param codigoPais Código do país onde se verficou o resultado da prestação do serviço para o caso de Exportação de Serviço.(Tabela de Países ISO)
      */
-    public void setCodigoPais(String codigoPais) {
+    public NFSeSefinNacionalTribMunicipal setCodigoPais(String codigoPais) {
         this.codigoPais = codigoPais;
+        return this;
     }
 
     /**
@@ -64,8 +67,9 @@ public class NFSeSefinNacionalTribMunicipal {
     /**
      * @param beneficioMunicipal Benefício Municipal concedido ao prestador do serviço
      */
-    public void setBeneficioMunicipal(NFSeSefinNacionalBeneficioMunicipal beneficioMunicipal) {
+    public NFSeSefinNacionalTribMunicipal setBeneficioMunicipal(NFSeSefinNacionalBeneficioMunicipal beneficioMunicipal) {
         this.beneficioMunicipal = beneficioMunicipal;
+        return this;
     }
 
     /**
@@ -78,8 +82,9 @@ public class NFSeSefinNacionalTribMunicipal {
     /**
      * @param exigibilidadeSuspensa Exigibilidade Suspensa do ISSQN sobre o serviço prestado
      */
-    public void setExigibilidadeSuspensa(NFSeSefinNacionalExigSuspensa exigibilidadeSuspensa) {
+    public NFSeSefinNacionalTribMunicipal setExigibilidadeSuspensa(NFSeSefinNacionalExigSuspensa exigibilidadeSuspensa) {
         this.exigibilidadeSuspensa = exigibilidadeSuspensa;
+        return this;
     }
 
     /**
@@ -92,22 +97,24 @@ public class NFSeSefinNacionalTribMunicipal {
     /**
      * @param tipoImunidade Tipo de imunidade do ISSQN sobre o serviço prestado
      */
-    public void setTipoImunidade(NFSeSefinNacionalTribMunicipalTipoImunidade tipoImunidade) {
+    public NFSeSefinNacionalTribMunicipal setTipoImunidade(NFSeSefinNacionalTribMunicipalTipoImunidade tipoImunidade) {
         this.tipoImunidade = tipoImunidade;
+        return this;
     }
 
     /**
      * @return Percentual da alíquota do ISSQN sobre o serviço prestado
      */
-    public String getPercentualAliquota() {
+    public BigDecimal getPercentualAliquota() {
         return percentualAliquota;
     }
 
     /**
      * @param percentualAliquota Percentual da alíquota do ISSQN sobre o serviço prestado
      */
-    public void setPercentualAliquota(String percentualAliquota) {
+    public NFSeSefinNacionalTribMunicipal setPercentualAliquota(BigDecimal percentualAliquota) {
         this.percentualAliquota = percentualAliquota;
+        return this;
     }
 
     /**

@@ -4,6 +4,8 @@ package io.github.t3wv.nfse.nacional.classes.nfsenacional;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 
+import java.math.BigDecimal;
+
 @Root(name = "TribTotal")
 public class NFSeSefinNacionalTribTotal {
 
@@ -12,9 +14,9 @@ public class NFSeSefinNacionalTribTotal {
     @Element(name = "pTotTrib", required = false)
     protected NFSeSefinNacionalTribTotalPercent percentualTotalTributos;
     @Element(name = "indTotTrib", required = false)
-    protected String indicadorValorTotalTributos = "0";
+    protected String indicadorValorTotalTributos;
     @Element(name = "pTotTribSN", required = false)
-    protected String percentualTotalSimplesNacional;
+    protected BigDecimal percentualTotalSimplesNacional;
 
     /**
      * @return Valor total dos tributos
@@ -26,8 +28,9 @@ public class NFSeSefinNacionalTribTotal {
     /**
      * @param valorTotalTributos Valor total dos tributos
      */
-    public void setValorTotalTributos(NFSeSefinNacionalTribTotalMonet valorTotalTributos) {
+    public NFSeSefinNacionalTribTotal setValorTotalTributos(NFSeSefinNacionalTribTotalMonet valorTotalTributos) {
         this.valorTotalTributos = valorTotalTributos;
+        return this;
     }
 
     /**
@@ -40,8 +43,9 @@ public class NFSeSefinNacionalTribTotal {
     /**
      * @param percentualTotalTributos Percentual total dos tributos
      */
-    public void setPercentualTotalTributos(NFSeSefinNacionalTribTotalPercent percentualTotalTributos) {
+    public NFSeSefinNacionalTribTotal setPercentualTotalTributos(NFSeSefinNacionalTribTotalPercent percentualTotalTributos) {
         this.percentualTotalTributos = percentualTotalTributos;
+        return this;
     }
 
     /**
@@ -68,15 +72,16 @@ public class NFSeSefinNacionalTribTotal {
     /**
      * @return Percentual total do Simples Nacional
      */
-    public String getPercentualTotalSimplesNacional() {
+    public BigDecimal getPercentualTotalSimplesNacional() {
         return percentualTotalSimplesNacional;
     }
 
     /**
      * @param percentualTotalSimplesNacional Percentual total do Simples Nacional
      */
-    public void setPercentualTotalSimplesNacional(String percentualTotalSimplesNacional) {
+    public NFSeSefinNacionalTribTotal setPercentualTotalSimplesNacional(BigDecimal percentualTotalSimplesNacional) {
         this.percentualTotalSimplesNacional = percentualTotalSimplesNacional;
+        return this;
     }
 
 }

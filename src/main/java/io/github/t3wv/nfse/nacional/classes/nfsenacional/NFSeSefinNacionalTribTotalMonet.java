@@ -3,38 +3,43 @@ package io.github.t3wv.nfse.nacional.classes.nfsenacional;
 
 import org.simpleframework.xml.*;
 
+import java.math.BigDecimal;
+
 @Root(name = "TribTotalMonet")
 public class NFSeSefinNacionalTribTotalMonet {
 
     @Element(name = "vTotTribFed")
-    protected String valorTributosFederais;
+    protected BigDecimal valorTributosFederais;
     @Element(name = "vTotTribEst")
-    protected String valorTributosEstaduais;
+    protected BigDecimal valorTributosEstaduais;
     @Element(name = "vTotTribMun")
-    protected String valorTributosMunicipais;
+    protected BigDecimal valorTributosMunicipais;
 
-    public String getValorTributosFederais() {
+    public BigDecimal getValorTributosFederais() {
         return valorTributosFederais;
     }
 
-    public void setValorTributosFederais(String valorTributosFederais) {
+    public NFSeSefinNacionalTribTotalMonet setValorTributosFederais(BigDecimal valorTributosFederais) {
         this.valorTributosFederais = valorTributosFederais;
+        return this;
     }
 
-    public String getValorTributosEstaduais() {
+    public BigDecimal getValorTributosEstaduais() {
         return valorTributosEstaduais;
     }
 
-    public void setValorTributosEstaduais(String valorTributosFederais) {
+    public NFSeSefinNacionalTribTotalMonet setValorTributosEstaduais(BigDecimal valorTributosFederais) {
         this.valorTributosEstaduais = valorTributosFederais;
+        return this;
     }
 
-    public String getValorTributosMunicipais() {
+    public BigDecimal getValorTributosMunicipais() {
         return valorTributosMunicipais;
     }
 
-    public void setValorTributosMunicipais(String valorTributosFederais) {
+    public NFSeSefinNacionalTribTotalMonet setValorTributosMunicipais(BigDecimal valorTributosFederais) {
         this.valorTributosMunicipais = valorTributosFederais;
+        return this;
     }
 
 }
