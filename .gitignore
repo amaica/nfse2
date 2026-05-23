@@ -243,3 +243,14 @@ buildNumber.properties
 
 # Classes de testes de envio
 T3wTest.java
+
+# Config local (senhas / certificados)
+nfse.properties
+src/main/resources/nfse.properties
+
+# Portal NFS-e
+portal-api/data/
+portal-web/node_modules/
+portal-web/.next/
+portal-web/.env.local
+.vscode/

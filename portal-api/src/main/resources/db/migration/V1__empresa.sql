@@ -1,0 +1,10 @@
+CREATE TABLE empresa (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    cnpj VARCHAR(14) NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_empresa_cnpj UNIQUE (cnpj)
+);
+
+CREATE INDEX idx_empresa_ativo ON empresa (ativo);

@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: nfse-portal-api
+  datasource:
+    url: ${DB_URL:jdbc:h2:file:./data/nfse-portal;MODE=MySQL;AUTO_SERVER=TRUE}
+    username: ${DB_USER:sa}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: ${PORT:8080}
+
+nfse:
+  portal:
+    jwt-secret: ${NFSE_JWT_SECRET:change-me-in-production-use-long-random-string}
+    # 0 = token permanente (iframe por empresa). >0 = expiração em minutos (sessão temporária).
+    jwt-expiration-minutes: ${NFSE_JWT_EXP_MIN:0}
+    cors-origins: ${CORS_ORIGINS:http://localhost:3000}
+  demo:
+    # Certificado A1 (.pfx) carregado na 1ª subida se ainda não houver upload no portal
+    certificado-path: ${CERTIFICADO_PATH:/home/aurelio/FONTES/CERTIFICADOS/ClovisWerlang_safe1283.pfx}
+    certificado-senha: ${CERTIFICADO_SENHA:safe1283}
+    # homologacao = SEFIN/ADN produção restrita (isTeste=true). producao = ambiente real.
+    ambiente: ${NFSE_AMBIENTE:homologacao}
+    codigo-municipio-ibge: ${MUNICIPIO_IBGE:4310009}
+    prefeitura: ${PREFEITURA:Ibiruba/RS}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+logging:
+  level:
+    br.com.synki: INFO

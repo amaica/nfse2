@@ -77,7 +77,7 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>${slf4j.version}</version>
-            <scope>test</scope>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
     <build>
@@ -124,7 +124,8 @@
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <optimize>true</optimize>
-                    <debug>false</debug>
+                    <debug>true</debug>
+                    <debuglevel>lines,vars,source</debuglevel>
                 </configuration>
             </plugin>
             <plugin>
@@ -135,6 +136,14 @@
                     <systemPropertyVariables>
                         <org.slf4j.simpleLogger.defaultLogLevel>DEBUG</org.slf4j.simpleLogger.defaultLogLevel>
                     </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <mainClass>io.github.t3wv.nfse.DemoRun</mainClass>
                 </configuration>
             </plugin>
         </plugins>

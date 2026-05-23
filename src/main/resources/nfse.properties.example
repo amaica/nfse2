@@ -1,0 +1,17 @@
+# Copie para nfse.properties (na raiz do projeto ou src/main/resources) e ajuste.
+# nfse.properties no classpath tem prioridade junto com application.properties.
+# Variaveis de ambiente (export) ainda sobrescrevem estes valores, se definidas.
+
+# Certificado A1 da empresa (prestador)
+nfse.certificado.path=/caminho/certificado.pfx
+nfse.certificado.senha=sua_senha
+
+# Cadeia SSL dos webservices NFS-e
+nfse.cadeia-certificados.path=/tmp/nfse_cacerts.jks
+nfse.cadeia-certificados.senha=senha
+
+# producao | homologacao
+nfse.ambiente=producao
+
+# Seu municipio (IBGE, 7 digitos) — usado na aplicacao / DemoRun
+nfse.municipio.codigo-ibge=4216602

@@ -1,0 +1,2012 @@
+[
+{
+"codigo": "01.01.01.000",
+"codigoNacional": "010101",
+"descricao": "Análise e desenvolvimento de sistemas.",
+"label": "01.01.01.000 — Análise e desenvolvimento de sistemas."
+},
+{
+"codigo": "01.02.01.000",
+"codigoNacional": "010201",
+"descricao": "Programação.",
+"label": "01.02.01.000 — Programação."
+},
+{
+"codigo": "01.03.01.000",
+"codigoNacional": "010301",
+"descricao": "Processamento de dados, textos, imagens, vídeos, páginas eletrônicas, aplicativos e sistemas de informação, entre outros formatos, e congêneres.",
+"label": "01.03.01.000 — Processamento de dados, textos, imagens, vídeos, páginas eletrônicas, aplicativo…"
+},
+{
+"codigo": "01.03.02.000",
+"codigoNacional": "010302",
+"descricao": "Armazenamento ou hospedagem de dados, textos, imagens, vídeos, páginas eletrônicas, aplicativos e sistemas de informação, entre outros formatos, e congêneres.",
+"label": "01.03.02.000 — Armazenamento ou hospedagem de dados, textos, imagens, vídeos, páginas eletrônic…"
+},
+{
+"codigo": "01.04.01.000",
+"codigoNacional": "010401",
+"descricao": "Elaboração de programas de computadores, inclusive de jogos eletrônicos, independentemente da arquitetura construtiva da máquina em que o programa será executado, incluindo tablets, smartphones e congêneres.",
+"label": "01.04.01.000 — Elaboração de programas de computadores, inclusive de jogos eletrônicos, indepen…"
+},
+{
+"codigo": "01.05.01.000",
+"codigoNacional": "010501",
+"descricao": "Licenciamento ou cessão de direito de uso de programas de computação.",
+"label": "01.05.01.000 — Licenciamento ou cessão de direito de uso de programas de computação."
+},
+{
+"codigo": "01.06.01.000",
+"codigoNacional": "010601",
+"descricao": "Assessoria e consultoria em informática.",
+"label": "01.06.01.000 — Assessoria e consultoria em informática."
+},
+{
+"codigo": "01.07.01.000",
+"codigoNacional": "010701",
+"descricao": "Suporte técnico em informática, inclusive instalação, configuração e manutenção de programas de computação e bancos de dados.",
+"label": "01.07.01.000 — Suporte técnico em informática, inclusive instalação, configuração e manutenção …"
+},
+{
+"codigo": "01.08.01.000",
+"codigoNacional": "010801",
+"descricao": "Planejamento, confecção, manutenção e atualização de páginas eletrônicas.",
+"label": "01.08.01.000 — Planejamento, confecção, manutenção e atualização de páginas eletrônicas."
+},
+{
+"codigo": "01.09.01.000",
+"codigoNacional": "010901",
+"descricao": "Disponibilização, sem cessão definitiva, de conteúdos de áudio por meio da internet (exceto a distribuição de conteúdos pelas prestadoras de Serviço de Acesso Condicionado, de que trata a Lei nº 12.485, de 12 de setembro de 2011, sujeita ao ICMS).",
+"label": "01.09.01.000 — Disponibilização, sem cessão definitiva, de conteúdos de áudio por meio da inter…"
+},
+{
+"codigo": "01.09.02.000",
+"codigoNacional": "010902",
+"descricao": "Disponibilização, sem cessão definitiva, de conteúdos de vídeo, imagem e texto por meio da internet, respeitada a imunidade de livros, jornais e periódicos (exceto a distribuição de conteúdos pelas prestadoras de Serviço de Acesso Condicionado, de que trata a Lei nº 12.485, de 12 de setembro de 2011, sujeita ao ICMS).",
+"label": "01.09.02.000 — Disponibilização, sem cessão definitiva, de conteúdos de vídeo, imagem e texto p…"
+},
+{
+"codigo": "02.01.01.000",
+"codigoNacional": "020101",
+"descricao": "Serviços de pesquisas e desenvolvimento de qualquer natureza.",
+"label": "02.01.01.000 — Serviços de pesquisas e desenvolvimento de qualquer natureza."
+},
+{
+"codigo": "03.02.01.000",
+"codigoNacional": "030201",
+"descricao": "Cessão de direito de uso de marcas e de sinais de propaganda.",
+"label": "03.02.01.000 — Cessão de direito de uso de marcas e de sinais de propaganda."
+},
+{
+"codigo": "03.03.01.000",
+"codigoNacional": "030301",
+"descricao": "Exploração de salões de festas, centro de convenções, stands e congêneres, para realização de eventos ou negócios de qualquer natureza.",
+"label": "03.03.01.000 — Exploração de salões de festas, centro de convenções, stands e congêneres, para …"
+},
+{
+"codigo": "03.03.02.000",
+"codigoNacional": "030302",
+"descricao": "Exploração de escritórios virtuais e congêneres, para realização de eventos ou negócios de qualquer natureza.",
+"label": "03.03.02.000 — Exploração de escritórios virtuais e congêneres, para realização de eventos ou n…"
+},
+{
+"codigo": "03.03.03.000",
+"codigoNacional": "030303",
+"descricao": "Exploração de quadras esportivas, estádios, ginásios, canchas e congêneres, para realização de eventos ou negócios de qualquer natureza.",
+"label": "03.03.03.000 — Exploração de quadras esportivas, estádios, ginásios, canchas e congêneres, para…"
+},
+{
+"codigo": "03.03.04.000",
+"codigoNacional": "030304",
+"descricao": "Exploração de auditórios, casas de espetáculos e congêneres, para realização de eventos ou negócios de qualquer natureza.",
+"label": "03.03.04.000 — Exploração de auditórios, casas de espetáculos e congêneres, para realização de …"
+},
+{
+"codigo": "03.03.05.000",
+"codigoNacional": "030305",
+"descricao": "Exploração de parques de diversões e congêneres, para realização de eventos ou negócios de qualquer natureza.",
+"label": "03.03.05.000 — Exploração de parques de diversões e congêneres, para realização de eventos ou n…"
+},
+{
+"codigo": "03.04.01.000",
+"codigoNacional": "030401",
+"descricao": "Locação, sublocação, arrendamento, direito de passagem ou permissão de uso, compartilhado ou não, de ferrovia.",
+"label": "03.04.01.000 — Locação, sublocação, arrendamento, direito de passagem ou permissão de uso, comp…"
+},
+{
+"codigo": "03.04.02.000",
+"codigoNacional": "030402",
+"descricao": "Locação, sublocação, arrendamento, direito de passagem ou permissão de uso, compartilhado ou não, de rodovia.",
+"label": "03.04.02.000 — Locação, sublocação, arrendamento, direito de passagem ou permissão de uso, comp…"
+},
+{
+"codigo": "03.04.03.000",
+"codigoNacional": "030403",
+"descricao": "Locação, sublocação, arrendamento, direito de passagem ou permissão de uso, compartilhado ou não, de postes, cabos, dutos e condutos de qualquer natureza.",
+"label": "03.04.03.000 — Locação, sublocação, arrendamento, direito de passagem ou permissão de uso, comp…"
+},
+{
+"codigo": "03.05.01.000",
+"codigoNacional": "030501",
+"descricao": "Cessão de andaimes, palcos, coberturas e outras estruturas de uso temporário.",
+"label": "03.05.01.000 — Cessão de andaimes, palcos, coberturas e outras estruturas de uso temporário."
+},
+{
+"codigo": "04.01.01.000",
+"codigoNacional": "040101",
+"descricao": "Medicina.",
+"label": "04.01.01.000 — Medicina."
+},
+{
+"codigo": "04.01.02.000",
+"codigoNacional": "040102",
+"descricao": "Biomedicina.",
+"label": "04.01.02.000 — Biomedicina."
+},
+{
+"codigo": "04.02.01.000",
+"codigoNacional": "040201",
+"descricao": "Análises clínicas e congêneres.",
+"label": "04.02.01.000 — Análises clínicas e congêneres."
+},
+{
+"codigo": "04.02.02.000",
+"codigoNacional": "040202",
+"descricao": "Patologia e congêneres.",
+"label": "04.02.02.000 — Patologia e congêneres."
+},
+{
+"codigo": "04.02.03.000",
+"codigoNacional": "040203",
+"descricao": "Eletricidade médica (eletroestimulação de nervos e musculos, cardioversão, etc) e congêneres.",
+"label": "04.02.03.000 — Eletricidade médica (eletroestimulação de nervos e musculos, cardioversão, etc) …"
+},
+{
+"codigo": "04.02.04.000",
+"codigoNacional": "040204",
+"descricao": "Radioterapia, quimioterapia e congêneres.",
+"label": "04.02.04.000 — Radioterapia, quimioterapia e congêneres."
+},
+{
+"codigo": "04.02.05.000",
+"codigoNacional": "040205",
+"descricao": "Ultra-sonografia, ressonância magnética, radiologia, tomografia e congêneres.",
+"label": "04.02.05.000 — Ultra-sonografia, ressonância magnética, radiologia, tomografia e congêneres."
+},
+{
+"codigo": "04.03.01.000",
+"codigoNacional": "040301",
+"descricao": "Hospitais e congêneres.",
+"label": "04.03.01.000 — Hospitais e congêneres."
+},
+{
+"codigo": "04.03.02.000",
+"codigoNacional": "040302",
+"descricao": "Laboratórios e congêneres.",
+"label": "04.03.02.000 — Laboratórios e congêneres."
+},
+{
+"codigo": "04.03.03.000",
+"codigoNacional": "040303",
+"descricao": "Clínicas, sanatórios, manicômios, casas de saúde, prontos-socorros, ambulatórios e congêneres.",
+"label": "04.03.03.000 — Clínicas, sanatórios, manicômios, casas de saúde, prontos-socorros, ambulatórios…"
+},
+{
+"codigo": "04.04.01.000",
+"codigoNacional": "040401",
+"descricao": "Instrumentação cirúrgica.",
+"label": "04.04.01.000 — Instrumentação cirúrgica."
+},
+{
+"codigo": "04.05.01.000",
+"codigoNacional": "040501",
+"descricao": "Acupuntura.",
+"label": "04.05.01.000 — Acupuntura."
+},
+{
+"codigo": "04.06.01.000",
+"codigoNacional": "040601",
+"descricao": "Enfermagem, inclusive serviços auxiliares.",
+"label": "04.06.01.000 — Enfermagem, inclusive serviços auxiliares."
+},
+{
+"codigo": "04.07.01.000",
+"codigoNacional": "040701",
+"descricao": "Serviços farmacêuticos.",
+"label": "04.07.01.000 — Serviços farmacêuticos."
+},
+{
+"codigo": "04.08.01.000",
+"codigoNacional": "040801",
+"descricao": "Terapia ocupacional.",
+"label": "04.08.01.000 — Terapia ocupacional."
+},
+{
+"codigo": "04.08.02.000",
+"codigoNacional": "040802",
+"descricao": "Fisioterapia.",
+"label": "04.08.02.000 — Fisioterapia."
+},
+{
+"codigo": "04.08.03.000",
+"codigoNacional": "040803",
+"descricao": "Fonoaudiologia.",
+"label": "04.08.03.000 — Fonoaudiologia."
+},
+{
+"codigo": "04.09.01.000",
+"codigoNacional": "040901",
+"descricao": "Terapias de qualquer espécie destinadas ao tratamento físico, orgânico e mental.",
+"label": "04.09.01.000 — Terapias de qualquer espécie destinadas ao tratamento físico, orgânico e mental."
+},
+{
+"codigo": "04.10.01.000",
+"codigoNacional": "041001",
+"descricao": "Nutrição.",
+"label": "04.10.01.000 — Nutrição."
+},
+{
+"codigo": "04.11.01.000",
+"codigoNacional": "041101",
+"descricao": "Obstetrícia.",
+"label": "04.11.01.000 — Obstetrícia."
+},
+{
+"codigo": "04.12.01.000",
+"codigoNacional": "041201",
+"descricao": "Odontologia.",
+"label": "04.12.01.000 — Odontologia."
+},
+{
+"codigo": "04.13.01.000",
+"codigoNacional": "041301",
+"descricao": "Ortóptica.",
+"label": "04.13.01.000 — Ortóptica."
+},
+{
+"codigo": "04.14.01.000",
+"codigoNacional": "041401",
+"descricao": "Próteses sob encomenda.",
+"label": "04.14.01.000 — Próteses sob encomenda."
+},
+{
+"codigo": "04.15.01.000",
+"codigoNacional": "041501",
+"descricao": "Psicanálise.",
+"label": "04.15.01.000 — Psicanálise."
+},
+{
+"codigo": "04.16.01.000",
+"codigoNacional": "041601",
+"descricao": "Psicologia.",
+"label": "04.16.01.000 — Psicologia."
+},
+{
+"codigo": "04.17.01.000",
+"codigoNacional": "041701",
+"descricao": "Casas de repouso e congêneres.",
+"label": "04.17.01.000 — Casas de repouso e congêneres."
+},
+{
+"codigo": "04.17.02.000",
+"codigoNacional": "041702",
+"descricao": "Casas de recuperação e congêneres.",
+"label": "04.17.02.000 — Casas de recuperação e congêneres."
+},
+{
+"codigo": "04.17.03.000",
+"codigoNacional": "041703",
+"descricao": "Creches e congêneres.",
+"label": "04.17.03.000 — Creches e congêneres."
+},
+{
+"codigo": "04.17.04.000",
+"codigoNacional": "041704",
+"descricao": "Asilos e congêneres.",
+"label": "04.17.04.000 — Asilos e congêneres."
+},
+{
+"codigo": "04.18.01.000",
+"codigoNacional": "041801",
+"descricao": "Inseminação artificial, fertilização in vitro e congêneres.",
+"label": "04.18.01.000 — Inseminação artificial, fertilização in vitro e congêneres."
+},
+{
+"codigo": "04.19.01.000",
+"codigoNacional": "041901",
+"descricao": "Bancos de sangue, leite, pele, olhos, óvulos, sêmen e congêneres.",
+"label": "04.19.01.000 — Bancos de sangue, leite, pele, olhos, óvulos, sêmen e congêneres."
+},
+{
+"codigo": "04.20.01.000",
+"codigoNacional": "042001",
+"descricao": "Coleta de sangue, leite, tecidos, sêmen, órgãos e materiais biológicos de qualquer espécie.",
+"label": "04.20.01.000 — Coleta de sangue, leite, tecidos, sêmen, órgãos e materiais biológicos de qualqu…"
+},
+{
+"codigo": "04.21.01.000",
+"codigoNacional": "042101",
+"descricao": "Unidade de atendimento, assistência ou tratamento móvel e congêneres.",
+"label": "04.21.01.000 — Unidade de atendimento, assistência ou tratamento móvel e congêneres."
+},
+{
+"codigo": "04.22.01.000",
+"codigoNacional": "042201",
+"descricao": "Planos de medicina de grupo ou individual e convênios para prestação de assistência médica, hospitalar, odontológica e congêneres.",
+"label": "04.22.01.000 — Planos de medicina de grupo ou individual e convênios para prestação de assistên…"
+},
+{
+"codigo": "04.23.01.000",
+"codigoNacional": "042301",
+"descricao": "Outros planos de saúde que se cumpram através de serviços de terceiros contratados, credenciados, cooperados ou apenas pagos pelo operador do plano mediante indicação do beneficiário.",
+"label": "04.23.01.000 — Outros planos de saúde que se cumpram através de serviços de terceiros contratad…"
+},
+{
+"codigo": "05.01.01.000",
+"codigoNacional": "050101",
+"descricao": "Medicina veterinária",
+"label": "05.01.01.000 — Medicina veterinária"
+},
+{
+"codigo": "05.01.02.000",
+"codigoNacional": "050102",
+"descricao": "Zootecnia.",
+"label": "05.01.02.000 — Zootecnia."
+},
+{
+"codigo": "05.02.01.000",
+"codigoNacional": "050201",
+"descricao": "Hospitais e congêneres, na área veterinária.",
+"label": "05.02.01.000 — Hospitais e congêneres, na área veterinária."
+},
+{
+"codigo": "05.02.02.000",
+"codigoNacional": "050202",
+"descricao": "Clínicas, ambulatórios, prontos-socorros e congêneres, na área veterinária.",
+"label": "05.02.02.000 — Clínicas, ambulatórios, prontos-socorros e congêneres, na área veterinária."
+},
+{
+"codigo": "05.03.01.000",
+"codigoNacional": "050301",
+"descricao": "Laboratórios de análise na área veterinária.",
+"label": "05.03.01.000 — Laboratórios de análise na área veterinária."
+},
+{
+"codigo": "05.04.01.000",
+"codigoNacional": "050401",
+"descricao": "Inseminação artificial, fertilização in vitro e congêneres.",
+"label": "05.04.01.000 — Inseminação artificial, fertilização in vitro e congêneres."
+},
+{
+"codigo": "05.05.01.000",
+"codigoNacional": "050501",
+"descricao": "Bancos de sangue e de órgãos e congêneres.",
+"label": "05.05.01.000 — Bancos de sangue e de órgãos e congêneres."
+},
+{
+"codigo": "05.06.01.000",
+"codigoNacional": "050601",
+"descricao": "Coleta de sangue, leite, tecidos, sêmen, órgãos e materiais biológicos de qualquer espécie.",
+"label": "05.06.01.000 — Coleta de sangue, leite, tecidos, sêmen, órgãos e materiais biológicos de qualqu…"
+},
+{
+"codigo": "05.07.01.000",
+"codigoNacional": "050701",
+"descricao": "Unidade de atendimento, assistência ou tratamento móvel e congêneres.",
+"label": "05.07.01.000 — Unidade de atendimento, assistência ou tratamento móvel e congêneres."
+},
+{
+"codigo": "05.08.01.000",
+"codigoNacional": "050801",
+"descricao": "Guarda, tratamento, amestramento, embelezamento, alojamento e congêneres.",
+"label": "05.08.01.000 — Guarda, tratamento, amestramento, embelezamento, alojamento e congêneres."
+},
+{
+"codigo": "05.09.01.000",
+"codigoNacional": "050901",
+"descricao": "Planos de atendimento e assistência médico-veterinária.",
+"label": "05.09.01.000 — Planos de atendimento e assistência médico-veterinária."
+},
+{
+"codigo": "06.01.01.000",
+"codigoNacional": "060101",
+"descricao": "Barbearia, cabeleireiros, manicuros, pedicuros e congêneres.",
+"label": "06.01.01.000 — Barbearia, cabeleireiros, manicuros, pedicuros e congêneres."
+},
+{
+"codigo": "06.02.01.000",
+"codigoNacional": "060201",
+"descricao": "Esteticistas, tratamento de pele, depilação e congêneres.",
+"label": "06.02.01.000 — Esteticistas, tratamento de pele, depilação e congêneres."
+},
+{
+"codigo": "06.03.01.000",
+"codigoNacional": "060301",
+"descricao": "Banhos, duchas, sauna, massagens e congêneres.",
+"label": "06.03.01.000 — Banhos, duchas, sauna, massagens e congêneres."
+},
+{
+"codigo": "06.04.01.000",
+"codigoNacional": "060401",
+"descricao": "Ginástica, dança, esportes, natação, artes marciais e demais atividades físicas.",
+"label": "06.04.01.000 — Ginástica, dança, esportes, natação, artes marciais e demais atividades físicas."
+},
+{
+"codigo": "06.05.01.000",
+"codigoNacional": "060501",
+"descricao": "Centros de emagrecimento, spa e congêneres.",
+"label": "06.05.01.000 — Centros de emagrecimento, spa e congêneres."
+},
+{
+"codigo": "06.06.01.000",
+"codigoNacional": "060601",
+"descricao": "Aplicação de tatuagens, piercings e congêneres.",
+"label": "06.06.01.000 — Aplicação de tatuagens, piercings e congêneres."
+},
+{
+"codigo": "07.01.01.000",
+"codigoNacional": "070101",
+"descricao": "Engenharia e congêneres.",
+"label": "07.01.01.000 — Engenharia e congêneres."
+},
+{
+"codigo": "07.01.02.000",
+"codigoNacional": "070102",
+"descricao": "Agronomia e congêneres.",
+"label": "07.01.02.000 — Agronomia e congêneres."
+},
+{
+"codigo": "07.01.03.000",
+"codigoNacional": "070103",
+"descricao": "Agrimensura e congêneres.",
+"label": "07.01.03.000 — Agrimensura e congêneres."
+},
+{
+"codigo": "07.01.04.000",
+"codigoNacional": "070104",
+"descricao": "Arquitetura, urbanismo e congêneres.",
+"label": "07.01.04.000 — Arquitetura, urbanismo e congêneres."
+},
+{
+"codigo": "07.01.05.000",
+"codigoNacional": "070105",
+"descricao": "Geologia e congêneres.",
+"label": "07.01.05.000 — Geologia e congêneres."
+},
+{
+"codigo": "07.01.06.000",
+"codigoNacional": "070106",
+"descricao": "Paisagismo e congêneres.",
+"label": "07.01.06.000 — Paisagismo e congêneres."
+},
+{
+"codigo": "07.02.01.000",
+"codigoNacional": "070201",
+"descricao": "Execução, por administração, de obras de construção civil, hidráulica ou elétrica e de outras obras semelhantes, inclusive sondagem, perfuração de poços, escavação, drenagem e irrigação, terraplanagem, pavimentação, concretagem e a instalação e montagem de produtos, peças e equipamentos (exceto o fornecimento de mercadorias produzidas pelo prestador de serviços fora do local da prestação dos serviços, que fica sujeito ao ICMS).",
+"label": "07.02.01.000 — Execução, por administração, de obras de construção civil, hidráulica ou elétric…"
+},
+{
+"codigo": "07.02.02.000",
+"codigoNacional": "070202",
+"descricao": "Execução, por empreitada ou subempreitada, de obras de construção civil, hidráulica ou elétrica e de outras obras semelhantes, inclusive sondagem, perfuração de poços, escavação, drenagem e irrigação, terraplanagem, pavimentação, concretagem e a instalação e montagem de produtos, peças e equipamentos (exceto o fornecimento de mercadorias produzidas pelo prestador de serviços fora do local da prestação dos serviços, que fica sujeito ao ICMS).",
+"label": "07.02.02.000 — Execução, por empreitada ou subempreitada, de obras de construção civil, hidrául…"
+},
+{
+"codigo": "07.03.01.000",
+"codigoNacional": "070301",
+"descricao": "Elaboração de planos diretores, estudos de viabilidade, estudos organizacionais e outros, relacionados com obras e serviços de engenharia.",
+"label": "07.03.01.000 — Elaboração de planos diretores, estudos de viabilidade, estudos organizacionais …"
+},
+{
+"codigo": "07.03.02.000",
+"codigoNacional": "070302",
+"descricao": "Elaboração de anteprojetos, projetos básicos e projetos executivos para trabalhos de engenharia.",
+"label": "07.03.02.000 — Elaboração de anteprojetos, projetos básicos e projetos executivos para trabalho…"
+},
+{
+"codigo": "07.04.01.000",
+"codigoNacional": "070401",
+"descricao": "Demolição.",
+"label": "07.04.01.000 — Demolição."
+},
+{
+"codigo": "07.05.01.000",
+"codigoNacional": "070501",
+"descricao": "Reparação, conservação e reforma de edifícios e congêneres (exceto o fornecimento de mercadorias produzidas pelo prestador dos serviços, fora do local da prestação dos serviços, que fica sujeito ao ICMS).",
+"label": "07.05.01.000 — Reparação, conservação e reforma de edifícios e congêneres (exceto o forneciment…"
+},
+{
+"codigo": "07.05.02.000",
+"codigoNacional": "070502",
+"descricao": "Reparação, conservação e reforma de estradas, pontes, portos e congêneres (exceto o fornecimento de mercadorias produzidas pelo prestador dos serviços, fora do local da prestação dos serviços, que fica sujeito ao ICMS).",
+"label": "07.05.02.000 — Reparação, conservação e reforma de estradas, pontes, portos e congêneres (excet…"
+},
+{
+"codigo": "07.06.01.000",
+"codigoNacional": "070601",
+"descricao": "Colocação e instalação de tapetes, carpetes, cortinas e congêneres, com material fornecido pelo tomador do serviço.",
+"label": "07.06.01.000 — Colocação e instalação de tapetes, carpetes, cortinas e congêneres, com material…"
+},
+{
+"codigo": "07.06.02.000",
+"codigoNacional": "070602",
+"descricao": "Colocação e instalação de assoalhos, revestimentos de parede, vidros, divisórias, placas de gesso e congêneres, com material fornecido pelo tomador do serviço.",
+"label": "07.06.02.000 — Colocação e instalação de assoalhos, revestimentos de parede, vidros, divisórias…"
+},
+{
+"codigo": "07.07.01.000",
+"codigoNacional": "070701",
+"descricao": "Recuperação, raspagem, polimento e lustração de pisos e congêneres.",
+"label": "07.07.01.000 — Recuperação, raspagem, polimento e lustração de pisos e congêneres."
+},
+{
+"codigo": "07.08.01.000",
+"codigoNacional": "070801",
+"descricao": "Calafetação.",
+"label": "07.08.01.000 — Calafetação."
+},
+{
+"codigo": "07.09.01.000",
+"codigoNacional": "070901",
+"descricao": "Varrição, coleta e remoção de lixo, rejeitos e outros resíduos quaisquer.",
+"label": "07.09.01.000 — Varrição, coleta e remoção de lixo, rejeitos e outros resíduos quaisquer."
+},
+{
+"codigo": "07.09.02.000",
+"codigoNacional": "070902",
+"descricao": "Incineração, tratamento, reciclagem, separação e destinação final de lixo, rejeitos e outros resíduos quaisquer.",
+"label": "07.09.02.000 — Incineração, tratamento, reciclagem, separação e destinação final de lixo, rejei…"
+},
+{
+"codigo": "07.10.01.000",
+"codigoNacional": "071001",
+"descricao": "Limpeza, manutenção e conservação de vias e logradouros públicos, parques, jardins e congêneres.",
+"label": "07.10.01.000 — Limpeza, manutenção e conservação de vias e logradouros públicos, parques, jardi…"
+},
+{
+"codigo": "07.10.02.000",
+"codigoNacional": "071002",
+"descricao": "Limpeza, manutenção e conservação de imóveis, chaminés, piscinas e congêneres.",
+"label": "07.10.02.000 — Limpeza, manutenção e conservação de imóveis, chaminés, piscinas e congêneres."
+},
+{
+"codigo": "07.11.01.000",
+"codigoNacional": "071101",
+"descricao": "Decoração.",
+"label": "07.11.01.000 — Decoração."
+},
+{
+"codigo": "07.11.02.000",
+"codigoNacional": "071102",
+"descricao": "Jardinagem, inclusive corte e poda de árvores.",
+"label": "07.11.02.000 — Jardinagem, inclusive corte e poda de árvores."
+},
+{
+"codigo": "07.12.01.000",
+"codigoNacional": "071201",
+"descricao": "Controle e tratamento de efluentes de qualquer natureza e de agentes físicos, químicos e biológicos.",
+"label": "07.12.01.000 — Controle e tratamento de efluentes de qualquer natureza e de agentes físicos, qu…"
+},
+{
+"codigo": "07.13.01.000",
+"codigoNacional": "071301",
+"descricao": "Dedetização, desinfecção, desinsetização, imunização, higienização, desratização, pulverização e congêneres.",
+"label": "07.13.01.000 — Dedetização, desinfecção, desinsetização, imunização, higienização, desratização…"
+},
+{
+"codigo": "07.16.01.000",
+"codigoNacional": "071601",
+"descricao": "Florestamento, reflorestamento, semeadura, adubação, reparação de solo, plantio, silagem, colheita, corte e descascamento de árvores, silvicultura, exploração florestal e dos serviços congêneres indissociáveis da formação, manutenção e colheita de florestas, para quaisquer fins e por quaisquer meios.",
+"label": "07.16.01.000 — Florestamento, reflorestamento, semeadura, adubação, reparação de solo, plantio,…"
+},
+{
+"codigo": "07.17.01.000",
+"codigoNacional": "071701",
+"descricao": "Escoramento, contenção de encostas e serviços congêneres.",
+"label": "07.17.01.000 — Escoramento, contenção de encostas e serviços congêneres."
+},
+{
+"codigo": "07.18.01.000",
+"codigoNacional": "071801",
+"descricao": "Limpeza e dragagem de rios, portos, canais, baías, lagos, lagoas, represas, açudes e congêneres.",
+"label": "07.18.01.000 — Limpeza e dragagem de rios, portos, canais, baías, lagos, lagoas, represas, açud…"
+},
+{
+"codigo": "07.19.01.000",
+"codigoNacional": "071901",
+"descricao": "Acompanhamento e fiscalização da execução de obras de engenharia, arquitetura e urbanismo.",
+"label": "07.19.01.000 — Acompanhamento e fiscalização da execução de obras de engenharia, arquitetura e …"
+},
+{
+"codigo": "07.20.01.000",
+"codigoNacional": "072001",
+"descricao": "Aerofotogrametria (inclusive interpretação), cartografia, mapeamento e congêneres.",
+"label": "07.20.01.000 — Aerofotogrametria (inclusive interpretação), cartografia, mapeamento e congênere…"
+},
+{
+"codigo": "07.20.02.000",
+"codigoNacional": "072002",
+"descricao": "Levantamentos batimétricos, geográficos, geodésicos, geológicos, geofísicos e congêneres.",
+"label": "07.20.02.000 — Levantamentos batimétricos, geográficos, geodésicos, geológicos, geofísicos e co…"
+},
+{
+"codigo": "07.20.03.000",
+"codigoNacional": "072003",
+"descricao": "Levantamentos topográficos e congêneres.",
+"label": "07.20.03.000 — Levantamentos topográficos e congêneres."
+},
+{
+"codigo": "07.21.01.000",
+"codigoNacional": "072101",
+"descricao": "Pesquisa, perfuração, cimentação, mergulho, perfilagem, concretação, testemunhagem, pescaria, estimulação e outros serviços relacionados com a exploração e explotação de petróleo, gás natural e de outros recursos minerais.",
+"label": "07.21.01.000 — Pesquisa, perfuração, cimentação, mergulho, perfilagem, concretação, testemunhag…"
+},
+{
+"codigo": "07.22.01.000",
+"codigoNacional": "072201",
+"descricao": "Nucleação e bombardeamento de nuvens e congêneres.",
+"label": "07.22.01.000 — Nucleação e bombardeamento de nuvens e congêneres."
+},
+{
+"codigo": "08.01.01.000",
+"codigoNacional": "080101",
+"descricao": "Ensino regular pré-escolar, fundamental e médio.",
+"label": "08.01.01.000 — Ensino regular pré-escolar, fundamental e médio."
+},
+{
+"codigo": "08.01.02.000",
+"codigoNacional": "080102",
+"descricao": "Ensino regular superior.",
+"label": "08.01.02.000 — Ensino regular superior."
+},
+{
+"codigo": "08.02.01.000",
+"codigoNacional": "080201",
+"descricao": "Instrução, treinamento, orientação pedagógica e educacional, avaliação de conhecimentos de qualquer natureza.",
+"label": "08.02.01.000 — Instrução, treinamento, orientação pedagógica e educacional, avaliação de conhec…"
+},
+{
+"codigo": "09.01.01.000",
+"codigoNacional": "090101",
+"descricao": "Hospedagem em hotéis, hotelaria marítima e congêneres (o valor da alimentação e gorjeta, quando incluído no preço da diária, fica sujeito ao Imposto Sobre Serviços).",
+"label": "09.01.01.000 — Hospedagem em hotéis, hotelaria marítima e congêneres (o valor da alimentação e …"
+},
+{
+"codigo": "09.01.02.000",
+"codigoNacional": "090102",
+"descricao": "Hospedagem em pensões, albergues, pousadas, hospedarias, ocupação por temporada com fornecimento de serviços e congêneres (o valor da alimentação e gorjeta, quando incluído no preço da diária, fica sujeito ao Imposto Sobre Serviços).",
+"label": "09.01.02.000 — Hospedagem em pensões, albergues, pousadas, hospedarias, ocupação por temporada …"
+},
+{
+"codigo": "09.01.03.000",
+"codigoNacional": "090103",
+"descricao": "Hospedagem em motéis e congêneres (o valor da alimentação e gorjeta, quando incluído no preço da diária, fica sujeito ao Imposto Sobre Serviços).",
+"label": "09.01.03.000 — Hospedagem em motéis e congêneres (o valor da alimentação e gorjeta, quando incl…"
+},
+{
+"codigo": "09.01.04.000",
+"codigoNacional": "090104",
+"descricao": "Hospedagem em apart-service condominiais, flat, apart-hotéis, hotéis residência, residence-service, suite service e congêneres (o valor da alimentação e gorjeta, quando incluído no preço da diária, fica sujeito ao Imposto Sobre Serviços).",
+"label": "09.01.04.000 — Hospedagem em apart-service condominiais, flat, apart-hotéis, hotéis residência,…"
+},
+{
+"codigo": "09.02.01.000",
+"codigoNacional": "090201",
+"descricao": "Agenciamento e intermediação de programas de turismo, passeios, viagens, excursões, hospedagens e congêneres.",
+"label": "09.02.01.000 — Agenciamento e intermediação de programas de turismo, passeios, viagens, excursõ…"
+},
+{
+"codigo": "09.02.02.000",
+"codigoNacional": "090202",
+"descricao": "Organização, promoção e execução de programas de turismo, passeios, viagens, excursões, hospedagens e congêneres.",
+"label": "09.02.02.000 — Organização, promoção e execução de programas de turismo, passeios, viagens, exc…"
+},
+{
+"codigo": "09.03.01.000",
+"codigoNacional": "090301",
+"descricao": "Guias de turismo.",
+"label": "09.03.01.000 — Guias de turismo."
+},
+{
+"codigo": "10.01.01.000",
+"codigoNacional": "100101",
+"descricao": "Agenciamento, corretagem ou intermediação de câmbio.",
+"label": "10.01.01.000 — Agenciamento, corretagem ou intermediação de câmbio."
+},
+{
+"codigo": "10.01.02.000",
+"codigoNacional": "100102",
+"descricao": "Agenciamento, corretagem ou intermediação de seguros.",
+"label": "10.01.02.000 — Agenciamento, corretagem ou intermediação de seguros."
+},
+{
+"codigo": "10.01.03.000",
+"codigoNacional": "100103",
+"descricao": "Agenciamento, corretagem ou intermediação de cartões de crédito.",
+"label": "10.01.03.000 — Agenciamento, corretagem ou intermediação de cartões de crédito."
+},
+{
+"codigo": "10.01.04.000",
+"codigoNacional": "100104",
+"descricao": "Agenciamento, corretagem ou intermediação de planos de saúde.",
+"label": "10.01.04.000 — Agenciamento, corretagem ou intermediação de planos de saúde."
+},
+{
+"codigo": "10.01.05.000",
+"codigoNacional": "100105",
+"descricao": "Agenciamento, corretagem ou intermediação de planos de previdência privada.",
+"label": "10.01.05.000 — Agenciamento, corretagem ou intermediação de planos de previdência privada."
+},
+{
+"codigo": "10.02.01.000",
+"codigoNacional": "100201",
+"descricao": "Agenciamento, corretagem ou intermediação de títulos em geral e valores mobiliários.",
+"label": "10.02.01.000 — Agenciamento, corretagem ou intermediação de títulos em geral e valores mobiliár…"
+},
+{
+"codigo": "10.02.02.000",
+"codigoNacional": "100202",
+"descricao": "Agenciamento, corretagem ou intermediação de contratos quaisquer.",
+"label": "10.02.02.000 — Agenciamento, corretagem ou intermediação de contratos quaisquer."
+},
+{
+"codigo": "10.03.01.000",
+"codigoNacional": "100301",
+"descricao": "Agenciamento, corretagem ou intermediação de direitos de propriedade industrial, artística ou literária.",
+"label": "10.03.01.000 — Agenciamento, corretagem ou intermediação de direitos de propriedade industrial,…"
+},
+{
+"codigo": "10.04.01.000",
+"codigoNacional": "100401",
+"descricao": "Agenciamento, corretagem ou intermediação de contratos de arrendamento mercantil (leasing).",
+"label": "10.04.01.000 — Agenciamento, corretagem ou intermediação de contratos de arrendamento mercantil…"
+},
+{
+"codigo": "10.04.02.000",
+"codigoNacional": "100402",
+"descricao": "Agenciamento, corretagem ou intermediação de contratos de franquia (franchising).",
+"label": "10.04.02.000 — Agenciamento, corretagem ou intermediação de contratos de franquia (franchising)…"
+},
+{
+"codigo": "10.04.03.000",
+"codigoNacional": "100403",
+"descricao": "Agenciamento, corretagem ou intermediação de faturização (factoring).",
+"label": "10.04.03.000 — Agenciamento, corretagem ou intermediação de faturização (factoring)."
+},
+{
+"codigo": "10.05.01.000",
+"codigoNacional": "100501",
+"descricao": "Agenciamento, corretagem ou intermediação de bens móveis ou imóveis, não abrangidos em outros itens ou subitens, por quaisquer meios.",
+"label": "10.05.01.000 — Agenciamento, corretagem ou intermediação de bens móveis ou imóveis, não abrangi…"
+},
+{
+"codigo": "10.05.02.000",
+"codigoNacional": "100502",
+"descricao": "Agenciamento, corretagem ou intermediação de bens móveis ou imóveis realizados no âmbito de Bolsas de Mercadorias e Futuros, por quaisquer meios.",
+"label": "10.05.02.000 — Agenciamento, corretagem ou intermediação de bens móveis ou imóveis realizados n…"
+},
+{
+"codigo": "10.06.01.000",
+"codigoNacional": "100601",
+"descricao": "Agenciamento marítimo.",
+"label": "10.06.01.000 — Agenciamento marítimo."
+},
+{
+"codigo": "10.07.01.000",
+"codigoNacional": "100701",
+"descricao": "Agenciamento de notícias.",
+"label": "10.07.01.000 — Agenciamento de notícias."
+},
+{
+"codigo": "10.08.01.000",
+"codigoNacional": "100801",
+"descricao": "Agenciamento de publicidade e propaganda, inclusive o agenciamento de veiculação por quaisquer meios.",
+"label": "10.08.01.000 — Agenciamento de publicidade e propaganda, inclusive o agenciamento de veiculação…"
+},
+{
+"codigo": "10.09.01.000",
+"codigoNacional": "100901",
+"descricao": "Representação de qualquer natureza, inclusive comercial.",
+"label": "10.09.01.000 — Representação de qualquer natureza, inclusive comercial."
+},
+{
+"codigo": "10.10.01.000",
+"codigoNacional": "101001",
+"descricao": "Distribuição de bens de terceiros.",
+"label": "10.10.01.000 — Distribuição de bens de terceiros."
+},
+{
+"codigo": "11.01.01.000",
+"codigoNacional": "110101",
+"descricao": "Guarda e estacionamento de veículos terrestres automotores.",
+"label": "11.01.01.000 — Guarda e estacionamento de veículos terrestres automotores."
+},
+{
+"codigo": "11.01.02.000",
+"codigoNacional": "110102",
+"descricao": "Guarda e estacionamento de aeronaves e de embarcações.",
+"label": "11.01.02.000 — Guarda e estacionamento de aeronaves e de embarcações."
+},
+{
+"codigo": "11.02.01.000",
+"codigoNacional": "110201",
+"descricao": "Vigilância, segurança ou monitoramento de bens, pessoas e semoventes.",
+"label": "11.02.01.000 — Vigilância, segurança ou monitoramento de bens, pessoas e semoventes."
+},
+{
+"codigo": "11.03.01.000",
+"codigoNacional": "110301",
+"descricao": "Escolta, inclusive de veículos e cargas.",
+"label": "11.03.01.000 — Escolta, inclusive de veículos e cargas."
+},
+{
+"codigo": "11.04.01.000",
+"codigoNacional": "110401",
+"descricao": "Armazenamento, depósito, guarda de bens de qualquer espécie.",
+"label": "11.04.01.000 — Armazenamento, depósito, guarda de bens de qualquer espécie."
+},
+{
+"codigo": "11.04.02.000",
+"codigoNacional": "110402",
+"descricao": "Carga, descarga, arrumação de bens de qualquer espécie.",
+"label": "11.04.02.000 — Carga, descarga, arrumação de bens de qualquer espécie."
+},
+{
+"codigo": "12.01.01.000",
+"codigoNacional": "120101",
+"descricao": "Espetáculos teatrais.",
+"label": "12.01.01.000 — Espetáculos teatrais."
+},
+{
+"codigo": "12.02.01.000",
+"codigoNacional": "120201",
+"descricao": "Exibições cinematográficas.",
+"label": "12.02.01.000 — Exibições cinematográficas."
+},
+{
+"codigo": "12.03.01.000",
+"codigoNacional": "120301",
+"descricao": "Espetáculos circenses.",
+"label": "12.03.01.000 — Espetáculos circenses."
+},
+{
+"codigo": "12.04.01.000",
+"codigoNacional": "120401",
+"descricao": "Programas de auditório.",
+"label": "12.04.01.000 — Programas de auditório."
+},
+{
+"codigo": "12.05.01.000",
+"codigoNacional": "120501",
+"descricao": "Parques de diversões, centros de lazer e congêneres.",
+"label": "12.05.01.000 — Parques de diversões, centros de lazer e congêneres."
+},
+{
+"codigo": "12.06.01.000",
+"codigoNacional": "120601",
+"descricao": "Boates, taxi-dancing e congêneres.",
+"label": "12.06.01.000 — Boates, taxi-dancing e congêneres."
+},
+{
+"codigo": "12.07.01.000",
+"codigoNacional": "120701",
+"descricao": "Shows, ballet, danças, desfiles, bailes, óperas, concertos, recitais, festivais e congêneres.",
+"label": "12.07.01.000 — Shows, ballet, danças, desfiles, bailes, óperas, concertos, recitais, festivais …"
+},
+{
+"codigo": "12.08.01.000",
+"codigoNacional": "120801",
+"descricao": "Feiras, exposições, congressos e congêneres.",
+"label": "12.08.01.000 — Feiras, exposições, congressos e congêneres."
+},
+{
+"codigo": "12.09.01.000",
+"codigoNacional": "120901",
+"descricao": "Bilhares.",
+"label": "12.09.01.000 — Bilhares."
+},
+{
+"codigo": "12.09.02.000",
+"codigoNacional": "120902",
+"descricao": "Boliches.",
+"label": "12.09.02.000 — Boliches."
+},
+{
+"codigo": "12.09.03.000",
+"codigoNacional": "120903",
+"descricao": "Diversões eletrônicas ou não.",
+"label": "12.09.03.000 — Diversões eletrônicas ou não."
+},
+{
+"codigo": "12.10.01.000",
+"codigoNacional": "121001",
+"descricao": "Corridas e competições de animais.",
+"label": "12.10.01.000 — Corridas e competições de animais."
+},
+{
+"codigo": "12.11.01.000",
+"codigoNacional": "121101",
+"descricao": "Competições esportivas ou de destreza física ou intelectual, com ou sem a participação do espectador.",
+"label": "12.11.01.000 — Competições esportivas ou de destreza física ou intelectual, com ou sem a partic…"
+},
+{
+"codigo": "12.12.01.000",
+"codigoNacional": "121201",
+"descricao": "Execução de música.",
+"label": "12.12.01.000 — Execução de música."
+},
+{
+"codigo": "12.13.01.000",
+"codigoNacional": "121301",
+"descricao": "Produção, mediante ou sem encomenda prévia, de eventos, espetáculos, entrevistas, shows, ballet, danças, desfiles, bailes, teatros, óperas, concertos, recitais, festivais e congêneres.",
+"label": "12.13.01.000 — Produção, mediante ou sem encomenda prévia, de eventos, espetáculos, entrevistas…"
+},
+{
+"codigo": "12.14.01.000",
+"codigoNacional": "121401",
+"descricao": "Fornecimento de música para ambientes fechados ou não, mediante transmissão por qualquer processo.",
+"label": "12.14.01.000 — Fornecimento de música para ambientes fechados ou não, mediante transmissão por …"
+},
+{
+"codigo": "12.15.01.000",
+"codigoNacional": "121501",
+"descricao": "Desfiles de blocos carnavalescos ou folclóricos, trios elétricos e congêneres.",
+"label": "12.15.01.000 — Desfiles de blocos carnavalescos ou folclóricos, trios elétricos e congêneres."
+},
+{
+"codigo": "12.16.01.000",
+"codigoNacional": "121601",
+"descricao": "Exibição de filmes, entrevistas, musicais, espetáculos, shows, concertos, desfiles, óperas, competições esportivas, de destreza intelectual ou congêneres.",
+"label": "12.16.01.000 — Exibição de filmes, entrevistas, musicais, espetáculos, shows, concertos, desfil…"
+},
+{
+"codigo": "12.17.01.000",
+"codigoNacional": "121701",
+"descricao": "Recreação e animação, inclusive em festas e eventos de qualquer natureza.",
+"label": "12.17.01.000 — Recreação e animação, inclusive em festas e eventos de qualquer natureza."
+},
+{
+"codigo": "13.02.01.000",
+"codigoNacional": "130201",
+"descricao": "Fonografia ou gravação de sons, inclusive trucagem, dublagem, mixagem e congêneres.",
+"label": "13.02.01.000 — Fonografia ou gravação de sons, inclusive trucagem, dublagem, mixagem e congêner…"
+},
+{
+"codigo": "13.03.01.000",
+"codigoNacional": "130301",
+"descricao": "Fotografia e cinematografia, inclusive revelação, ampliação, cópia, reprodução, trucagem e congêneres.",
+"label": "13.03.01.000 — Fotografia e cinematografia, inclusive revelação, ampliação, cópia, reprodução, …"
+},
+{
+"codigo": "13.04.01.000",
+"codigoNacional": "130401",
+"descricao": "Reprografia, microfilmagem e digitalização.",
+"label": "13.04.01.000 — Reprografia, microfilmagem e digitalização."
+},
+{
+"codigo": "13.05.01.000",
+"codigoNacional": "130501",
+"descricao": "Composição gráfica, inclusive confecção de impressos gráficos, fotocomposição, clicheria, zincografia, litografia e fotolitografia, exceto se destinados a posterior operação de comercialização ou industrialização, ainda que incorporados, de qualquer forma, a outra mercadoria que deva ser objeto de posterior circulação, tais como bulas, rótulos, etiquetas, caixas, cartuchos, embalagens e manuais técnicos e de instrução, quando ficarão sujeitos ao ICMS.",
+"label": "13.05.01.000 — Composição gráfica, inclusive confecção de impressos gráficos, fotocomposição, c…"
+},
+{
+"codigo": "14.01.01.000",
+"codigoNacional": "140101",
+"descricao": "Lubrificação, limpeza, lustração, revisão, carga e recarga, conserto, restauração, blindagem, manutenção e conservação de máquinas, veículos, aparelhos, equipamentos, motores, elevadores ou de qualquer objeto (exceto peças e partes empregadas, que ficam sujeitas ao ICMS).",
+"label": "14.01.01.000 — Lubrificação, limpeza, lustração, revisão, carga e recarga, conserto, restauraçã…"
+},
+{
+"codigo": "14.02.01.000",
+"codigoNacional": "140201",
+"descricao": "Assistência técnica.",
+"label": "14.02.01.000 — Assistência técnica."
+},
+{
+"codigo": "14.03.01.000",
+"codigoNacional": "140301",
+"descricao": "Recondicionamento de motores (exceto peças e partes empregadas, que ficam sujeitas ao ICMS).",
+"label": "14.03.01.000 — Recondicionamento de motores (exceto peças e partes empregadas, que ficam sujeit…"
+},
+{
+"codigo": "14.04.01.000",
+"codigoNacional": "140401",
+"descricao": "Recauchutagem ou regeneração de pneus.",
+"label": "14.04.01.000 — Recauchutagem ou regeneração de pneus."
+},
+{
+"codigo": "14.05.01.000",
+"codigoNacional": "140501",
+"descricao": "Restauração, recondicionamento, acondicionamento, pintura, beneficiamento, lavagem, secagem, tingimento, galvanoplastia, anodização, corte, recorte, plastificação, costura, acabamento, polimento e congêneres de objetos quaisquer.",
+"label": "14.05.01.000 — Restauração, recondicionamento, acondicionamento, pintura, beneficiamento, lavag…"
+},
+{
+"codigo": "14.06.01.000",
+"codigoNacional": "140601",
+"descricao": "Instalação e montagem de aparelhos, máquinas e equipamentos, inclusive montagem industrial, prestados ao usuário final, exclusivamente com material por ele fornecido.",
+"label": "14.06.01.000 — Instalação e montagem de aparelhos, máquinas e equipamentos, inclusive montagem …"
+},
+{
+"codigo": "14.07.01.000",
+"codigoNacional": "140701",
+"descricao": "Colocação de molduras e congêneres.",
+"label": "14.07.01.000 — Colocação de molduras e congêneres."
+},
+{
+"codigo": "14.08.01.000",
+"codigoNacional": "140801",
+"descricao": "Encadernação, gravação e douração de livros, revistas e congêneres.",
+"label": "14.08.01.000 — Encadernação, gravação e douração de livros, revistas e congêneres."
+},
+{
+"codigo": "14.09.01.000",
+"codigoNacional": "140901",
+"descricao": "Alfaiataria e costura, quando o material for fornecido pelo usuário final, exceto aviamento.",
+"label": "14.09.01.000 — Alfaiataria e costura, quando o material for fornecido pelo usuário final, excet…"
+},
+{
+"codigo": "14.10.01.000",
+"codigoNacional": "141001",
+"descricao": "Tinturaria e lavanderia.",
+"label": "14.10.01.000 — Tinturaria e lavanderia."
+},
+{
+"codigo": "14.11.01.000",
+"codigoNacional": "141101",
+"descricao": "Tapeçaria e reforma de estofamentos em geral.",
+"label": "14.11.01.000 — Tapeçaria e reforma de estofamentos em geral."
+},
+{
+"codigo": "14.12.01.000",
+"codigoNacional": "141201",
+"descricao": "Funilaria e lanternagem.",
+"label": "14.12.01.000 — Funilaria e lanternagem."
+},
+{
+"codigo": "14.13.01.000",
+"codigoNacional": "141301",
+"descricao": "Carpintaria.",
+"label": "14.13.01.000 — Carpintaria."
+},
+{
+"codigo": "14.13.02.000",
+"codigoNacional": "141302",
+"descricao": "Serralheria.",
+"label": "14.13.02.000 — Serralheria."
+},
+{
+"codigo": "14.14.01.000",
+"codigoNacional": "141401",
+"descricao": "Guincho intramunicipal.",
+"label": "14.14.01.000 — Guincho intramunicipal."
+},
+{
+"codigo": "14.14.02.000",
+"codigoNacional": "141402",
+"descricao": "Guindaste e içamento.",
+"label": "14.14.02.000 — Guindaste e içamento."
+},
+{
+"codigo": "15.01.01.000",
+"codigoNacional": "150101",
+"descricao": "Administração de fundos quaisquer e congêneres.",
+"label": "15.01.01.000 — Administração de fundos quaisquer e congêneres."
+},
+{
+"codigo": "15.01.02.000",
+"codigoNacional": "150102",
+"descricao": "Administração de consórcio e congêneres.",
+"label": "15.01.02.000 — Administração de consórcio e congêneres."
+},
+{
+"codigo": "15.01.03.000",
+"codigoNacional": "150103",
+"descricao": "Administração de cartão de crédito ou débito e congêneres.",
+"label": "15.01.03.000 — Administração de cartão de crédito ou débito e congêneres."
+},
+{
+"codigo": "15.01.04.000",
+"codigoNacional": "150104",
+"descricao": "Administração de carteira de clientes e congêneres.",
+"label": "15.01.04.000 — Administração de carteira de clientes e congêneres."
+},
+{
+"codigo": "15.01.05.000",
+"codigoNacional": "150105",
+"descricao": "Administração de cheques pré-datados e congêneres.",
+"label": "15.01.05.000 — Administração de cheques pré-datados e congêneres."
+},
+{
+"codigo": "15.02.01.000",
+"codigoNacional": "150201",
+"descricao": "Abertura de conta-corrente no País, bem como a manutenção da referida conta ativa e inativa.",
+"label": "15.02.01.000 — Abertura de conta-corrente no País, bem como a manutenção da referida conta ativ…"
+},
+{
+"codigo": "15.02.02.000",
+"codigoNacional": "150202",
+"descricao": "Abertura de conta-corrente no exterior, bem como a manutenção da referida conta ativa e inativa.",
+"label": "15.02.02.000 — Abertura de conta-corrente no exterior, bem como a manutenção da referida conta …"
+},
+{
+"codigo": "15.02.03.000",
+"codigoNacional": "150203",
+"descricao": "Abertura de conta de investimentos e aplicação no País, bem como a manutenção da referida conta ativa e inativa.",
+"label": "15.02.03.000 — Abertura de conta de investimentos e aplicação no País, bem como a manutenção da…"
+},
+{
+"codigo": "15.02.04.000",
+"codigoNacional": "150204",
+"descricao": "Abertura de conta de investimentos e aplicação no exterior, bem como a manutenção da referida conta ativa e inativa.",
+"label": "15.02.04.000 — Abertura de conta de investimentos e aplicação no exterior, bem como a manutençã…"
+},
+{
+"codigo": "15.02.05.000",
+"codigoNacional": "150205",
+"descricao": "Abertura de caderneta de poupança no País, bem como a manutenção da referida conta ativa e inativa.",
+"label": "15.02.05.000 — Abertura de caderneta de poupança no País, bem como a manutenção da referida con…"
+},
+{
+"codigo": "15.02.06.000",
+"codigoNacional": "150206",
+"descricao": "Abertura de caderneta de poupança no exterior, bem como a manutenção da referida conta ativa e inativa.",
+"label": "15.02.06.000 — Abertura de caderneta de poupança no exterior, bem como a manutenção da referida…"
+},
+{
+"codigo": "15.02.07.000",
+"codigoNacional": "150207",
+"descricao": "Abertura de contas em geral no País, não abrangida em outro subitem, bem como a manutenção das referidas contas ativas e inativas.",
+"label": "15.02.07.000 — Abertura de contas em geral no País, não abrangida em outro subitem, bem como a …"
+},
+{
+"codigo": "15.02.08.000",
+"codigoNacional": "150208",
+"descricao": "Abertura de contas em geral no exterior, não abrangida em outro subitem, bem como a manutenção das referidas contas ativas e inativas.",
+"label": "15.02.08.000 — Abertura de contas em geral no exterior, não abrangida em outro subitem, bem com…"
+},
+{
+"codigo": "15.03.01.000",
+"codigoNacional": "150301",
+"descricao": "Locação de cofres particulares.",
+"label": "15.03.01.000 — Locação de cofres particulares."
+},
+{
+"codigo": "15.03.02.000",
+"codigoNacional": "150302",
+"descricao": "Manutenção de cofres particulares.",
+"label": "15.03.02.000 — Manutenção de cofres particulares."
+},
+{
+"codigo": "15.03.03.000",
+"codigoNacional": "150303",
+"descricao": "Locação de terminais eletrônicos.",
+"label": "15.03.03.000 — Locação de terminais eletrônicos."
+},
+{
+"codigo": "15.03.04.000",
+"codigoNacional": "150304",
+"descricao": "Manutenção de terminais eletrônicos.",
+"label": "15.03.04.000 — Manutenção de terminais eletrônicos."
+},
+{
+"codigo": "15.03.05.000",
+"codigoNacional": "150305",
+"descricao": "Locação de terminais de atendimento.",
+"label": "15.03.05.000 — Locação de terminais de atendimento."
+},
+{
+"codigo": "15.03.06.000",
+"codigoNacional": "150306",
+"descricao": "Manutenção de terminais de atendimento.",
+"label": "15.03.06.000 — Manutenção de terminais de atendimento."
+},
+{
+"codigo": "15.03.07.000",
+"codigoNacional": "150307",
+"descricao": "Locação de bens e equipamentos em geral.",
+"label": "15.03.07.000 — Locação de bens e equipamentos em geral."
+},
+{
+"codigo": "15.03.08.000",
+"codigoNacional": "150308",
+"descricao": "Manutenção de bens e equipamentos em geral.",
+"label": "15.03.08.000 — Manutenção de bens e equipamentos em geral."
+},
+{
+"codigo": "15.04.01.000",
+"codigoNacional": "150401",
+"descricao": "Fornecimento ou emissão de atestados em geral, inclusive atestado de idoneidade, atestado de capacidade financeira e congêneres.",
+"label": "15.04.01.000 — Fornecimento ou emissão de atestados em geral, inclusive atestado de idoneidade,…"
+},
+{
+"codigo": "15.05.01.000",
+"codigoNacional": "150501",
+"descricao": "Cadastro, elaboração de ficha cadastral, renovação cadastral e congêneres.",
+"label": "15.05.01.000 — Cadastro, elaboração de ficha cadastral, renovação cadastral e congêneres."
+},
+{
+"codigo": "15.05.02.000",
+"codigoNacional": "150502",
+"descricao": "Inclusão no Cadastro de Emitentes de Cheques sem Fundos - CCF.",
+"label": "15.05.02.000 — Inclusão no Cadastro de Emitentes de Cheques sem Fundos - CCF."
+},
+{
+"codigo": "15.05.03.000",
+"codigoNacional": "150503",
+"descricao": "Exclusão no Cadastro de Emitentes de Cheques sem Fundos - CCF.",
+"label": "15.05.03.000 — Exclusão no Cadastro de Emitentes de Cheques sem Fundos - CCF."
+},
+{
+"codigo": "15.05.04.000",
+"codigoNacional": "150504",
+"descricao": "Inclusão em quaisquer outros bancos cadastrais.",
+"label": "15.05.04.000 — Inclusão em quaisquer outros bancos cadastrais."
+},
+{
+"codigo": "15.05.05.000",
+"codigoNacional": "150505",
+"descricao": "Exclusão em quaisquer outros bancos cadastrais.",
+"label": "15.05.05.000 — Exclusão em quaisquer outros bancos cadastrais."
+},
+{
+"codigo": "15.06.01.000",
+"codigoNacional": "150601",
+"descricao": "Emissão, reemissão e fornecimento de avisos, comprovantes e documentos em geral",
+"label": "15.06.01.000 — Emissão, reemissão e fornecimento de avisos, comprovantes e documentos em geral"
+},
+{
+"codigo": "15.06.02.000",
+"codigoNacional": "150602",
+"descricao": "Abono de firmas.",
+"label": "15.06.02.000 — Abono de firmas."
+},
+{
+"codigo": "15.06.03.000",
+"codigoNacional": "150603",
+"descricao": "Coleta e entrega de documentos, bens e valores.",
+"label": "15.06.03.000 — Coleta e entrega de documentos, bens e valores."
+},
+{
+"codigo": "15.06.04.000",
+"codigoNacional": "150604",
+"descricao": "Comunicação com outra agência ou com a administração central.",
+"label": "15.06.04.000 — Comunicação com outra agência ou com a administração central."
+},
+{
+"codigo": "15.06.05.000",
+"codigoNacional": "150605",
+"descricao": "Licenciamento eletrônico de veículos.",
+"label": "15.06.05.000 — Licenciamento eletrônico de veículos."
+},
+{
+"codigo": "15.06.06.000",
+"codigoNacional": "150606",
+"descricao": "Transferência de veículos.",
+"label": "15.06.06.000 — Transferência de veículos."
+},
+{
+"codigo": "15.06.07.000",
+"codigoNacional": "150607",
+"descricao": "Agenciamento fiduciário ou depositário.",
+"label": "15.06.07.000 — Agenciamento fiduciário ou depositário."
+},
+{
+"codigo": "15.06.08.000",
+"codigoNacional": "150608",
+"descricao": "Devolução de bens em custódia.",
+"label": "15.06.08.000 — Devolução de bens em custódia."
+},
+{
+"codigo": "15.07.01.000",
+"codigoNacional": "150701",
+"descricao": "Acesso, movimentação, atendimento e consulta a contas em geral, por qualquer meio ou processo, inclusive por telefone, fac-símile, internet e telex.",
+"label": "15.07.01.000 — Acesso, movimentação, atendimento e consulta a contas em geral, por qualquer mei…"
+},
+{
+"codigo": "15.07.02.000",
+"codigoNacional": "150702",
+"descricao": "Acesso a terminais de atendimento, inclusive vinte e quatro horas.",
+"label": "15.07.02.000 — Acesso a terminais de atendimento, inclusive vinte e quatro horas."
+},
+{
+"codigo": "15.07.03.000",
+"codigoNacional": "150703",
+"descricao": "Acesso a outro banco e à rede compartilhada.",
+"label": "15.07.03.000 — Acesso a outro banco e à rede compartilhada."
+},
+{
+"codigo": "15.07.04.000",
+"codigoNacional": "150704",
+"descricao": "Fornecimento de saldo, extrato e demais informações relativas a contas em geral, por qualquer meio ou processo.",
+"label": "15.07.04.000 — Fornecimento de saldo, extrato e demais informações relativas a contas em geral,…"
+},
+{
+"codigo": "15.08.01.000",
+"codigoNacional": "150801",
+"descricao": "Emissão, reemissão, alteração, cessão, substituição, cancelamento e registro de contrato de crédito.",
+"label": "15.08.01.000 — Emissão, reemissão, alteração, cessão, substituição, cancelamento e registro de …"
+},
+{
+"codigo": "15.08.02.000",
+"codigoNacional": "150802",
+"descricao": "Estudo, análise e avaliação de operações de crédito.",
+"label": "15.08.02.000 — Estudo, análise e avaliação de operações de crédito."
+},
+{
+"codigo": "15.08.03.000",
+"codigoNacional": "150803",
+"descricao": "Emissão, concessão, alteração ou contratação de aval, fiança, anuência e congêneres.",
+"label": "15.08.03.000 — Emissão, concessão, alteração ou contratação de aval, fiança, anuência e congêne…"
+},
+{
+"codigo": "15.08.04.000",
+"codigoNacional": "150804",
+"descricao": "Serviços relativos à abertura de crédito, para quaisquer fins.",
+"label": "15.08.04.000 — Serviços relativos à abertura de crédito, para quaisquer fins."
+},
+{
+"codigo": "15.09.01.000",
+"codigoNacional": "150901",
+"descricao": "Arrendamento mercantil (leasing) de quaisquer bens, inclusive cessão de direitos e obrigações, substituição de garantia, alteração, cancelamento e registro de contrato, e demais serviços relacionados ao arrendamento mercantil (leasing).",
+"label": "15.09.01.000 — Arrendamento mercantil (leasing) de quaisquer bens, inclusive cessão de direitos…"
+},
+{
+"codigo": "15.10.01.000",
+"codigoNacional": "151001",
+"descricao": "Serviços relacionados a cobranças em geral, de títulos quaisquer, de contas ou carnês, de câmbio, de tributos e por conta de terceiros, inclusive os efetuados por meio eletrônico, automático ou por máquinas de atendimento.",
+"label": "15.10.01.000 — Serviços relacionados a cobranças em geral, de títulos quaisquer, de contas ou c…"
+},
+{
+"codigo": "15.10.02.000",
+"codigoNacional": "151002",
+"descricao": "Serviços relacionados a recebimentos em geral, de títulos quaisquer, de contas ou carnês, de câmbio, de tributos e por conta de terceiros, inclusive os efetuados por meio eletrônico, automático ou por máquinas de atendimento.",
+"label": "15.10.02.000 — Serviços relacionados a recebimentos em geral, de títulos quaisquer, de contas o…"
+},
+{
+"codigo": "15.10.03.000",
+"codigoNacional": "151003",
+"descricao": "Serviços relacionados a pagamentos em geral, de títulos quaisquer, de contas ou carnês, de câmbio, de tributos e por conta de terceiros, inclusive os efetuados por meio eletrônico, automático ou por máquinas de atendimento.",
+"label": "15.10.03.000 — Serviços relacionados a pagamentos em geral, de títulos quaisquer, de contas ou …"
+},
+{
+"codigo": "15.10.04.000",
+"codigoNacional": "151004",
+"descricao": "Serviços relacionados a fornecimento de posição de cobrança, recebimento ou pagamento.",
+"label": "15.10.04.000 — Serviços relacionados a fornecimento de posição de cobrança, recebimento ou paga…"
+},
+{
+"codigo": "15.10.05.000",
+"codigoNacional": "151005",
+"descricao": "Serviços relacionados a emissão de carnês, fichas de compensação, impressos e documentos em geral.",
+"label": "15.10.05.000 — Serviços relacionados a emissão de carnês, fichas de compensação, impressos e do…"
+},
+{
+"codigo": "15.11.01.000",
+"codigoNacional": "151101",
+"descricao": "Devolução de títulos, protesto de títulos, sustação de protesto, manutenção de títulos, reapresentação de títulos, e demais serviços a eles relacionados.",
+"label": "15.11.01.000 — Devolução de títulos, protesto de títulos, sustação de protesto, manutenção de t…"
+},
+{
+"codigo": "15.12.01.000",
+"codigoNacional": "151201",
+"descricao": "Custódia em geral, inclusive de títulos e valores mobiliários.",
+"label": "15.12.01.000 — Custódia em geral, inclusive de títulos e valores mobiliários."
+},
+{
+"codigo": "15.13.01.000",
+"codigoNacional": "151301",
+"descricao": "Serviços relacionados a operações de câmbio em geral, edição, alteração, prorrogação, cancelamento e baixa de contrato de câmbio.",
+"label": "15.13.01.000 — Serviços relacionados a operações de câmbio em geral, edição, alteração, prorrog…"
+},
+{
+"codigo": "15.13.02.000",
+"codigoNacional": "151302",
+"descricao": "Serviços relacionados a emissão de registro de exportação ou de crédito.",
+"label": "15.13.02.000 — Serviços relacionados a emissão de registro de exportação ou de crédito."
+},
+{
+"codigo": "15.13.03.000",
+"codigoNacional": "151303",
+"descricao": "Serviços relacionados a cobrança ou depósito no exterior.",
+"label": "15.13.03.000 — Serviços relacionados a cobrança ou depósito no exterior."
+},
+{
+"codigo": "15.13.04.000",
+"codigoNacional": "151304",
+"descricao": "Serviços relacionados a emissão, fornecimento e cancelamento de cheques de viagem.",
+"label": "15.13.04.000 — Serviços relacionados a emissão, fornecimento e cancelamento de cheques de viage…"
+},
+{
+"codigo": "15.13.05.000",
+"codigoNacional": "151305",
+"descricao": "Serviços relacionados a fornecimento, transferência, cancelamento e demais serviços relativos a carta de crédito de importação, exportação e garantias recebidas.",
+"label": "15.13.05.000 — Serviços relacionados a fornecimento, transferência, cancelamento e demais servi…"
+},
+{
+"codigo": "15.13.06.000",
+"codigoNacional": "151306",
+"descricao": "Serviços relacionados a envio e recebimento de mensagens em geral relacionadas a operações de câmbio.",
+"label": "15.13.06.000 — Serviços relacionados a envio e recebimento de mensagens em geral relacionadas a…"
+},
+{
+"codigo": "15.14.01.000",
+"codigoNacional": "151401",
+"descricao": "Fornecimento, emissão, reemissão de cartão magnético, cartão de crédito, cartão de débito, cartão salário e congêneres.",
+"label": "15.14.01.000 — Fornecimento, emissão, reemissão de cartão magnético, cartão de crédito, cartão …"
+},
+{
+"codigo": "15.14.02.000",
+"codigoNacional": "151402",
+"descricao": "Renovação de cartão magnético, cartão de crédito, cartão de débito, cartão salário e congêneres.",
+"label": "15.14.02.000 — Renovação de cartão magnético, cartão de crédito, cartão de débito, cartão salár…"
+},
+{
+"codigo": "15.14.03.000",
+"codigoNacional": "151403",
+"descricao": "Manutenção de cartão magnético, cartão de crédito, cartão de débito, cartão salário e congêneres.",
+"label": "15.14.03.000 — Manutenção de cartão magnético, cartão de crédito, cartão de débito, cartão salá…"
+},
+{
+"codigo": "15.15.01.000",
+"codigoNacional": "151501",
+"descricao": "Compensação de cheques e títulos quaisquer.",
+"label": "15.15.01.000 — Compensação de cheques e títulos quaisquer."
+},
+{
+"codigo": "15.15.02.000",
+"codigoNacional": "151502",
+"descricao": "Serviços relacionados a depósito, inclusive depósito identificado, a saque de contas quaisquer, por qualquer meio ou processo, inclusive em terminais eletrônicos e de atendimento.",
+"label": "15.15.02.000 — Serviços relacionados a depósito, inclusive depósito identificado, a saque de co…"
+},
+{
+"codigo": "15.16.01.000",
+"codigoNacional": "151601",
+"descricao": "Emissão, reemissão, liquidação, alteração, cancelamento e baixa de ordens de pagamento, ordens de crédito e similares, por qualquer meio ou processo.",
+"label": "15.16.01.000 — Emissão, reemissão, liquidação, alteração, cancelamento e baixa de ordens de pag…"
+},
+{
+"codigo": "15.16.02.000",
+"codigoNacional": "151602",
+"descricao": "Serviços relacionados à transferência de valores, dados, fundos, pagamentos e similares, inclusive entre contas em geral.",
+"label": "15.16.02.000 — Serviços relacionados à transferência de valores, dados, fundos, pagamentos e si…"
+},
+{
+"codigo": "15.17.01.000",
+"codigoNacional": "151701",
+"descricao": "Emissão e fornecimento de cheques quaisquer, avulso ou por talão.",
+"label": "15.17.01.000 — Emissão e fornecimento de cheques quaisquer, avulso ou por talão."
+},
+{
+"codigo": "15.17.02.000",
+"codigoNacional": "151702",
+"descricao": "Devolução de cheques quaisquer, avulso ou por talão.",
+"label": "15.17.02.000 — Devolução de cheques quaisquer, avulso ou por talão."
+},
+{
+"codigo": "15.17.03.000",
+"codigoNacional": "151703",
+"descricao": "Sustação, cancelamento e oposição de cheques quaisquer, avulso ou por talão.",
+"label": "15.17.03.000 — Sustação, cancelamento e oposição de cheques quaisquer, avulso ou por talão."
+},
+{
+"codigo": "15.18.01.000",
+"codigoNacional": "151801",
+"descricao": "Serviços relacionados a crédito imobiliário, de avaliação e vistoria de imóvel ou obra.",
+"label": "15.18.01.000 — Serviços relacionados a crédito imobiliário, de avaliação e vistoria de imóvel o…"
+},
+{
+"codigo": "15.18.02.000",
+"codigoNacional": "151802",
+"descricao": "Serviços relacionados a crédito imobiliário, de análise técnica e jurídica.",
+"label": "15.18.02.000 — Serviços relacionados a crédito imobiliário, de análise técnica e jurídica."
+},
+{
+"codigo": "15.18.03.000",
+"codigoNacional": "151803",
+"descricao": "Serviços relacionados a crédito imobiliário, de emissão, reemissão, alteração, transferência e renegociação de contrato.",
+"label": "15.18.03.000 — Serviços relacionados a crédito imobiliário, de emissão, reemissão, alteração, t…"
+},
+{
+"codigo": "15.18.04.000",
+"codigoNacional": "151804",
+"descricao": "Serviços relacionados a crédito imobiliário, de emissão e reemissão do termo de quitação.",
+"label": "15.18.04.000 — Serviços relacionados a crédito imobiliário, de emissão e reemissão do termo de …"
+},
+{
+"codigo": "15.18.05.000",
+"codigoNacional": "151805",
+"descricao": "Demais serviços relacionados a crédito imobiliário.",
+"label": "15.18.05.000 — Demais serviços relacionados a crédito imobiliário."
+},
+{
+"codigo": "16.01.01.000",
+"codigoNacional": "160101",
+"descricao": "Serviços de transporte coletivo municipal rodoviário de passageiros.",
+"label": "16.01.01.000 — Serviços de transporte coletivo municipal rodoviário de passageiros."
+},
+{
+"codigo": "16.01.02.000",
+"codigoNacional": "160102",
+"descricao": "Serviços de transporte coletivo municipal metroviário de passageiros.",
+"label": "16.01.02.000 — Serviços de transporte coletivo municipal metroviário de passageiros."
+},
+{
+"codigo": "16.01.03.000",
+"codigoNacional": "160103",
+"descricao": "Serviços de transporte coletivo municipal ferroviário de passageiros.",
+"label": "16.01.03.000 — Serviços de transporte coletivo municipal ferroviário de passageiros."
+},
+{
+"codigo": "16.01.04.000",
+"codigoNacional": "160104",
+"descricao": "Serviços de transporte coletivo municipal aquaviário de passageiros.",
+"label": "16.01.04.000 — Serviços de transporte coletivo municipal aquaviário de passageiros."
+},
+{
+"codigo": "16.02.01.000",
+"codigoNacional": "160201",
+"descricao": "Outros serviços de transporte de natureza municipal.",
+"label": "16.02.01.000 — Outros serviços de transporte de natureza municipal."
+},
+{
+"codigo": "17.01.01.000",
+"codigoNacional": "170101",
+"descricao": "Assessoria ou consultoria de qualquer natureza, não contida em outros itens desta lista.",
+"label": "17.01.01.000 — Assessoria ou consultoria de qualquer natureza, não contida em outros itens dest…"
+},
+{
+"codigo": "17.01.02.000",
+"codigoNacional": "170102",
+"descricao": "Análise, exame, pesquisa, coleta, compilação e fornecimento de dados e informações de qualquer natureza, inclusive cadastro e similares.",
+"label": "17.01.02.000 — Análise, exame, pesquisa, coleta, compilação e fornecimento de dados e informaçõ…"
+},
+{
+"codigo": "17.02.01.000",
+"codigoNacional": "170201",
+"descricao": "Datilografia, digitação, estenografia e congêneres.",
+"label": "17.02.01.000 — Datilografia, digitação, estenografia e congêneres."
+},
+{
+"codigo": "17.02.02.000",
+"codigoNacional": "170202",
+"descricao": "Expediente, secretaria em geral, apoio e infra-estrutura administrativa e congêneres.",
+"label": "17.02.02.000 — Expediente, secretaria em geral, apoio e infra-estrutura administrativa e congên…"
+},
+{
+"codigo": "17.02.03.000",
+"codigoNacional": "170203",
+"descricao": "Resposta audível e congêneres.",
+"label": "17.02.03.000 — Resposta audível e congêneres."
+},
+{
+"codigo": "17.02.04.000",
+"codigoNacional": "170204",
+"descricao": "Redação, edição, revisão e congêneres.",
+"label": "17.02.04.000 — Redação, edição, revisão e congêneres."
+},
+{
+"codigo": "17.02.05.000",
+"codigoNacional": "170205",
+"descricao": "Interpretação, tradução e congêneres.",
+"label": "17.02.05.000 — Interpretação, tradução e congêneres."
+},
+{
+"codigo": "17.03.01.000",
+"codigoNacional": "170301",
+"descricao": "Planejamento, coordenação, programação ou organização técnica.",
+"label": "17.03.01.000 — Planejamento, coordenação, programação ou organização técnica."
+},
+{
+"codigo": "17.03.02.000",
+"codigoNacional": "170302",
+"descricao": "Planejamento, coordenação, programação ou organização financeira.",
+"label": "17.03.02.000 — Planejamento, coordenação, programação ou organização financeira."
+},
+{
+"codigo": "17.03.03.000",
+"codigoNacional": "170303",
+"descricao": "Planejamento, coordenação, programação ou organização administrativa.",
+"label": "17.03.03.000 — Planejamento, coordenação, programação ou organização administrativa."
+},
+{
+"codigo": "17.04.01.000",
+"codigoNacional": "170401",
+"descricao": "Recrutamento, agenciamento, seleção e colocação de mão-de-obra.",
+"label": "17.04.01.000 — Recrutamento, agenciamento, seleção e colocação de mão-de-obra."
+},
+{
+"codigo": "17.05.01.000",
+"codigoNacional": "170501",
+"descricao": "Fornecimento de mão-de-obra, mesmo em caráter temporário, inclusive de empregados ou trabalhadores, avulsos ou temporários, contratados pelo prestador de serviço.",
+"label": "17.05.01.000 — Fornecimento de mão-de-obra, mesmo em caráter temporário, inclusive de empregado…"
+},
+{
+"codigo": "17.06.01.000",
+"codigoNacional": "170601",
+"descricao": "Propaganda e publicidade, inclusive promoção de vendas, planejamento de campanhas ou sistemas de publicidade, elaboração de desenhos, textos e demais materiais publicitários.",
+"label": "17.06.01.000 — Propaganda e publicidade, inclusive promoção de vendas, planejamento de campanha…"
+},
+{
+"codigo": "17.08.01.000",
+"codigoNacional": "170801",
+"descricao": "Franquia (franchising).",
+"label": "17.08.01.000 — Franquia (franchising)."
+},
+{
+"codigo": "17.09.01.000",
+"codigoNacional": "170901",
+"descricao": "Perícias, laudos, exames técnicos e análises técnicas.",
+"label": "17.09.01.000 — Perícias, laudos, exames técnicos e análises técnicas."
+},
+{
+"codigo": "17.10.01.000",
+"codigoNacional": "171001",
+"descricao": "Planejamento, organização e administração de feiras, exposições, e congêneres.",
+"label": "17.10.01.000 — Planejamento, organização e administração de feiras, exposições, e congêneres."
+},
+{
+"codigo": "17.10.02.000",
+"codigoNacional": "171002",
+"descricao": "Planejamento, organização e administração de congressos e congêneres.",
+"label": "17.10.02.000 — Planejamento, organização e administração de congressos e congêneres."
+},
+{
+"codigo": "17.11.01.000",
+"codigoNacional": "171101",
+"descricao": "Organização de festas e recepções.",
+"label": "17.11.01.000 — Organização de festas e recepções."
+},
+{
+"codigo": "17.11.02.000",
+"codigoNacional": "171102",
+"descricao": "Bufê (exceto o fornecimento de alimentação e bebidas, que fica sujeito ao ICMS).",
+"label": "17.11.02.000 — Bufê (exceto o fornecimento de alimentação e bebidas, que fica sujeito ao ICMS)."
+},
+{
+"codigo": "17.12.01.000",
+"codigoNacional": "171201",
+"descricao": "Administração em geral, inclusive de bens e negócios de terceiros.",
+"label": "17.12.01.000 — Administração em geral, inclusive de bens e negócios de terceiros."
+},
+{
+"codigo": "17.13.01.000",
+"codigoNacional": "171301",
+"descricao": "Leilão e congêneres.",
+"label": "17.13.01.000 — Leilão e congêneres."
+},
+{
+"codigo": "17.14.01.000",
+"codigoNacional": "171401",
+"descricao": "Advocacia",
+"label": "17.14.01.000 — Advocacia"
+},
+{
+"codigo": "17.15.01.000",
+"codigoNacional": "171501",
+"descricao": "Arbitragem de qualquer espécie, inclusive jurídica.",
+"label": "17.15.01.000 — Arbitragem de qualquer espécie, inclusive jurídica."
+},
+{
+"codigo": "17.16.01.000",
+"codigoNacional": "171601",
+"descricao": "Auditoria.",
+"label": "17.16.01.000 — Auditoria."
+},
+{
+"codigo": "17.17.01.000",
+"codigoNacional": "171701",
+"descricao": "Análise de Organização e Métodos.",
+"label": "17.17.01.000 — Análise de Organização e Métodos."
+},
+{
+"codigo": "17.18.01.000",
+"codigoNacional": "171801",
+"descricao": "Atuária e cálculos técnicos de qualquer natureza.",
+"label": "17.18.01.000 — Atuária e cálculos técnicos de qualquer natureza."
+},
+{
+"codigo": "17.19.01.000",
+"codigoNacional": "171901",
+"descricao": "Contabilidade, inclusive serviços técnicos e auxiliares.",
+"label": "17.19.01.000 — Contabilidade, inclusive serviços técnicos e auxiliares."
+},
+{
+"codigo": "17.20.01.000",
+"codigoNacional": "172001",
+"descricao": "Consultoria e assessoria econômica ou financeira.",
+"label": "17.20.01.000 — Consultoria e assessoria econômica ou financeira."
+},
+{
+"codigo": "17.21.01.000",
+"codigoNacional": "172101",
+"descricao": "Estatística.",
+"label": "17.21.01.000 — Estatística."
+},
+{
+"codigo": "17.22.01.000",
+"codigoNacional": "172201",
+"descricao": "Cobrança em geral.",
+"label": "17.22.01.000 — Cobrança em geral."
+},
+{
+"codigo": "17.23.01.000",
+"codigoNacional": "172301",
+"descricao": "Assessoria, análise, avaliação, atendimento, consulta, cadastro, seleção, gerenciamento de informações, administração de contas a receber ou a pagar e em geral, relacionados a operações de faturização (factoring).",
+"label": "17.23.01.000 — Assessoria, análise, avaliação, atendimento, consulta, cadastro, seleção, gerenc…"
+},
+{
+"codigo": "17.24.01.000",
+"codigoNacional": "172401",
+"descricao": "Apresentação de palestras, conferências, seminários e congêneres.",
+"label": "17.24.01.000 — Apresentação de palestras, conferências, seminários e congêneres."
+},
+{
+"codigo": "17.25.01.000",
+"codigoNacional": "172501",
+"descricao": "Inserção de textos, desenhos e outros materiais de propaganda e publicidade, em qualquer meio (exceto em livros, jornais, periódicos e nas modalidades de serviços de radiodifusão sonora e de sons e imagens de recepção livre e gratuita).",
+"label": "17.25.01.000 — Inserção de textos, desenhos e outros materiais de propaganda e publicidade, em …"
+},
+{
+"codigo": "18.01.01.000",
+"codigoNacional": "180101",
+"descricao": "Serviços de regulação de sinistros vinculados a contratos de seguros e congêneres.",
+"label": "18.01.01.000 — Serviços de regulação de sinistros vinculados a contratos de seguros e congênere…"
+},
+{
+"codigo": "18.01.02.000",
+"codigoNacional": "180102",
+"descricao": "Serviços de inspeção e avaliação de riscos para cobertura de contratos de seguros e congêneres.",
+"label": "18.01.02.000 — Serviços de inspeção e avaliação de riscos para cobertura de contratos de seguro…"
+},
+{
+"codigo": "18.01.03.000",
+"codigoNacional": "180103",
+"descricao": "Serviços de prevenção e gerência de riscos seguráveis e congêneres.",
+"label": "18.01.03.000 — Serviços de prevenção e gerência de riscos seguráveis e congêneres."
+},
+{
+"codigo": "19.01.01.000",
+"codigoNacional": "190101",
+"descricao": "Serviços de distribuição e venda de bilhetes e demais produtos de loteria, cartões, pules ou cupons de apostas, sorteios, prêmios, inclusive os decorrentes de títulos de capitalização e congêneres.",
+"label": "19.01.01.000 — Serviços de distribuição e venda de bilhetes e demais produtos de loteria, cartõ…"
+},
+{
+"codigo": "19.01.02.000",
+"codigoNacional": "190102",
+"descricao": "Serviços de distribuição e venda de bingos e congêneres.",
+"label": "19.01.02.000 — Serviços de distribuição e venda de bingos e congêneres."
+},
+{
+"codigo": "20.01.01.000",
+"codigoNacional": "200101",
+"descricao": "Serviços portuários, ferroportuários, utilização de porto, movimentação de passageiros, reboque de embarcações, rebocador escoteiro, atracação, desatracação, serviços de praticagem, capatazia, armazenagem de qualquer natureza, serviços acessórios, movimentação de mercadorias, serviços de apoio marítimo, de movimentação ao largo, serviços de armadores, estiva, conferência, logística e congêneres. (prestado em terra)",
+"label": "20.01.01.000 — Serviços portuários, ferroportuários, utilização de porto, movimentação de passa…"
+},
+{
+"codigo": "20.01.02.000",
+"codigoNacional": "200102",
+"descricao": "Serviços portuários, ferroportuários, utilização de porto, movimentação de passageiros, reboque de embarcações, rebocador escoteiro, atracação, desatracação, serviços de praticagem, capatazia, armazenagem de qualquer natureza, serviços acessórios, movimentação de mercadorias, serviços de apoio marítimo, de movimentação ao largo, serviços de armadores, estiva, conferência, logística e congêneres. (prestado em águas marinhas)",
+"label": "20.01.02.000 — Serviços portuários, ferroportuários, utilização de porto, movimentação de passa…"
+},
+{
+"codigo": "20.02.01.000",
+"codigoNacional": "200201",
+"descricao": "Serviços aeroportuários, utilização de aeroporto, movimentação de passageiros, armazenagem de qualquer natureza, capatazia, movimentação de aeronaves, serviços de apoio aeroportuários, serviços acessórios, movimentação de mercadorias, logística e congêneres.",
+"label": "20.02.01.000 — Serviços aeroportuários, utilização de aeroporto, movimentação de passageiros, a…"
+},
+{
+"codigo": "20.03.01.000",
+"codigoNacional": "200301",
+"descricao": "Serviços de terminais rodoviários, ferroviários, metroviários, movimentação de passageiros, mercadorias, inclusive suas operações, logística e congêneres.",
+"label": "20.03.01.000 — Serviços de terminais rodoviários, ferroviários, metroviários, movimentação de p…"
+},
+{
+"codigo": "21.01.01.000",
+"codigoNacional": "210101",
+"descricao": "Serviços de registros públicos, cartorários e notariais.",
+"label": "21.01.01.000 — Serviços de registros públicos, cartorários e notariais."
+},
+{
+"codigo": "22.01.01.000",
+"codigoNacional": "220101",
+"descricao": "Serviços de exploração de rodovia mediante cobrança de preço ou pedágio dos usuários, envolvendo execução de serviços de conservação, manutenção, melhoramentos para adequação de capacidade e segurança de trânsito, operação, monitoração, assistência aos usuários e outros serviços definidos em contratos, atos de concessão ou de permissão ou em normas oficiais.",
+"label": "22.01.01.000 — Serviços de exploração de rodovia mediante cobrança de preço ou pedágio dos usuá…"
+},
+{
+"codigo": "23.01.01.000",
+"codigoNacional": "230101",
+"descricao": "Serviços de programação e comunicação visual e congêneres.",
+"label": "23.01.01.000 — Serviços de programação e comunicação visual e congêneres."
+},
+{
+"codigo": "23.01.02.000",
+"codigoNacional": "230102",
+"descricao": "Serviços de desenho industrial e congêneres.",
+"label": "23.01.02.000 — Serviços de desenho industrial e congêneres."
+},
+{
+"codigo": "24.01.01.000",
+"codigoNacional": "240101",
+"descricao": "Serviços de chaveiros, confecção de carimbos e congêneres.",
+"label": "24.01.01.000 — Serviços de chaveiros, confecção de carimbos e congêneres."
+},
+{
+"codigo": "24.01.02.000",
+"codigoNacional": "240102",
+"descricao": "Serviços de placas, sinalização visual, banners, adesivos e congêneres.",
+"label": "24.01.02.000 — Serviços de placas, sinalização visual, banners, adesivos e congêneres."
+},
+{
+"codigo": "25.01.01.000",
+"codigoNacional": "250101",
+"descricao": "Funerais, inclusive fornecimento de caixão, urna ou esquifes; aluguel de capela; transporte do corpo cadavérico; fornecimento de flores, coroas e outros paramentos; desembaraço de certidão de óbito; fornecimento de véu, essa e outros adornos; embalsamento, embelezamento, conservação ou restauração de cadáveres.",
+"label": "25.01.01.000 — Funerais, inclusive fornecimento de caixão, urna ou esquifes; aluguel de capela;…"
+},
+{
+"codigo": "25.02.01.000",
+"codigoNacional": "250201",
+"descricao": "Translado intramunicipal de corpos e partes de corpos cadavéricos.",
+"label": "25.02.01.000 — Translado intramunicipal de corpos e partes de corpos cadavéricos."
+},
+{
+"codigo": "25.02.02.000",
+"codigoNacional": "250202",
+"descricao": "Cremação de corpos e partes de corpos cadavéricos.",
+"label": "25.02.02.000 — Cremação de corpos e partes de corpos cadavéricos."
+},
+{
+"codigo": "25.03.01.000",
+"codigoNacional": "250301",
+"descricao": "Planos ou convênio funerários.",
+"label": "25.03.01.000 — Planos ou convênio funerários."
+},
+{
+"codigo": "25.04.01.000",
+"codigoNacional": "250401",
+"descricao": "Manutenção e conservação de jazigos e cemitérios.",
+"label": "25.04.01.000 — Manutenção e conservação de jazigos e cemitérios."
+},
+{
+"codigo": "25.05.01.000",
+"codigoNacional": "250501",
+"descricao": "Cessão de uso de espaços em cemitérios para sepultamento.",
+"label": "25.05.01.000 — Cessão de uso de espaços em cemitérios para sepultamento."
+},
+{
+"codigo": "26.01.01.000",
+"codigoNacional": "260101",
+"descricao": "Serviços de coleta, remessa ou entrega de correspondências, documentos, objetos, bens ou valores, inclusive pelos correios e suas agências franqueadas.",
+"label": "26.01.01.000 — Serviços de coleta, remessa ou entrega de correspondências, documentos, objetos,…"
+},
+{
+"codigo": "26.01.02.000",
+"codigoNacional": "260102",
+"descricao": "Serviços de courrier e congêneres.",
+"label": "26.01.02.000 — Serviços de courrier e congêneres."
+},
+{
+"codigo": "27.01.01.000",
+"codigoNacional": "270101",
+"descricao": "Serviços de assistência social.",
+"label": "27.01.01.000 — Serviços de assistência social."
+},
+{
+"codigo": "28.01.01.000",
+"codigoNacional": "280101",
+"descricao": "Serviços de avaliação de bens e serviços de qualquer natureza.",
+"label": "28.01.01.000 — Serviços de avaliação de bens e serviços de qualquer natureza."
+},
+{
+"codigo": "29.01.01.000",
+"codigoNacional": "290101",
+"descricao": "Serviços de biblioteconomia.",
+"label": "29.01.01.000 — Serviços de biblioteconomia."
+},
+{
+"codigo": "30.01.01.000",
+"codigoNacional": "300101",
+"descricao": "Serviços de biologia e biotecnologia.",
+"label": "30.01.01.000 — Serviços de biologia e biotecnologia."
+},
+{
+"codigo": "30.01.02.000",
+"codigoNacional": "300102",
+"descricao": "Serviços de química.",
+"label": "30.01.02.000 — Serviços de química."
+},
+{
+"codigo": "31.01.01.000",
+"codigoNacional": "310101",
+"descricao": "Serviços técnicos em edificações e congêneres.",
+"label": "31.01.01.000 — Serviços técnicos em edificações e congêneres."
+},
+{
+"codigo": "31.01.02.000",
+"codigoNacional": "310102",
+"descricao": "Serviços técnicos em eletrônica, eletrotécnica e congêneres.",
+"label": "31.01.02.000 — Serviços técnicos em eletrônica, eletrotécnica e congêneres."
+},
+{
+"codigo": "31.01.03.000",
+"codigoNacional": "310103",
+"descricao": "Serviços técnicos em mecânica e congêneres.",
+"label": "31.01.03.000 — Serviços técnicos em mecânica e congêneres."
+},
+{
+"codigo": "31.01.04.000",
+"codigoNacional": "310104",
+"descricao": "Serviços técnicos em telecomunicações e congêneres.",
+"label": "31.01.04.000 — Serviços técnicos em telecomunicações e congêneres."
+},
+{
+"codigo": "32.01.01.000",
+"codigoNacional": "320101",
+"descricao": "Serviços de desenhos técnicos.",
+"label": "32.01.01.000 — Serviços de desenhos técnicos."
+},
+{
+"codigo": "33.01.01.000",
+"codigoNacional": "330101",
+"descricao": "Serviços de desembaraço aduaneiro, comissários, despachantes e congêneres.",
+"label": "33.01.01.000 — Serviços de desembaraço aduaneiro, comissários, despachantes e congêneres."
+},
+{
+"codigo": "34.01.01.000",
+"codigoNacional": "340101",
+"descricao": "Serviços de investigações particulares, detetives e congêneres.",
+"label": "34.01.01.000 — Serviços de investigações particulares, detetives e congêneres."
+},
+{
+"codigo": "35.01.01.000",
+"codigoNacional": "350101",
+"descricao": "Serviços de reportagem e jornalismo.",
+"label": "35.01.01.000 — Serviços de reportagem e jornalismo."
+},
+{
+"codigo": "35.01.02.000",
+"codigoNacional": "350102",
+"descricao": "Serviços de assessoria de imprensa.",
+"label": "35.01.02.000 — Serviços de assessoria de imprensa."
+},
+{
+"codigo": "35.01.03.000",
+"codigoNacional": "350103",
+"descricao": "Serviços de relações públicas.",
+"label": "35.01.03.000 — Serviços de relações públicas."
+},
+{
+"codigo": "36.01.01.000",
+"codigoNacional": "360101",
+"descricao": "Serviços de meteorologia.",
+"label": "36.01.01.000 — Serviços de meteorologia."
+},
+{
+"codigo": "37.01.01.000",
+"codigoNacional": "370101",
+"descricao": "Serviços de artistas, atletas, modelos e manequins.",
+"label": "37.01.01.000 — Serviços de artistas, atletas, modelos e manequins."
+},
+{
+"codigo": "38.01.01.000",
+"codigoNacional": "380101",
+"descricao": "Serviços de museologia.",
+"label": "38.01.01.000 — Serviços de museologia."
+},
+{
+"codigo": "39.01.01.000",
+"codigoNacional": "390101",
+"descricao": "Serviços de ourivesaria e lapidação (quando o material for fornecido pelo tomador do serviço).",
+"label": "39.01.01.000 — Serviços de ourivesaria e lapidação (quando o material for fornecido pelo tomado…"
+},
+{
+"codigo": "40.01.01.000",
+"codigoNacional": "400101",
+"descricao": "Obras de arte sob encomenda.",
+"label": "40.01.01.000 — Obras de arte sob encomenda."
+},
+{
+"codigo": "99.01.01.000",
+"codigoNacional": "990101",
+"descricao": "Serviços sem a incidência de ISSQN e ICMS",
+"label": "99.01.01.000 — Serviços sem a incidência de ISSQN e ICMS"
+}
+]

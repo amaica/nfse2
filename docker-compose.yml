@@ -1,0 +1,15 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: nfse_portal
+      MYSQL_USER: nfse
+      MYSQL_PASSWORD: nfse
+    ports:
+      - "3307:3306"
+    volumes:
+      - nfse_mysql_data:/var/lib/mysql
+
+volumes:
+  nfse_mysql_data:
