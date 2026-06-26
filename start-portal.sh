@@ -2,6 +2,14 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
+# Variáveis da API (certificado, município, JWT): copie portal-api/.env.example → portal-api/.env
+if [[ -f "$ROOT/portal-api/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT/portal-api/.env"
+  set +a
+fi
+
 if [[ -x /tmp/jdk-21/bin/javac ]]; then
   export JAVA_HOME=/tmp/jdk-21
 elif [[ -x /usr/lib/jvm/java-21-openjdk-amd64/bin/javac ]]; then

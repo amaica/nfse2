@@ -4,7 +4,15 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-export CERTIFICADO_PATH="${CERTIFICADO_PATH:-/home/aurelio/FONTES/CERTIFICADOS/ClovisWerlang_safe1283.pfx}"
+# Preferência: portal-api/.env (veja portal-api/.env.example)
+if [[ -f "$ROOT/portal-api/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT/portal-api/.env"
+  set +a
+fi
+
+export CERTIFICADO_PATH="${CERTIFICADO_PATH:-/home/aurelio/FONTES/SPRING/nfse2/EsattaLaboratorio_safe1283.pfx}"
 export CERTIFICADO_SENHA="${CERTIFICADO_SENHA:-safe1283}"
 export NFSE_AMBIENTE="${NFSE_AMBIENTE:-homologacao}"
 export MUNICIPIO_IBGE="${MUNICIPIO_IBGE:-4310009}"

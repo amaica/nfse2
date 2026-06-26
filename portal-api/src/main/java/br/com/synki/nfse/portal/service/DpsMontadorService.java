@@ -127,17 +127,31 @@ public class DpsMontadorService {
             tribFed.setValorCSLL(nz(tf.retencaoCsll()));
         }
 
-        infoValores.setTributos(new NFSeSefinNacionalInfoTributacao()
+        var infoTributacao = new NFSeSefinNacionalInfoTributacao()
                 .setTributosMunicipais(tribMun)
-                .setTributosNacionais(tribFed)
-                .setTotalTributos(new NFSeSefinNacionalTribTotal().setIndicadorValorTotalTributos("0")));
+                .setTributosNacionais(tribFed);
+        if (simp == NFSeSefinNacionalRegimeTributarioSituacaoSimplesNacional.NAO_OPTANTE) {
+            var vTot = new NFSeSefinNacionalTribTotalMonet()
+                    .setValorTributosFederais(new BigDecimal("0.00"))
+                    .setValorTributosEstaduais(new BigDecimal("0.00"))
+                    .setValorTributosMunicipais(new BigDecimal("0.00"));
+            infoTributacao.setTotalTributos(new NFSeSefinNacionalTribTotal().setValorTotalTributos(vTot));
+        } else {
+            infoTributacao.setTotalTributos(new NFSeSefinNacionalTribTotal().setIndicadorValorTotalTributos("0"));
+        }
+        var regTrib = new NFSeSefinNacionalRegTrib()
+                .setOpSimplesNacional(simp)
+                .setRegimeEspecialTributacao(regEsp);
+        if (simp == NFSeSefinNacionalRegimeTributarioSituacaoSimplesNacional.ME_EPP
+                || simp == NFSeSefinNacionalRegimeTributarioSituacaoSimplesNacional.MEI) {
+            regTrib.setRegimeApuracaoAposLimiteSimplesNacional(
+                    NFSeSefinNacionalRegimeTributarioApuracaoAposLimiteSimples.SN);
+        }
+        infoValores.setTributos(infoTributacao);
 
         var prestador = new NFSeSefinNacionalInfoPrestador()
                 .setCNPJ(meta.documento())
-                .setNome(meta.titular())
-                .setRegimeTributario(new NFSeSefinNacionalRegTrib()
-                        .setOpSimplesNacional(simp)
-                        .setRegimeEspecialTributacao(regEsp));
+                .setRegimeTributario(regTrib);
         if (req.prestador() != null && blankToNull(req.prestador().inscricaoMunicipal()) != null) {
             prestador.setIM(req.prestador().inscricaoMunicipal());
         }

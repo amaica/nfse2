@@ -250,7 +250,9 @@ src/main/resources/nfse.properties
 
 # Portal NFS-e
 portal-api/data/
+portal-api/.env
 portal-web/node_modules/
 portal-web/.next/
 portal-web/.env.local
 .vscode/
+*.pfx
