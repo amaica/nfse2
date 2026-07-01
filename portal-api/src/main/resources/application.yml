@@ -2,16 +2,31 @@ spring:
   application:
     name: nfse-portal-api
   datasource:
-    url: ${DB_URL:jdbc:h2:file:./data/nfse-portal;MODE=MySQL;AUTO_SERVER=TRUE}
-    username: ${DB_USER:sa}
-    password: ${DB_PASSWORD:}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/nfse_portal?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
   flyway:
     enabled: true
     locations: classpath:db/migration
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   port: ${PORT:8080}
@@ -22,9 +37,29 @@ nfse:
     # 0 = token permanente (iframe por empresa). >0 = expiração em minutos (sessão temporária).
     jwt-expiration-minutes: ${NFSE_JWT_EXP_MIN:0}
     cors-origins: ${CORS_ORIGINS:http://localhost:3000}
+    admin-secret: ${NFSE_ADMIN_SECRET:admin-change-me}
+    embed-base-url: ${NFSE_EMBED_BASE_URL:http://localhost:3000}
+  mail:
+    enabled: ${MAIL_ENABLED:true}
+    from: ${MAIL_FROM:${MAIL_USER:}}
+    from-name: ${MAIL_FROM_NAME:Synki NFS-e}
+  pdf-retry:
+    enabled: ${NFSE_PDF_RETRY_ENABLED:true}
+    interval-ms: ${NFSE_PDF_RETRY_INTERVAL_MS:60000}
+    max-tentativas: ${NFSE_PDF_RETRY_MAX:72}
+    lote: ${NFSE_PDF_RETRY_LOTE:30}
+  fluxo:
+    enabled: ${FLUXO_IMPORT_ENABLED:false}
+    import-on-startup: ${FLUXO_IMPORT_ON_STARTUP:false}
+    url: jdbc:mysql://${FLUXO_DB_HOST:100.84.22.20}:3306/${FLUXO_DB_NAME:fluxo}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+    username: ${FLUXO_DB_USER:root}
+    password: ${FLUXO_DB_PASSWORD:root}
+    cliente-empresa-fluxo-id: ${FLUXO_CLIENTE_EMPRESA_ID:4}
+    replicar-cadastros-empresa-demo-id: ${FLUXO_DEMO_EMPRESA_ID:1}
+    default-senha-usuario: ${FLUXO_DEFAULT_SENHA:fluxo123}
   demo:
     # Certificado A1 (.pfx) carregado na 1ª subida se ainda não houver upload no portal
-    certificado-path: ${CERTIFICADO_PATH:/home/aurelio/FONTES/CERTIFICADOS/ClovisWerlang_safe1283.pfx}
+    certificado-path: ${CERTIFICADO_PATH:/home/aurelio/FONTES/SPRING/nfse2/EsattaLaboratorio_safe1283.pfx}
     certificado-senha: ${CERTIFICADO_SENHA:safe1283}
     # homologacao = SEFIN/ADN produção restrita (isTeste=true). producao = ambiente real.
     ambiente: ${NFSE_AMBIENTE:homologacao}

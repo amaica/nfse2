@@ -1,5 +1,6 @@
 package br.com.synki.nfse.portal.config;
 
+import br.com.synki.nfse.portal.security.AdminAuthFilter;
 import br.com.synki.nfse.portal.security.EmbedAuthFilter;
 import br.com.synki.nfse.portal.security.EmbedTokenService;
 import org.springframework.context.annotation.Bean;
@@ -29,15 +30,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, EmbedTokenService tokenService, PortalProperties props) throws Exception {
+    SecurityFilterChain filterChain(
+            HttpSecurity http,
+            EmbedTokenService tokenService,
+            AdminAuthFilter adminAuthFilter,
+            PortalProperties props) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsSource(props)))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
+                        .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/nfse/servicos", "/api/nfse/nbs", "/api/nfse/cnae").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated())
+                .addFilterBefore(adminAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new EmbedAuthFilter(tokenService), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

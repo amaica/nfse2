@@ -256,3 +256,5 @@ portal-web/.next/
 portal-web/.env.local
 .vscode/
 *.pfx
+data/
+danfse-*.pdf

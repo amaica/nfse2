@@ -7,7 +7,6 @@ import {
   formParaPayload,
   recalcularValores,
 } from "@/lib/form-defaults";
-import { cn } from "@/lib/utils";
 import {
   buscarTomadorPorDocumento,
   listarTomadores,
@@ -21,7 +20,7 @@ import { ClassificacaoFiscalServico } from "../ClassificacaoFiscalServico";
 import { TributacaoClassificacaoFiscal } from "./TributacaoClassificacaoFiscal";
 import { StepIndicator } from "./StepIndicator";
 import { Card, GhostButton, Input, Label, PrimaryButton, Textarea, Toggle } from "../ui";
-import { Loader2, Printer, Sparkles } from "lucide-react";
+import { Loader2, Mail, Printer, Sparkles } from "lucide-react";
 
 function setPath<K extends keyof EmissaoFormState>(
   form: EmissaoFormState,
@@ -43,6 +42,10 @@ export function EmissaoWizard({ token }: { token: string }) {
   const [erro, setErro] = useState("");
   const [emitindo, setEmitindo] = useState(false);
   const [sucesso, setSucesso] = useState<EmissaoSucesso | null>(null);
+  const [emailDanfe, setEmailDanfe] = useState("");
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
+  const [emailMsg, setEmailMsg] = useState("");
+  const [emailErro, setEmailErro] = useState("");
 
   const carregarContexto = useCallback(() => {
     api.emissaoContexto(token).then((c) => {
@@ -116,6 +119,12 @@ export function EmissaoWizard({ token }: { token: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simples, issRetido]);
 
+  useEffect(() => {
+    if (erro) {
+      document.getElementById("emissao-erro")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [erro]);
+
   async function emitir() {
     setEmitindo(true);
     setErro("");
@@ -130,6 +139,9 @@ export function EmissaoWizard({ token }: { token: string }) {
       const payload = formParaPayload(recalcularValores(form));
       const res = await api.emitir(token, payload);
       setSucesso(res);
+      setEmailDanfe(form.tomador.email?.trim() ?? "");
+      setEmailMsg("");
+      setEmailErro("");
       setStep(4);
       notifyParent({ type: "NFSE_EMITIDA", chave: res.chaveAcesso });
     } catch (e) {
@@ -138,6 +150,29 @@ export function EmissaoWizard({ token }: { token: string }) {
       notifyParent({ type: "ERRO_EMISSAO", mensagem: msg });
     } finally {
       setEmitindo(false);
+    }
+  }
+
+  async function enviarDanfeEmail() {
+    if (!sucesso?.chaveAcesso || !emailDanfe.trim()) return;
+    setEnviandoEmail(true);
+    setEmailErro("");
+    setEmailMsg("");
+    try {
+      const res = await api.enviarDanfeEmail(token, sucesso.chaveAcesso, emailDanfe.trim());
+      if (res.pdfRetryAgendado) {
+        setEmailMsg(
+          `XML enviado para ${emailDanfe.trim()}. O PDF sera reenviado automaticamente quando a SEFIN disponibilizar.`,
+        );
+      } else if (res.anexoXml) {
+        setEmailMsg(`Documento enviado para ${emailDanfe.trim()} (XML em anexo).`);
+      } else {
+        setEmailMsg(`DANFSe enviado para ${emailDanfe.trim()}`);
+      }
+    } catch (e) {
+      setEmailErro(e instanceof Error ? e.message : "Falha ao enviar e-mail");
+    } finally {
+      setEnviandoEmail(false);
     }
   }
 
@@ -168,6 +203,32 @@ export function EmissaoWizard({ token }: { token: string }) {
           </PrimaryButton>
           <GhostButton onClick={() => api.downloadPdf(token, sucesso.chaveAcesso)}>Baixar PDF</GhostButton>
           <GhostButton onClick={() => api.downloadXml(token, sucesso.chaveAcesso)}>XML</GhostButton>
+        </div>
+        <div className="mx-auto mt-6 max-w-md rounded-xl border border-[var(--border)] bg-slate-50 p-4 text-left">
+          <p className="mb-2 text-sm font-medium text-slate-800">Enviar DANFSe por e-mail</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              type="email"
+              placeholder="destinatario@empresa.com.br"
+              value={emailDanfe}
+              onChange={(e) => setEmailDanfe(e.target.value)}
+              className="flex-1"
+            />
+            <PrimaryButton
+              type="button"
+              disabled={enviandoEmail || !emailDanfe.trim()}
+              onClick={() => void enviarDanfeEmail()}
+            >
+              {enviandoEmail ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="mr-1.5 h-4 w-4" />
+              )}
+              Enviar
+            </PrimaryButton>
+          </div>
+          {emailMsg && <p className="mt-2 text-sm text-green-700">{emailMsg}</p>}
+          {emailErro && <p className="mt-2 text-sm text-red-600">{emailErro}</p>}
         </div>
       </Card>
     );
@@ -225,7 +286,7 @@ export function EmissaoWizard({ token }: { token: string }) {
         {step === 2 && (
           <div className="space-y-5">
             <Label>Qual serviço foi prestado?</Label>
-            <ClassificacaoFiscalServico token={token} form={form} patch={patch} ativo={step === 2} />
+            <ClassificacaoFiscalServico token={token} form={form} patch={patch} ctx={ctx} ativo={step === 2} />
             {form.servico.itemListaServico && (
               <div>
                 <Label>Descrição na nota</Label>
@@ -300,7 +361,17 @@ export function EmissaoWizard({ token }: { token: string }) {
                 </dd>
               </div>
             </dl>
-            {erro && <p className="text-sm text-red-600">{erro}</p>}
+          </div>
+        )}
+
+        {erro && (
+          <div
+            id="emissao-erro"
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          >
+            <p className="font-medium">Não foi possível emitir a NFS-e</p>
+            <p className="mt-1">{erro}</p>
           </div>
         )}
 
@@ -308,6 +379,7 @@ export function EmissaoWizard({ token }: { token: string }) {
           token={token}
           form={form}
           patch={patch}
+          ctx={ctx}
           onRecalc={() => setForm((f) => recalcularValores(f))}
         />
 

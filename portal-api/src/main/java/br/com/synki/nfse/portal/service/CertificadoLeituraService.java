@@ -22,7 +22,17 @@ public class CertificadoLeituraService {
         this.certificadoRepository = certificadoRepository;
     }
 
-    public record Metadados(String documento, boolean pessoaFisica, String titular) {}
+    public record Metadados(
+            String documento,
+            boolean pessoaFisica,
+            String titular,
+            java.time.LocalDate validade,
+            boolean eCpf,
+            String cpfTitular) {
+        public Metadados(String documento, boolean pessoaFisica, String titular) {
+            this(documento, pessoaFisica, titular, null, pessoaFisica, pessoaFisica ? documento : null);
+        }
+    }
 
     public Optional<Metadados> lerMetadados(Long empresaId) {
         return certificadoRepository.findFirstByEmpresaIdOrderByCreatedAtDesc(empresaId).flatMap(cert -> {
@@ -31,7 +41,11 @@ public class CertificadoLeituraService {
                 ks.load(new ByteArrayInputStream(cert.getArquivo()), cert.getSenha().toCharArray());
                 var alias = ks.aliases().nextElement();
                 var x509 = (X509Certificate) ks.getCertificate(alias);
-                return Optional.of(parseSubject(x509.getSubjectX500Principal().getName()));
+                var meta = parseSubject(x509.getSubjectX500Principal().getName());
+                var validade = x509.getNotAfter().toInstant()
+                        .atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+                return Optional.of(new Metadados(
+                        meta.documento(), meta.pessoaFisica(), meta.titular(), validade, meta.eCpf(), meta.cpfTitular()));
             } catch (Exception e) {
                 return Optional.empty();
             }
@@ -39,15 +53,36 @@ public class CertificadoLeituraService {
     }
 
     public static Metadados parseSubject(String subject) {
+        String cpfTitular = extrairCpfTitular(subject);
         Matcher cnpj = CNPJ.matcher(subject);
         if (cnpj.find()) {
-            return new Metadados(cnpj.group(1), false, extrairNome(subject, cnpj.group(1)));
+            boolean eCpf = subject.contains("e-CPF");
+            return new Metadados(cnpj.group(1), false, extrairNome(subject, cnpj.group(1)), null, eCpf, cpfTitular);
         }
         Matcher cpf = CPF.matcher(subject);
         if (cpf.find()) {
-            return new Metadados(cpf.group(1), true, extrairNome(subject, cpf.group(1)));
+            String doc = cpf.group(1);
+            return new Metadados(doc, true, extrairNome(subject, doc), null, true, doc);
         }
         throw new IllegalArgumentException("Nao foi possivel identificar CPF/CNPJ no certificado digital");
+    }
+
+    /** CPF do titular no CN (ex.: NOME:12345678901 em certificado e-CPF). */
+    private static String extrairCpfTitular(String subject) {
+        int cn = subject.indexOf("CN=");
+        if (cn < 0) {
+            return null;
+        }
+        String cnValue = subject.substring(cn + 3);
+        int comma = cnValue.indexOf(',');
+        if (comma > 0) {
+            cnValue = cnValue.substring(0, comma);
+        }
+        Matcher cpfNoCn = Pattern.compile(":(\\d{11})$").matcher(cnValue.trim());
+        if (cpfNoCn.find()) {
+            return cpfNoCn.group(1);
+        }
+        return null;
     }
 
     private static String extrairNome(String subject, String documento) {
@@ -61,6 +96,8 @@ public class CertificadoLeituraService {
             cnValue = cnValue.substring(0, comma);
         }
         cnValue = cnValue.replace(":" + documento, "").replace(documento + ":", "").trim();
+        // e-CNPJ: CN costuma ser "TITULAR:CPF" e o CNPJ vem em outro campo do subject
+        cnValue = cnValue.replaceAll(":\\d{11}$", "").trim();
         return cnValue.isBlank() ? "Prestador" : cnValue;
     }
 }

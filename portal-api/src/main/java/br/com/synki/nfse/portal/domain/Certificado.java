@@ -16,7 +16,7 @@ public class Certificado {
     private Long empresaId;
 
     @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "LONGBLOB")
     private byte[] arquivo;
 
     @Column(nullable = false)

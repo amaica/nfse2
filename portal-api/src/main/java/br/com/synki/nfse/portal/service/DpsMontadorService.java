@@ -6,17 +6,16 @@ import io.github.t3wv.nfse.nacional.classes.nfsenacional.*;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class DpsMontadorService {
 
-    private static final AtomicLong NUMERO = new AtomicLong(System.currentTimeMillis() % 1_000_000);
     private static final ZoneId BR = ZoneId.of("-03:00");
 
     private final CertificadoLeituraService certificadoLeituraService;
@@ -25,7 +24,7 @@ public class DpsMontadorService {
         this.certificadoLeituraService = certificadoLeituraService;
     }
 
-    public NFSeSefinNacionalDPS montar(Long empresaId, ConfiguracaoNfse cfg, EmissaoCompletaRequest req) {
+    public NFSeSefinNacionalDPS montar(Long empresaId, ConfiguracaoNfse cfg, EmissaoCompletaRequest req, Long numeroReservado) {
         var meta = certificadoLeituraService.lerMetadados(empresaId)
                 .orElseThrow(() -> new IllegalStateException("Certificado A1 nao cadastrado"));
 
@@ -34,7 +33,15 @@ public class DpsMontadorService {
                 : NFSeSefinNacionalTipoAmbiente.HOMOLOGACAO;
 
         var id = req.identificacao();
-        long numeroDps = id.numeroRps() != null ? id.numeroRps() : NUMERO.incrementAndGet();
+        long numeroDps;
+        if (id.numeroRps() != null) {
+            numeroDps = id.numeroRps();
+        } else if (numeroReservado != null) {
+            numeroDps = numeroReservado;
+        } else {
+            throw new IllegalStateException("Numero da NFS-e nao reservado");
+        }
+        var serieRps = primeiroNaoVazio(id.serieRps(), cfg.getSerieRps(), "1");
         LocalDate competencia = LocalDate.parse(id.competencia());
         ZonedDateTime dhEmi = parseDataHora(id.dataEmissao());
 
@@ -74,26 +81,23 @@ public class DpsMontadorService {
                         .setCodigoInternoContribuinte(blankToNull(req.servico().cnae())));
 
         var valores = req.valores();
-        var vServPrest = new NFSeSefinNacionalVServPrest().setValorServicos(valores.valorServicos());
+        var vServPrest = new NFSeSefinNacionalVServPrest().setValorServicos(moeda(valores.valorServicos()));
 
         var infoValores = new NFSeSefinNacionalInfoValores().setValoresServicoPrestado(vServPrest);
 
-        if (nz(valores.descontoIncondicionado()).signum() > 0 || nz(valores.descontoCondicionado()).signum() > 0) {
+        if (moeda(valores.descontoIncondicionado()).signum() > 0 || moeda(valores.descontoCondicionado()).signum() > 0) {
             infoValores.setValoresDescontosCondicionadosEIncondicionados(new NFSeSefinNacionalVDescCondIncond()
-                    .setValorDescontoIncondicionado(nz(valores.descontoIncondicionado()))
-                    .setValorDescontoCondicionado(nz(valores.descontoCondicionado())));
+                    .setValorDescontoIncondicionado(moeda(valores.descontoIncondicionado()))
+                    .setValorDescontoCondicionado(moeda(valores.descontoCondicionado())));
         }
-        if (nz(valores.deducoes()).signum() > 0) {
+        if (moeda(valores.deducoes()).signum() > 0) {
             infoValores.setValoresDeducaoBaseCalculo(new NFSeSefinNacionalInfoDedRed()
-                    .setValorMonetarioPadrao(valores.deducoes().toPlainString()));
+                    .setValorMonetarioPadrao(moeda(valores.deducoes()).toPlainString()));
         }
 
         var tribMun = new NFSeSefinNacionalTribMunicipal()
                 .setTributacaoISSQN(tribIss)
                 .setTipoRetencaoISSQN(retIss);
-        if (valores.aliquota() != null) {
-            tribMun.setPercentualAliquota(valores.aliquota());
-        }
 
         var cstPis = NFSeSefinNacionalTribOutrosPisCofinsSituacaoTributaria.CONTRIBUICAO_SEM_INCIDENCIA;
         if (req.tributacaoFederal() != null && blankToNull(req.tributacaoFederal().cstPisCofins()) != null) {
@@ -104,27 +108,31 @@ public class DpsMontadorService {
             }
         }
         var pisCofins = new NFSeSefinNacionalTribOutrosPisCofins().setCST(cstPis);
-        if (req.tributacaoFederal() != null) {
+        if (req.tributacaoFederal() != null && exigeDetalhePisCofins(cstPis)) {
             var tf = req.tributacaoFederal();
-            if (tf.baseCalculoPisCofins() != null) {
-                pisCofins.setValorBaseCalculoPisCofins(tf.baseCalculoPisCofins());
+            var temPisCofins = positivo(tf.aliquotaPis()) || positivo(tf.aliquotaCofins())
+                    || positivo(tf.valorPis()) || positivo(tf.valorCofins());
+            if (temPisCofins) {
+                var valorServico = moeda(valores.valorServicos());
+                if (tf.baseCalculoPisCofins() != null) {
+                    var bc = moeda(tf.baseCalculoPisCofins()).min(valorServico);
+                    if (positivo(bc)) {
+                        pisCofins.setValorBaseCalculoPisCofins(bc);
+                    }
+                }
+                if (positivo(tf.aliquotaPis())) pisCofins.setAliquotaPIS(moeda(tf.aliquotaPis()));
+                if (positivo(tf.aliquotaCofins())) pisCofins.setAliquotaCOFINS(moeda(tf.aliquotaCofins()));
+                if (positivo(tf.valorPis())) pisCofins.setValorPIS(moeda(tf.valorPis()));
+                if (positivo(tf.valorCofins())) pisCofins.setValorCofins(moeda(tf.valorCofins()));
             }
-            if (tf.aliquotaPis() != null) pisCofins.setAliquotaPIS(tf.aliquotaPis());
-            if (tf.aliquotaCofins() != null) pisCofins.setAliquotaCOFINS(tf.aliquotaCofins());
-            if (tf.valorPis() != null) pisCofins.setValorPIS(tf.valorPis());
-            if (tf.valorCofins() != null) pisCofins.setValorCofins(tf.valorCofins());
         }
         var tribFed = new NFSeSefinNacionalTribFederal().setPiscofins(pisCofins);
         if (req.retencoesFederais() != null) {
             var r = req.retencoesFederais();
-            tribFed.setValorCP(nz(r.inss()));
-            tribFed.setValorIRRF(nz(r.ir()));
-            tribFed.setValorCSLL(nz(r.csll()));
+            definirRetencoesFederais(tribFed, r.inss(), r.ir(), r.csll());
         } else if (req.tributacaoFederal() != null && Boolean.TRUE.equals(req.tributacaoFederal().habilitarRetencoes())) {
             var tf = req.tributacaoFederal();
-            tribFed.setValorCP(nz(tf.retencaoInss()));
-            tribFed.setValorIRRF(nz(tf.retencaoIrrf()));
-            tribFed.setValorCSLL(nz(tf.retencaoCsll()));
+            definirRetencoesFederais(tribFed, tf.retencaoInss(), tf.retencaoIrrf(), tf.retencaoCsll());
         }
 
         var infoTributacao = new NFSeSefinNacionalInfoTributacao()
@@ -163,7 +171,7 @@ public class DpsMontadorService {
         var inf = new NFSeSefinNacionalInfDPS()
                 .setTipoAmbiente(ambiente)
                 .setDataHoraEmissao(dhEmi)
-                .setSerie(id.serieRps())
+                .setSerie(serieRps)
                 .setNumeroDPS(numeroDps)
                 .setCodigoMunicipioEmissao(cfg.getCodigoMunicipioIbge())
                 .setDataInicioPrestacaoServico(competencia)
@@ -347,6 +355,31 @@ public class DpsMontadorService {
             }
         }
         return "";
+    }
+
+    private static boolean exigeDetalhePisCofins(NFSeSefinNacionalTribOutrosPisCofinsSituacaoTributaria cst) {
+        return cst != NFSeSefinNacionalTribOutrosPisCofinsSituacaoTributaria.NENHUM
+                && cst != NFSeSefinNacionalTribOutrosPisCofinsSituacaoTributaria.CONTRIBUICAO_SEM_INCIDENCIA
+                && cst != NFSeSefinNacionalTribOutrosPisCofinsSituacaoTributaria.SUSPENSAO_CONTRIBUICAO;
+    }
+
+    private static void definirRetencoesFederais(
+            NFSeSefinNacionalTribFederal tribFed, BigDecimal inss, BigDecimal irrf, BigDecimal csll) {
+        if (positivo(inss)) tribFed.setValorCP(moeda(inss));
+        if (positivo(irrf)) tribFed.setValorIRRF(moeda(irrf));
+        if (positivo(csll)) tribFed.setValorCSLL(moeda(csll));
+    }
+
+    /** Normaliza para o padrão TSDec15V2 do XML (sempre 2 casas decimais). */
+    private static BigDecimal moeda(BigDecimal v) {
+        if (v == null) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+        return v.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static boolean positivo(BigDecimal v) {
+        return v != null && v.signum() > 0;
     }
 
     private static BigDecimal nz(BigDecimal v) {

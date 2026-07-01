@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface CertificadoRepository extends JpaRepository<Certificado, Long> {
     Optional<Certificado> findFirstByEmpresaIdOrderByCreatedAtDesc(Long empresaId);
+    void deleteByEmpresaId(Long empresaId);
 }

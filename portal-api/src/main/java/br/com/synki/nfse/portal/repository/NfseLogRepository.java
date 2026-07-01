@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface NfseLogRepository extends JpaRepository<NfseLog, Long> {
     List<NfseLog> findTop50ByEmpresaIdOrderByCreatedAtDesc(Long empresaId);
+    void deleteByEmpresaId(Long empresaId);
 }

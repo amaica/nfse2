@@ -30,11 +30,13 @@ export function TributacaoClassificacaoFiscal({
   form,
   patch,
   onRecalc,
+  ctx,
 }: {
   token: string;
   form: EmissaoFormState;
   patch: Patch;
   onRecalc: () => void;
+  ctx?: import("@/lib/api").EmissaoContexto | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -61,7 +63,7 @@ export function TributacaoClassificacaoFiscal({
       {open && (
         <div className="mt-3 space-y-2 animate-in">
           <Accordion title="Classificação fiscal do serviço" defaultOpen>
-            <ClassificacaoFiscalServico token={token} form={form} patch={(s, f, v) => patchR(s, f, v)} />
+            <ClassificacaoFiscalServico token={token} form={form} patch={(s, f, v) => patchR(s, f, v)} ctx={ctx} />
           </Accordion>
 
           <Accordion title="Valores NFSe" defaultOpen={false}>

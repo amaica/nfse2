@@ -9,6 +9,8 @@ if [[ -f "$ROOT/portal-api/.env" ]]; then
   source "$ROOT/portal-api/.env"
   set +a
 fi
+API_PORT="${PORT:-8080}"
+unset PORT
 
 if [[ -x /tmp/jdk-21/bin/javac ]]; then
   export JAVA_HOME=/tmp/jdk-21
@@ -36,12 +38,25 @@ fi
 echo "==> Empacotando API..."
 (cd "$ROOT/portal-api" && mvn -q package -DskipTests)
 
-echo "==> Subindo API :8080 ..."
-(java -jar "$ROOT/portal-api/target/nfse-portal-api-0.1.0-SNAPSHOT.jar") &
+echo "==> Liberando portas 8080 e 3000 (instancias anteriores)..."
+pkill -f 'nfse-portal-api-0.1.0-SNAPSHOT.jar' 2>/dev/null || true
+pkill -f 'portal-web.*next dev' 2>/dev/null || true
+pkill -f 'node.*next dev' 2>/dev/null || true
+sleep 1
+for port in 8080 3000; do
+  if fuser -n tcp "$port" >/dev/null 2>&1; then
+    echo "AVISO: porta $port ainda em uso. Encerrando processo..."
+    fuser -k -n tcp "$port" >/dev/null 2>&1 || true
+    sleep 1
+  fi
+done
+
+echo "==> Subindo API :${API_PORT} ..."
+(PORT="$API_PORT" java -jar "$ROOT/portal-api/target/nfse-portal-api-0.1.0-SNAPSHOT.jar") &
 API_PID=$!
 
 echo "==> Subindo Next.js :3000 ..."
-(cd "$ROOT/portal-web" && npm run dev) &
+(cd "$ROOT/portal-web" && PORT=3000 npm run dev) &
 WEB_PID=$!
 
 cleanup() { kill $API_PID $WEB_PID 2>/dev/null || true; }
@@ -49,29 +64,32 @@ trap cleanup EXIT
 
 echo "Aguardando API..."
 for i in $(seq 1 60); do
-  if curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
+  if curl -sf "http://localhost:${API_PORT}/actuator/health" >/dev/null 2>&1; then
     break
   fi
   sleep 2
 done
 
-TOKEN=$(curl -sf -X POST http://localhost:8080/api/auth/login \
+TOKEN=$(curl -sf -X POST "http://localhost:${API_PORT}/api/auth/login" \
   -H 'Content-Type: application/json' \
   -d '{"email":"admin@synki.demo","senha":"demo123"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])" 2>/dev/null || echo "")
 
 echo ""
 echo "============================================"
 if [[ -n "$TOKEN" ]]; then
-  echo "Portal: http://localhost:3000/embed?t=$TOKEN"
+  echo "Portal (email/senha na URL):"
+  echo "  http://localhost:3000/embed?email=admin@synki.demo&senha=demo123"
+  echo "Portal (token): http://localhost:3000/embed?t=$TOKEN"
 else
   echo "Portal: http://localhost:3000/embed  (obtenha token via login)"
 fi
-echo "API:    http://localhost:8080"
+echo "API:    http://localhost:${API_PORT}"
 echo "Login:  admin@synki.demo / demo123"
 echo ""
 echo "Homologacao (padrao): NFSE_AMBIENTE=${NFSE_AMBIENTE:-homologacao}"
 echo "Certificado: ${CERTIFICADO_PATH:- (application.yml)}"
 echo "Municipio:   ${MUNICIPIO_IBGE:-4310009} ${PREFEITURA:-Ibiruba/RS}"
+echo "Admin:  http://localhost:3000/admin  (NFSE_ADMIN_SECRET)"
 echo "Doc:         ./PORTAL.md"
 echo "Ctrl+C para encerrar"
 echo "============================================"

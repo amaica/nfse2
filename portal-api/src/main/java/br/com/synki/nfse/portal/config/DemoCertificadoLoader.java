@@ -54,6 +54,9 @@ public class DemoCertificadoLoader implements ApplicationRunner {
             if (!meta.pessoaFisica()) {
                 empresaRepository.findById(1L).ifPresent(e -> {
                     e.setCnpj(meta.documento());
+                    if (meta.titular() != null && !meta.titular().isBlank()) {
+                        e.setNome(meta.titular());
+                    }
                     empresaRepository.save(e);
                 });
             }

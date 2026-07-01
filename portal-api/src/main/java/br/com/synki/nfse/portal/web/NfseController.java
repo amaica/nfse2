@@ -4,12 +4,14 @@ import br.com.synki.nfse.portal.security.EmbedSession;
 import br.com.synki.nfse.portal.service.AuditLogService;
 import br.com.synki.nfse.portal.service.EmissaoContextoService;
 import br.com.synki.nfse.portal.service.EmissaoDpsService;
+import br.com.synki.nfse.portal.service.NfseEmailService;
 import br.com.synki.nfse.portal.service.NfseLibService;
 import br.com.synki.nfse.portal.service.CnaeService;
 import br.com.synki.nfse.portal.service.NbsService;
 import br.com.synki.nfse.portal.service.ServicosLc116Service;
 import br.com.synki.nfse.portal.repository.NfseLogRepository;
 import br.com.synki.nfse.portal.web.dto.EmissaoCompletaRequest;
+import br.com.synki.nfse.portal.web.dto.EnviarDanfeEmailRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -31,6 +34,7 @@ public class NfseController {
     private final ServicosLc116Service servicosLc116Service;
     private final NbsService nbsService;
     private final CnaeService cnaeService;
+    private final NfseEmailService nfseEmailService;
 
     public NfseController(
             NfseLibService nfseLibService,
@@ -40,7 +44,8 @@ public class NfseController {
             NfseLogRepository logRepository,
             ServicosLc116Service servicosLc116Service,
             NbsService nbsService,
-            CnaeService cnaeService) {
+            CnaeService cnaeService,
+            NfseEmailService nfseEmailService) {
         this.nfseLibService = nfseLibService;
         this.emissaoDpsService = emissaoDpsService;
         this.emissaoContextoService = emissaoContextoService;
@@ -49,6 +54,7 @@ public class NfseController {
         this.servicosLc116Service = servicosLc116Service;
         this.nbsService = nbsService;
         this.cnaeService = cnaeService;
+        this.nfseEmailService = nfseEmailService;
     }
 
     @GetMapping("/emissao/contexto")
@@ -65,14 +71,19 @@ public class NfseController {
     public Object servicos(
             @RequestParam(required = false) String termo,
             @RequestParam(defaultValue = "400") int limite,
-            @RequestParam(required = false) String grupo) {
-        var itens = servicosLc116Service.buscar(termo, limite, grupo);
+            @RequestParam(required = false) String grupo,
+            @RequestParam(required = false) String cnaes) {
+        var listaCnaes = cnaes == null || cnaes.isBlank()
+                ? List.<String>of()
+                : List.of(cnaes.split(","));
+        var itens = servicosLc116Service.buscar(termo, limite, grupo, listaCnaes);
         return Map.of(
                 "total", servicosLc116Service.total(),
                 "totalAgro", servicosLc116Service.totalAgro(),
                 "totalMecanico", servicosLc116Service.totalMecanico(),
                 "exibidos", itens.size(),
                 "grupo", grupo != null ? grupo : "todos",
+                "filtradoPorCnae", !listaCnaes.isEmpty() && (termo == null || termo.isBlank()),
                 "itens", itens);
     }
 
@@ -121,6 +132,22 @@ public class NfseController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=nfse.pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
+    }
+
+    @PostMapping("/pdf/{chave}/email")
+    public Object enviarPdfPorEmail(
+            @AuthenticationPrincipal EmbedSession session,
+            @PathVariable String chave,
+            @Valid @RequestBody EnviarDanfeEmailRequest body) throws Exception {
+        var resultado = nfseEmailService.enviarDanfe(session.empresaId(), chave, body.destinatario(), body.mensagem());
+        auditLogService.log(session.empresaId(), session.usuarioId(), "EMAIL_DANFE",
+                "DANFSe " + chave + " -> " + body.destinatario()
+                        + (resultado.anexoXml() ? " (XML; PDF agendado)" : ""));
+        return Map.of(
+                "ok", true,
+                "destinatario", body.destinatario(),
+                "anexoXml", resultado.anexoXml(),
+                "pdfRetryAgendado", resultado.pdfRetryAgendado());
     }
 
     @GetMapping("/xml/{chave}")

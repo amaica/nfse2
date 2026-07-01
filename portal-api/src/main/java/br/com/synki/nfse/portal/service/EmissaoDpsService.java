@@ -12,24 +12,40 @@ public class EmissaoDpsService {
 
     private final NfseLibService nfseLibService;
     private final DpsMontadorService dpsMontadorService;
+    private final NumeracaoNfseService numeracaoNfseService;
 
-    public EmissaoDpsService(NfseLibService nfseLibService, DpsMontadorService dpsMontadorService) {
+    public EmissaoDpsService(
+            NfseLibService nfseLibService,
+            DpsMontadorService dpsMontadorService,
+            NumeracaoNfseService numeracaoNfseService) {
         this.nfseLibService = nfseLibService;
         this.dpsMontadorService = dpsMontadorService;
+        this.numeracaoNfseService = numeracaoNfseService;
     }
 
     public NFSeSefinNacionalNFSePostResponseSucesso emitir(Long empresaId, EmissaoCompletaRequest req) throws Exception {
         var cfg = nfseLibService.configOrThrow(empresaId);
-        var dps = dpsMontadorService.montar(empresaId, cfg, req);
-        var result = nfseLibService.facadeForEmpresa(empresaId).emitirNFSe(dps);
-        if (result.getKey() == java.net.HttpURLConnection.HTTP_CREATED) {
-            return (NFSeSefinNacionalNFSePostResponseSucesso) result.getValue();
+        Long numeroReservado = null;
+        if (req.identificacao().numeroRps() == null) {
+            numeroReservado = numeracaoNfseService.reservarProximoNumero(empresaId);
         }
-        var erro = (NFSeSefinNacionalNFSePostResponseErro) result.getValue();
-        var mensagens = erro.getErros() == null ? "" : erro.getErros().stream()
-                .map(e -> e.getCodigo() + " - " + e.getDescricao()
-                        + (e.getComplemento() != null && !e.getComplemento().isBlank() ? " (" + e.getComplemento() + ")" : ""))
-                .collect(Collectors.joining("; "));
-        throw new IllegalArgumentException(mensagens.isBlank() ? "SEFIN rejeitou a emissao" : mensagens);
+        try {
+            var dps = dpsMontadorService.montar(empresaId, cfg, req, numeroReservado);
+            var result = nfseLibService.facadeForEmpresa(empresaId).emitirNFSe(dps);
+            if (result.getKey() == java.net.HttpURLConnection.HTTP_CREATED) {
+                return (NFSeSefinNacionalNFSePostResponseSucesso) result.getValue();
+            }
+            var erro = (NFSeSefinNacionalNFSePostResponseErro) result.getValue();
+            var mensagens = erro.getErros() == null ? "" : erro.getErros().stream()
+                    .map(e -> e.getCodigo() + " - " + e.getDescricao()
+                            + (e.getComplemento() != null && !e.getComplemento().isBlank() ? " (" + e.getComplemento() + ")" : ""))
+                    .collect(Collectors.joining("; "));
+            throw new IllegalArgumentException(mensagens.isBlank() ? "SEFIN rejeitou a emissao" : mensagens);
+        } catch (Exception e) {
+            if (numeroReservado != null) {
+                numeracaoNfseService.liberarNumero(empresaId, numeroReservado);
+            }
+            throw e;
+        }
     }
 }

@@ -22,6 +22,9 @@ public class NbsService {
     private List<NbsItem> catalogo = List.of();
 
     private static final Map<String, String> LC116_PREFIXO_NBS = Map.ofEntries(
+            Map.entry("0402", "123019"),
+            Map.entry("0403", "123019"),
+            Map.entry("0401", "123011"),
             Map.entry("0101", "114061"),
             Map.entry("0107", "114061"),
             Map.entry("0103", "114061"),

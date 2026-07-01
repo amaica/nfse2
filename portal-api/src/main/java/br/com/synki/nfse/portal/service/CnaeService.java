@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 public class CnaeService {
@@ -86,6 +87,14 @@ public class CnaeService {
         return catalogo.size();
     }
 
+    public Optional<CnaeItem> porCodigo(String codigo) {
+        var d = codigo == null ? "" : codigo.replaceAll("\\D", "");
+        if (d.isEmpty()) {
+            return Optional.empty();
+        }
+        return catalogo.stream().filter(c -> c.codigo().equals(d)).findFirst();
+    }
+
     private record Scored(CnaeItem item, int score) {}
 
     private static int pontuar(CnaeItem c, String termoNorm, String soDigitos) {
@@ -134,7 +143,8 @@ public class CnaeService {
                 new CnaeItem("0161001", "01.61-0/01", "SERVIÇO DE PULVERIZAÇÃO E CONTROLE DE PRAGAS AGRÍCOLAS", "01.61-0/01 — SERVIÇO DE PULVERIZAÇÃO…"),
                 new CnaeItem("3314707", "33.14-7/07", "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E EQUIPAMENTOS AGRÍCOLAS", "33.14-7/07 — MANUTENÇÃO… AGRÍCOLAS"),
                 new CnaeItem("4520001", "45.20-0/01", "SERVIÇOS DE MANUTENÇÃO E REPARAÇÃO MECÂNICA DE VEÍCULOS AUTOMOTORES", "45.20-0/01 — MANUTENÇÃO MECÂNICA…"),
-                new CnaeItem("6201501", "62.01-5/01", "DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA", "62.01-5/01 — DESENVOLVIMENTO DE SOFTWARE…")
+                new CnaeItem("6201501", "62.01-5/01", "DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA", "62.01-5/01 — DESENVOLVIMENTO DE SOFTWARE…"),
+                new CnaeItem("8630504", "86.30-5/04", "Laboratórios clínicos", "86.30-5/04 — Laboratórios clínicos")
         );
     }
 

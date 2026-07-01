@@ -157,7 +157,9 @@ export function formParaPayload(f: EmissaoFormState): import("@/types/emissao-fo
     },
     tributacaoFederal: {
       ...f.tributacaoFederal,
-      baseCalculoPisCofins: parseNumero(f.tributacaoFederal.baseCalculoPisCofins),
+      baseCalculoPisCofins: parseNumero(f.tributacaoFederal.baseCalculoPisCofins) != null
+        ? Math.min(parseNumero(f.tributacaoFederal.baseCalculoPisCofins)!, valorServicos)
+        : undefined,
       aliquotaPis: parseNumero(f.tributacaoFederal.aliquotaPis),
       aliquotaCofins: parseNumero(f.tributacaoFederal.aliquotaCofins),
       valorPis: parseNumero(f.tributacaoFederal.valorPis),
@@ -245,7 +247,7 @@ export function recalcularValores(f: EmissaoFormState): EmissaoFormState {
     },
     tributacaoFederal: {
       ...f.tributacaoFederal,
-      baseCalculoPisCofins: f.tributacaoFederal.baseCalculoPisCofins || fmt(base),
+      baseCalculoPisCofins: fmt(base),
       valorPis: fmt(valorPis),
       valorCofins: fmt(valorCofins),
       retencaoIss: f.regime.issRetido === "2" ? fmt(iss) : f.tributacaoFederal.retencaoIss,

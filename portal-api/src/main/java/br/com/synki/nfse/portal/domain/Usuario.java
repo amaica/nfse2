@@ -26,6 +26,12 @@ public class Usuario {
     @Column(nullable = false)
     private boolean ativo = true;
 
+    @Column(length = 11)
+    private String cpf;
+
+    @Column(length = 30)
+    private String perfil = "OPERADOR";
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -44,4 +50,16 @@ public class Usuario {
     public String getEmail() { return email; }
     public String getSenha() { return senha; }
     public boolean isAtivo() { return ativo; }
+    public String getCpf() { return cpf; }
+    public String getPerfil() { return perfil; }
+
+    public void setSenha(String senhaHash) {
+        this.senha = senhaHash;
+    }
+
+    public void setNome(String nome) { this.nome = nome; }
+    public void setEmail(String email) { this.email = email; }
+    public void setAtivo(boolean ativo) { this.ativo = ativo; }
+    public void setCpf(String cpf) { this.cpf = cpf; }
+    public void setPerfil(String perfil) { this.perfil = perfil; }
 }

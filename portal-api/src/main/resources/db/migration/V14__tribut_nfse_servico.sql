@@ -1,0 +1,36 @@
+-- Tributação de serviços para NFS-e (por empresa)
+CREATE TABLE tribut_nfse_servico (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    empresa_id BIGINT NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    item_lista_servico VARCHAR(9) NOT NULL,
+    codigo_tributacao_municipio VARCHAR(20) NULL,
+    nbs VARCHAR(9) NULL,
+    cnae VARCHAR(7) NULL,
+    descricao_servico VARCHAR(2000) NULL,
+    municipio_prestacao_ibge VARCHAR(7) NULL,
+    aliquota_iss DECIMAL(7, 4) NULL,
+    tributacao_issqn VARCHAR(1) NOT NULL DEFAULT '1',
+    iss_retido VARCHAR(1) NOT NULL DEFAULT '1',
+    simples_nacional VARCHAR(1) NOT NULL DEFAULT '1',
+    regime_especial VARCHAR(1) NOT NULL DEFAULT '0',
+    cst_pis_cofins VARCHAR(2) NULL DEFAULT '08',
+    aliquota_pis DECIMAL(7, 4) NULL,
+    aliquota_cofins DECIMAL(7, 4) NULL,
+    tipo_retencao_pis_cofins VARCHAR(1) NULL,
+    habilitar_retencoes BOOLEAN NOT NULL DEFAULT FALSE,
+    retencao_inss DECIMAL(15, 2) NULL,
+    retencao_irrf DECIMAL(15, 2) NULL,
+    retencao_csll DECIMAL(15, 2) NULL,
+    ibs_cbs_cst VARCHAR(3) NOT NULL DEFAULT '000',
+    ibs_cbs_class_trib VARCHAR(6) NOT NULL DEFAULT '000001',
+    aliquota_ibs DECIMAL(7, 4) NOT NULL DEFAULT 0.0100,
+    aliquota_cbs DECIMAL(7, 4) NOT NULL DEFAULT 0.0100,
+    habilitar_ibs_cbs BOOLEAN NOT NULL DEFAULT TRUE,
+    principal BOOLEAN NOT NULL DEFAULT FALSE,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_nfse_servico_empresa FOREIGN KEY (empresa_id) REFERENCES empresa (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_nfse_servico_empresa ON tribut_nfse_servico (empresa_id, ativo);

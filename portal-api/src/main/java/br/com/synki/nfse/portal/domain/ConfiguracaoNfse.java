@@ -25,6 +25,12 @@ public class ConfiguracaoNfse {
     @Column(name = "token_integracao", length = 512)
     private String tokenIntegracao;
 
+    @Column(name = "serie_rps", nullable = false, length = 10)
+    private String serieRps = "1";
+
+    @Column(name = "ultimo_numero_nfse", nullable = false)
+    private long ultimoNumeroNfse = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -33,9 +39,22 @@ public class ConfiguracaoNfse {
     public String getPrefeitura() { return prefeitura; }
     public String getCodigoMunicipioIbge() { return codigoMunicipioIbge; }
     public String getAmbiente() { return ambiente; }
+    public String getSerieRps() { return serieRps; }
+    public long getUltimoNumeroNfse() { return ultimoNumeroNfse; }
     public boolean isProducao() { return "producao".equalsIgnoreCase(ambiente); }
 
     public void setPrefeitura(String prefeitura) { this.prefeitura = prefeitura; }
     public void setCodigoMunicipioIbge(String codigoMunicipioIbge) { this.codigoMunicipioIbge = codigoMunicipioIbge; }
     public void setAmbiente(String ambiente) { this.ambiente = ambiente; }
+    public void setSerieRps(String serieRps) { this.serieRps = serieRps; }
+    public void setUltimoNumeroNfse(long ultimoNumeroNfse) { this.ultimoNumeroNfse = ultimoNumeroNfse; }
+
+    public static ConfiguracaoNfse criar(Long empresaId, String prefeitura, String codigoMunicipioIbge, String ambiente) {
+        var c = new ConfiguracaoNfse();
+        c.empresaId = empresaId;
+        c.prefeitura = prefeitura;
+        c.codigoMunicipioIbge = codigoMunicipioIbge;
+        c.ambiente = ambiente != null && !ambiente.isBlank() ? ambiente : "homologacao";
+        return c;
+    }
 }

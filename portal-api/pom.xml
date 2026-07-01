@@ -23,6 +23,16 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.github.wmixvideo</groupId>
+            <artifactId>nfe</artifactId>
+            <version>5.0.61</version>
+        </dependency>
+        <dependency>
+            <groupId>br.com.swconsultoria</groupId>
+            <artifactId>java-danfe</artifactId>
+            <version>1.8</version>
+        </dependency>
+        <dependency>
             <groupId>io.github.t3wv</groupId>
             <artifactId>nfse</artifactId>
             <version>1.0.41-SNAPSHOT</version>
@@ -48,6 +58,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

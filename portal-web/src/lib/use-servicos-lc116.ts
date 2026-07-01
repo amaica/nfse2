@@ -8,18 +8,18 @@ export type GrupoServico = "todos" | "agro" | "mecanico";
 
 export function useServicosLc116(token: string) {
   const [itens, setItens] = useState<ServicoLc116[]>([]);
-  const [meta, setMeta] = useState<Pick<ServicosLc116Response, "total" | "totalAgro" | "totalMecanico" | "exibidos"> | null>(null);
+  const [meta, setMeta] = useState<Pick<ServicosLc116Response, "total" | "totalAgro" | "totalMecanico" | "exibidos" | "filtradoPorCnae"> | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const seq = useRef(0);
 
   const buscar = useCallback(
-    (termo: string, grupo: GrupoServico = "todos", limite = 400) => {
+    (termo: string, grupo: GrupoServico = "todos", limite = 400, cnaes?: string[]) => {
       const id = ++seq.current;
       setCarregando(true);
       setErro(null);
       api
-        .buscarServicos(token, termo, limite, grupo)
+        .buscarServicos(token, termo, limite, grupo, cnaes)
         .then((r) => {
           if (id !== seq.current) return;
           setMeta({
@@ -27,6 +27,7 @@ export function useServicosLc116(token: string) {
             totalAgro: r.totalAgro,
             totalMecanico: r.totalMecanico,
             exibidos: r.exibidos,
+            filtradoPorCnae: r.filtradoPorCnae,
           });
           setItens(
             r.itens.map((s) => ({
@@ -58,14 +59,15 @@ export function useDebouncedServicos(
   grupo: GrupoServico,
   enabled: boolean,
   limite = 400,
+  cnaes?: string[],
 ) {
   const { itens, meta, carregando, erro, buscar } = useServicosLc116(token);
 
   useEffect(() => {
     if (!enabled) return;
-    const t = window.setTimeout(() => buscar(termo, grupo, limite), 220);
+    const t = window.setTimeout(() => buscar(termo, grupo, limite, cnaes), 220);
     return () => window.clearTimeout(t);
-  }, [termo, grupo, enabled, limite, buscar]);
+  }, [termo, grupo, enabled, limite, cnaes, buscar]);
 
   return { itens, meta, carregando, erro, buscar };
 }
