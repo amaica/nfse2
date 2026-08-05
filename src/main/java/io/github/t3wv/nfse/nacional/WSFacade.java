@@ -5,6 +5,8 @@ import io.github.t3wv.nfse.nacional.classes.nfsenacional.*;
 import io.github.t3wv.nfse.nacional.classes.parametrosmunicipais.consulta.NFSeParametrosMunicipaisConvenio;
 import io.github.t3wv.nfse.nacional.classes.parametrosmunicipais.consulta.NFSeParametrosMunicipaisConvenioResponse;
 
+import io.github.t3wv.nfse.nacional.danfse.DANFSeJasper;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
@@ -31,7 +33,34 @@ public class WSFacade {
      * @return Array de bytes representando o arquivo PDF do DANFSe.
      * @throws Exception Se ocorrer um erro durante a requisição ou no processamento da resposta.
      */
+    /**
+     * Gera o DANFSe (PDF) localmente a partir do XML da NFS-e (NT 008/2026).
+     * A API ADN de PDF foi suspensa em 03/08/2026 — o PDF e gerado via Jasper na lib.
+     *
+     * @param nfseChaveAcesso Chave de acesso da NFSe com 50 digitos.
+     * @return Array de bytes representando o arquivo PDF do DANFSe.
+     * @throws Exception Se ocorrer erro ao baixar o XML ou gerar o PDF.
+     */
     public byte[] downloadNotaPdf(final String nfseChaveAcesso) throws Exception {
+        final String xml = downloadNotaXml(nfseChaveAcesso);
+        if (xml == null || xml.isBlank()) {
+            throw new IllegalStateException("XML da NFS-e indisponivel para gerar DANFSe");
+        }
+        return DANFSeJasper.gerarPdfDeXml(xml);
+    }
+
+    /**
+     * Gera o DANFSe (PDF) diretamente a partir de um XML ja obtido.
+     */
+    public byte[] gerarDanfsePdfDeXml(final String xmlNfse) throws Exception {
+        return DANFSeJasper.gerarPdfDeXml(xmlNfse);
+    }
+
+    /**
+     * @deprecated API ADN suspensa (NT 008/2026). Preferir {@link #downloadNotaPdf(String)}.
+     */
+    @Deprecated
+    public byte[] downloadNotaPdfAdn(final String nfseChaveAcesso) throws Exception {
         return wsDANFSe.downloadDANFSePdfByChaveAcesso(nfseChaveAcesso);
     }
 
