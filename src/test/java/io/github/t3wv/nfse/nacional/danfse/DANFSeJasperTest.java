@@ -78,6 +78,29 @@ public class DANFSeJasperTest {
         Assertions.assertNotNull(params.get("V_SERV"));
         Assertions.assertNotNull(params.get("V_LIQ"));
         Assertions.assertTrue(params.get("RODAPE").toString().contains("NT 008/2026"));
+        Assertions.assertEquals(Boolean.FALSE, params.get("IBS_PRESENTE"));
+    }
+
+    @Test
+    public void deveMapearBlocoIbscbsQuandoPresenteNoXml() throws Exception {
+        final Map<String, Object> params = DANFSeXmlMapper.fromXml(resource("danfse/nfse-producao-ibscbs.xml"));
+        Assertions.assertEquals(Boolean.TRUE, params.get("IBS_PRESENTE"));
+        Assertions.assertEquals("000 / 000001", params.get("IBS_CST_CCLASS"));
+        Assertions.assertTrue(params.get("IBS_IND_OPER_LOC").toString().contains("100301"));
+        Assertions.assertTrue(params.get("IBS_IND_OPER_LOC").toString().contains("4310009"));
+        Assertions.assertEquals("727,50", params.get("IBS_V_BC"));
+        Assertions.assertEquals("0,73", params.get("IBS_V_IBS_TOT"));
+        Assertions.assertEquals("6,55", params.get("IBS_V_CBS"));
+        Assertions.assertEquals("7,28", params.get("IBS_V_TOT_IBSCBS"));
+        Assertions.assertEquals("757,28", params.get("IBS_V_LIQ_COM_IBSCBS"));
+
+        final byte[] pdf = DANFSeJasper.gerarPdfDeXml(resource("danfse/nfse-producao-ibscbs.xml"));
+        Assertions.assertTrue(pdf.length > 1000);
+        Assertions.assertEquals("%PDF", new String(pdf, 0, 4, StandardCharsets.US_ASCII));
+
+        final Path out = Path.of("target", "danfse-producao-ibscbs.pdf");
+        Files.createDirectories(out.getParent());
+        Files.write(out, pdf);
     }
 
     private static String resource(final String path) throws Exception {
