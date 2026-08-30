@@ -13,6 +13,9 @@ public interface NfsePdfEmailPendenteRepository extends JpaRepository<NfsePdfEma
     Optional<NfsePdfEmailPendente> findByEmpresaIdAndChaveAcessoAndDestinatarioAndStatus(
             Long empresaId, String chaveAcesso, String destinatario, Status status);
 
+    boolean existsByEmpresaIdAndChaveAcessoAndDestinatarioAndStatus(
+            Long empresaId, String chaveAcesso, String destinatario, Status status);
+
     List<NfsePdfEmailPendente> findTop30ByStatusAndProximaTentativaEmLessThanEqualOrderByProximaTentativaEmAsc(
             Status status, Instant agora);
 }

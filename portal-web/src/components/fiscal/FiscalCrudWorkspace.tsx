@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ApiError } from "@/lib/api";
+import { ApiError, formatarCnpjCpf } from "@/lib/api";
 import { fiscalApi, type FiscalField } from "@/lib/fiscal-api";
+import { useEmpresaScope } from "@/hooks/useEmpresaScope";
 
 type Props = {
   title: string;
@@ -21,6 +22,7 @@ export function FiscalCrudWorkspace({
   defaultForm = {},
   reformaSection = false,
 }: Props) {
+  const { empresaId, empresaNome, empresaCnpj } = useEmpresaScope();
   const [itens, setItens] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
@@ -42,8 +44,11 @@ export function FiscalCrudWorkspace({
   }, [endpoint]);
 
   useEffect(() => {
-    carregar();
-  }, [carregar]);
+    if (!empresaId) return;
+    setShowForm(false);
+    setEditId(null);
+    void carregar();
+  }, [empresaId, carregar]);
 
   const abrirNovo = () => {
     setEditId(null);
@@ -142,7 +147,15 @@ export function FiscalCrudWorkspace({
   return (
     <div className="fiscal-card">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-slate-800">{title}</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-800">{title}</h1>
+          {empresaNome && (
+            <p className="mt-1 text-sm text-slate-500">
+              Emitente: <span className="font-medium text-slate-700">{empresaNome}</span>
+              {empresaCnpj ? ` · ${formatarCnpjCpf(empresaCnpj)}` : ""}
+            </p>
+          )}
+        </div>
         <div className="flex gap-2">
           <button type="button" className="fiscal-btn-primary" onClick={abrirNovo}>
             Novo

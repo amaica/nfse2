@@ -36,31 +36,56 @@ nfse:
     jwt-secret: ${NFSE_JWT_SECRET:change-me-in-production-use-long-random-string}
     # 0 = token permanente (iframe por empresa). >0 = expiração em minutos (sessão temporária).
     jwt-expiration-minutes: ${NFSE_JWT_EXP_MIN:0}
+    refresh-expiration-days: ${NFSE_REFRESH_DAYS:30}
     cors-origins: ${CORS_ORIGINS:http://localhost:3000}
     admin-secret: ${NFSE_ADMIN_SECRET:admin-change-me}
     embed-base-url: ${NFSE_EMBED_BASE_URL:http://localhost:3000}
+    stripe:
+      enabled: ${STRIPE_ENABLED:false}
+      env: ${STRIPE_ENV:test}
+      test-secret-key: ${STRIPE_TEST_SECRET_KEY:}
+      test-price-id: ${STRIPE_TEST_PRICE_ID:}
+      live-secret-key: ${STRIPE_LIVE_SECRET_KEY:}
+      live-price-id: ${STRIPE_LIVE_PRICE_ID:}
+      webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+      portal-return-url: ${STRIPE_PORTAL_RETURN_URL:http://localhost:3000/conta/assinatura}
   mail:
     enabled: ${MAIL_ENABLED:true}
     from: ${MAIL_FROM:${MAIL_USER:}}
     from-name: ${MAIL_FROM_NAME:Synki NFS-e}
+  billing:
+    dunning-cron: ${NFSE_DUNNING_CRON:0 0 9 * * *}
   pdf-retry:
-    enabled: ${NFSE_PDF_RETRY_ENABLED:true}
+    enabled: ${NFSE_PDF_RETRY_ENABLED:false}
     interval-ms: ${NFSE_PDF_RETRY_INTERVAL_MS:60000}
     max-tentativas: ${NFSE_PDF_RETRY_MAX:72}
     lote: ${NFSE_PDF_RETRY_LOTE:30}
+  nfe:
+    distribuicao:
+      enabled: ${NFE_DISTRIBUICAO_ENABLED:true}
+      cron: ${NFE_DISTRIBUICAO_CRON:0 20 * * * *}
+      max-paginas: ${NFE_DISTRIBUICAO_MAX_PAGINAS:20}
   fluxo:
+    # Ferramenta pontual de importacao do sistema legado "Fluxo" — desligada por padrao.
+    # Ao habilitar, todos os valores abaixo devem ser definidos explicitamente via env var
+    # (sem defaults funcionais aqui, para nao versionar host/credenciais reais no git).
     enabled: ${FLUXO_IMPORT_ENABLED:false}
     import-on-startup: ${FLUXO_IMPORT_ON_STARTUP:false}
-    url: jdbc:mysql://${FLUXO_DB_HOST:100.84.22.20}:3306/${FLUXO_DB_NAME:fluxo}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
-    username: ${FLUXO_DB_USER:root}
-    password: ${FLUXO_DB_PASSWORD:root}
+    url: jdbc:mysql://${FLUXO_DB_HOST:}:3306/${FLUXO_DB_NAME:fluxo}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+    username: ${FLUXO_DB_USER:}
+    password: ${FLUXO_DB_PASSWORD:}
     cliente-empresa-fluxo-id: ${FLUXO_CLIENTE_EMPRESA_ID:4}
     replicar-cadastros-empresa-demo-id: ${FLUXO_DEMO_EMPRESA_ID:1}
-    default-senha-usuario: ${FLUXO_DEFAULT_SENHA:fluxo123}
+    default-senha-usuario: ${FLUXO_DEFAULT_SENHA:}
+    admin-plataforma-email: ${FLUXO_ADMIN_EMAIL:admin@synki.demo}
+    conta-nome: ${FLUXO_CONTA_NOME:}
+    owner-email: ${FLUXO_OWNER_EMAIL:}
+    owner-nome: ${FLUXO_OWNER_NOME:}
+    operadores: ${FLUXO_OPERADORES:}
   demo:
-    # Certificado A1 (.pfx) carregado na 1ª subida se ainda não houver upload no portal
-    certificado-path: ${CERTIFICADO_PATH:/home/aurelio/FONTES/SPRING/nfse2/EsattaLaboratorio_safe1283.pfx}
-    certificado-senha: ${CERTIFICADO_SENHA:safe1283}
+    # Opcional: certificado demo carregado na 1ª subida (somente dev/homolog)
+    certificado-path: ${CERTIFICADO_PATH:}
+    certificado-senha: ${CERTIFICADO_SENHA:}
     # homologacao = SEFIN/ADN produção restrita (isTeste=true). producao = ambiente real.
     ambiente: ${NFSE_AMBIENTE:homologacao}
     codigo-municipio-ibge: ${MUNICIPIO_IBGE:4310009}

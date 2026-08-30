@@ -22,7 +22,9 @@ public class NfseLibService {
     private final CertificadoRepository certificadoRepository;
     private final ConfiguracaoNfseRepository configuracaoRepository;
 
-    public NfseLibService(CertificadoRepository certificadoRepository, ConfiguracaoNfseRepository configuracaoRepository) {
+    public NfseLibService(
+            CertificadoRepository certificadoRepository,
+            ConfiguracaoNfseRepository configuracaoRepository) {
         this.certificadoRepository = certificadoRepository;
         this.configuracaoRepository = configuracaoRepository;
     }
@@ -48,6 +50,9 @@ public class NfseLibService {
         return facadeForEmpresa(empresaId).buscarNFSeByChaveAcesso(chave);
     }
 
+    /**
+     * Gera DANFSe via lib (Jasper + XML) — NT 008/2026.
+     */
     public byte[] downloadPdf(Long empresaId, String chave) throws Exception {
         return facadeForEmpresa(empresaId).downloadNotaPdf(chave);
     }

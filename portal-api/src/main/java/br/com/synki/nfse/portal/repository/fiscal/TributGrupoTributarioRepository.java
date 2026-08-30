@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface TributGrupoTributarioRepository extends JpaRepository<TributGrupoTributario, Long> {
     List<TributGrupoTributario> findByEmpresaIdOrderByDescricaoAsc(Long empresaId);
     Optional<TributGrupoTributario> findByIdAndEmpresaId(Long id, Long empresaId);
+    Optional<TributGrupoTributario> findFirstByEmpresaIdAndDescricaoIgnoreCase(Long empresaId, String descricao);
+    Optional<TributGrupoTributario> findFirstByEmpresaIdOrderByIdAsc(Long empresaId);
     long countByEmpresaId(Long empresaId);
     void deleteByEmpresaId(Long empresaId);
 }

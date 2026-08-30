@@ -11,7 +11,7 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "empresa_id", nullable = false)
+    @Column(name = "empresa_id")
     private Long empresaId;
 
     @Column(nullable = false)
@@ -62,4 +62,5 @@ public class Usuario {
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
     public void setCpf(String cpf) { this.cpf = cpf; }
     public void setPerfil(String perfil) { this.perfil = perfil; }
+    public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
 }

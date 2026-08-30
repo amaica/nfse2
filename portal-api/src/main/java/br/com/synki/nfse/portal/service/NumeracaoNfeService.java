@@ -3,6 +3,7 @@ package br.com.synki.nfse.portal.service;
 import br.com.synki.nfse.portal.domain.ConfiguracaoDocumento;
 import br.com.synki.nfse.portal.repository.ConfiguracaoDocumentoRepository;
 import br.com.synki.nfse.portal.repository.EmpresaEnderecoRepository;
+import br.com.synki.nfse.portal.repository.EmpresaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,12 +12,18 @@ public class NumeracaoNfeService {
 
     private final ConfiguracaoDocumentoRepository documentoRepository;
     private final EmpresaEnderecoRepository enderecoRepository;
+    private final NfeUltimoNumeroService ultimoNumeroService;
+    private final EmpresaRepository empresaRepository;
 
     public NumeracaoNfeService(
             ConfiguracaoDocumentoRepository documentoRepository,
-            EmpresaEnderecoRepository enderecoRepository) {
+            EmpresaEnderecoRepository enderecoRepository,
+            NfeUltimoNumeroService ultimoNumeroService,
+            EmpresaRepository empresaRepository) {
         this.documentoRepository = documentoRepository;
         this.enderecoRepository = enderecoRepository;
+        this.ultimoNumeroService = ultimoNumeroService;
+        this.empresaRepository = empresaRepository;
     }
 
     public record ReservaNumeracao(String serie, long numero, Long enderecoId) {}
@@ -27,11 +34,14 @@ public class NumeracaoNfeService {
             var end = enderecoRepository.findLockedById(enderecoId)
                     .filter(e -> e.getEmpresaId().equals(empresaId))
                     .orElseThrow(() -> new IllegalArgumentException("Endereco nao encontrado"));
+            var empresa = empresaRepository.findById(empresaId).orElseThrow();
+            end = ultimoNumeroService.sincronizarEndereco(empresa, end);
             long proximo = end.getUltimoNumeroNfe() + 1;
             end.setUltimoNumeroNfe(proximo);
             enderecoRepository.save(end);
             return new ReservaNumeracao(end.getSerieNfe(), proximo, enderecoId);
         }
+        ultimoNumeroService.sincronizarEmpresa(empresaId);
         var doc = documentoRepository.findLockedByEmpresaIdAndTipo(empresaId, tipo)
                 .orElseThrow(() -> new IllegalStateException("Configure " + tipo + " da empresa"));
         long proximo = doc.getUltimoNumero() + 1;

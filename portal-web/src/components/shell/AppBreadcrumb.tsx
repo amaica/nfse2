@@ -1,14 +1,16 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { APP_MENU } from "@/lib/menu-config";
+import { getMenuForPapel, type MenuItem } from "@/lib/menu-config";
+import { useAppSession } from "@/hooks/useAppSession";
 
-function findBreadcrumb(path: string): string[] {
-  for (const item of APP_MENU) {
+function findBreadcrumb(menu: MenuItem[], path: string): string[] {
+  for (const item of menu) {
     if (item.href === path) return [item.label];
     if (item.items) {
       for (const sub of item.items) {
         if (sub.href === path) return [item.label, sub.label];
+        if (sub.href && path.startsWith(sub.href + "/")) return [item.label, sub.label];
       }
     }
   }
@@ -17,14 +19,17 @@ function findBreadcrumb(path: string): string[] {
 
 export function AppBreadcrumb() {
   const pathname = usePathname();
-  const crumbs = findBreadcrumb(pathname);
+  const { session, ready } = useAppSession();
+  const menu = ready ? getMenuForPapel(session?.papel) : getMenuForPapel(undefined);
+
+  const crumbs = findBreadcrumb(menu, pathname);
 
   return (
-    <nav className="text-sm text-slate-500" aria-label="Breadcrumb">
+    <nav className="text-sm text-agro-muted" aria-label="Breadcrumb">
       {crumbs.map((c, i) => (
         <span key={c}>
-          {i > 0 && <span className="mx-2 text-slate-300">/</span>}
-          <span className={i === crumbs.length - 1 ? "font-medium text-slate-800" : ""}>{c}</span>
+          {i > 0 && <span className="mx-2 text-[var(--primary-200)]">/</span>}
+          <span className={i === crumbs.length - 1 ? "font-medium text-agro-body" : ""}>{c}</span>
         </span>
       ))}
     </nav>

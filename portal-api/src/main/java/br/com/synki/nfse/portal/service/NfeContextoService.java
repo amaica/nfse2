@@ -21,21 +21,25 @@ public class NfeContextoService {
     private final CertificadoLeituraService certificadoLeituraService;
     private final ConfiguracaoDocumentoRepository documentoRepository;
     private final EmpresaEnderecoRepository enderecoRepository;
+    private final NfeUltimoNumeroService ultimoNumeroService;
 
     public NfeContextoService(
             EmpresaRepository empresaRepository,
             NfeLibService nfeLibService,
             CertificadoLeituraService certificadoLeituraService,
             ConfiguracaoDocumentoRepository documentoRepository,
-            EmpresaEnderecoRepository enderecoRepository) {
+            EmpresaEnderecoRepository enderecoRepository,
+            NfeUltimoNumeroService ultimoNumeroService) {
         this.empresaRepository = empresaRepository;
         this.nfeLibService = nfeLibService;
         this.certificadoLeituraService = certificadoLeituraService;
         this.documentoRepository = documentoRepository;
         this.enderecoRepository = enderecoRepository;
+        this.ultimoNumeroService = ultimoNumeroService;
     }
 
     public Map<String, Object> contexto(Long empresaId, DFModelo modelo) throws Exception {
+        ultimoNumeroService.sincronizarEmpresa(empresaId);
         var empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new IllegalStateException("Empresa nao encontrada"));
         var certificadoOk = nfeLibService.temCertificado(empresaId);
@@ -52,7 +56,7 @@ public class NfeContextoService {
         String emitenteNome = meta.map(CertificadoLeituraService.Metadados::titular).orElse(empresa.getNome());
 
         var enderecos = enderecoRepository.findByEmpresaIdOrderByPrincipalDescApelidoAsc(empresaId).stream()
-                .map(this::mapEndereco)
+                .map(e -> mapEndereco(empresa, e))
                 .toList();
 
         var body = new LinkedHashMap<String, Object>();
@@ -67,9 +71,14 @@ public class NfeContextoService {
         body.put("ufEmitente", nfeLibService.ufEmitente(empresaId, null).name());
         body.put("certificadoCadastrado", certificadoOk);
         body.put("documentoHabilitado", doc != null && doc.isHabilitado());
+        long ultimoDoc = doc != null ? doc.getUltimoNumero() : 0;
+        if (doc != null && empresa.getFluxoLegacyId() != null) {
+            ultimoDoc = ultimoNumeroService.ultimoEmitido(
+                    empresaId, doc.getSerie(), empresa.getFluxoLegacyId(), ultimoDoc);
+        }
         body.put("serie", doc != null ? doc.getSerie() : "1");
-        body.put("ultimoNumero", doc != null ? doc.getUltimoNumero() : 0);
-        body.put("proximoNumero", doc != null ? doc.getUltimoNumero() + 1 : 1);
+        body.put("ultimoNumero", ultimoDoc);
+        body.put("proximoNumero", ultimoDoc + 1);
         body.put("enderecos", enderecos);
         body.put("optanteSimples", empresa.isOptanteSimples());
         body.put("podeEmitir", certificadoOk && (emitenteDocumento.length() == 11 || emitenteDocumento.length() == 14));
@@ -81,7 +90,9 @@ public class NfeContextoService {
         return body;
     }
 
-    private Map<String, Object> mapEndereco(EmpresaEndereco e) {
+    private Map<String, Object> mapEndereco(Empresa empresa, EmpresaEndereco e) {
+        long ultimo = ultimoNumeroService.ultimoEmitido(
+                empresa.getId(), e.getSerieNfe(), empresa.getFluxoLegacyId(), e.getUltimoNumeroNfe());
         var m = new LinkedHashMap<String, Object>();
         m.put("id", e.getId());
         m.put("apelido", e.getApelido());
@@ -90,8 +101,8 @@ public class NfeContextoService {
         m.put("codigoMunicipioIbge", e.getCodigoMunicipioIbge());
         m.put("inscricaoEstadual", e.getInscricaoEstadual());
         m.put("serieNfe", e.getSerieNfe());
-        m.put("ultimoNumeroNfe", e.getUltimoNumeroNfe());
-        m.put("proximoNumeroNfe", e.getUltimoNumeroNfe() + 1);
+        m.put("ultimoNumeroNfe", ultimo);
+        m.put("proximoNumeroNfe", ultimo + 1);
         m.put("principal", e.isPrincipal());
         return m;
     }

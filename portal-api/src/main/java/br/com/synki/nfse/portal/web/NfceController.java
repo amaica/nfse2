@@ -1,6 +1,8 @@
 package br.com.synki.nfse.portal.web;
 
 import br.com.synki.nfse.portal.security.EmbedSession;
+import br.com.synki.nfse.portal.security.PortalAuthorization;
+import br.com.synki.nfse.portal.service.AssinaturaService;
 import br.com.synki.nfse.portal.service.AuditLogService;
 import br.com.synki.nfse.portal.service.EmissaoNfeService;
 import br.com.synki.nfse.portal.service.NfeContextoService;
@@ -19,16 +21,30 @@ public class NfceController {
     private final EmissaoNfeService emissaoService;
     private final NfeOperacoesService operacoesService;
     private final AuditLogService auditLogService;
+    private final PortalAuthorization authz;
+    private final AssinaturaService assinaturaService;
 
     public NfceController(
             NfeContextoService contextoService,
             EmissaoNfeService emissaoService,
             NfeOperacoesService operacoesService,
-            AuditLogService auditLogService) {
+            AuditLogService auditLogService,
+            PortalAuthorization authz,
+            AssinaturaService assinaturaService) {
         this.contextoService = contextoService;
         this.emissaoService = emissaoService;
         this.operacoesService = operacoesService;
         this.auditLogService = auditLogService;
+        this.authz = authz;
+        this.assinaturaService = assinaturaService;
+    }
+
+    @GetMapping("/notas")
+    public Object listarNotas(
+            @AuthenticationPrincipal EmbedSession session,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return emissaoService.listarNotas(session.empresaId(), DFModelo.NFCE, page, size);
     }
 
     @GetMapping("/emissao/contexto")
@@ -45,9 +61,12 @@ public class NfceController {
     public Object enviarLote(
             @AuthenticationPrincipal EmbedSession session,
             @RequestBody(required = false) NfeEmitirLoteRequest body) throws Exception {
+        authz.requireOperador(session);
+        assinaturaService.requireEmissaoNfe(session.empresaId());
         var resultado = emissaoService.enviarLote(session.empresaId(), DFModelo.NFCE, body);
         auditLogService.log(session.empresaId(), session.usuarioId(), "EMISSAO_NFCE",
                 "NFC-e " + resultado.getOrDefault("chaveAcesso", ""));
+        assinaturaService.registrarNfeEmitida(session.empresaId());
         return resultado;
     }
 
@@ -69,6 +88,8 @@ public class NfceController {
     public Object cancelar(
             @AuthenticationPrincipal EmbedSession session,
             @Valid @RequestBody NfeCancelarRequest body) throws Exception {
+        authz.requireOperador(session);
+        auditLogService.log(session.empresaId(), session.usuarioId(), "CANCELAMENTO_NFCE", body.chave());
         return operacoesService.cancelar(session.empresaId(), DFModelo.NFCE, body);
     }
 
@@ -76,6 +97,9 @@ public class NfceController {
     public Object inutilizar(
             @AuthenticationPrincipal EmbedSession session,
             @Valid @RequestBody NfeInutilizarRequest body) throws Exception {
+        authz.requireOperador(session);
+        auditLogService.log(session.empresaId(), session.usuarioId(), "INUTILIZACAO_NFCE",
+                body.serie() + " " + body.numeroInicial() + "-" + body.numeroFinal());
         return operacoesService.inutilizar(session.empresaId(), DFModelo.NFCE, body);
     }
 
@@ -83,6 +107,8 @@ public class NfceController {
     public Object contingenciaEpec(
             @AuthenticationPrincipal EmbedSession session,
             @RequestBody(required = false) NfeContingenciaEpecRequest body) throws Exception {
+        authz.requireOperador(session);
+        auditLogService.log(session.empresaId(), session.usuarioId(), "EPEC_NFCE", "contingencia");
         return operacoesService.enviarEpec(session.empresaId(), DFModelo.NFCE, body != null ? body : new NfeContingenciaEpecRequest(null, null, null, null, null));
     }
 }

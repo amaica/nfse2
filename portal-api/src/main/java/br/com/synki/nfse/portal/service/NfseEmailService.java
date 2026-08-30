@@ -60,8 +60,11 @@ public class NfseEmailService {
             throw new IllegalStateException("PDF e XML da NFS-e indisponiveis para a chave informada");
         }
         enviarDanfeXml(empresaId, chave, email, mensagem, xml.getBytes(StandardCharsets.UTF_8));
-        pdfEmailRetryService.agendar(empresaId, chave, email, mensagem);
-        return new EnviarDanfeResult(true, true);
+        if (!pdfEmailRetryService.jaEnviado(empresaId, chave, email)) {
+            pdfEmailRetryService.agendar(empresaId, chave, email, mensagem);
+            return new EnviarDanfeResult(true, true);
+        }
+        return new EnviarDanfeResult(true, false);
     }
 
     public void enviarDanfePdf(

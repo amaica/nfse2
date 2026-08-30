@@ -1,0 +1,21 @@
+[Unit]
+Description=AgroNota Portal API (Spring Boot)
+After=network-online.target mariadb.service
+Wants=network-online.target
+Requires=mariadb.service
+
+[Service]
+Type=simple
+User=agrownota
+Group=agrownota
+WorkingDirectory=/opt/agrownota
+EnvironmentFile=/opt/agrownota/portal-api/.env
+Environment=SERVER_PORT=8088
+ExecStart=/usr/lib/jvm/temurin-21-jre-amd64/bin/java -Xms512m -Xmx1536m -jar /opt/agrownota/portal-api/nfse-portal-api-0.1.0-SNAPSHOT.jar --spring.profiles.active=prod
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/agrownota/api.log
+StandardError=append:/var/log/agrownota/api.log
+
+[Install]
+WantedBy=multi-user.target

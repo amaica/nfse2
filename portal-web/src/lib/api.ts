@@ -1,4 +1,23 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+import { apiBaseUrl } from "./api-base";
+
+const API_URL = apiBaseUrl();
+
+export type LoginResponse = {
+  token: string;
+  refreshToken?: string;
+  empresaId: number;
+  empresaNome?: string;
+  empresaCnpj?: string;
+  usuarioId: number;
+  nome: string;
+  email: string;
+  papel?: string;
+  contaId?: number;
+  contaNome?: string;
+  onboardingRequired?: boolean;
+  emailIntegracao?: string;
+  senhaIntegracao?: string;
+};
 
 export class ApiError extends Error {
   constructor(
@@ -69,21 +88,78 @@ export const api = {
       const errBody = await res.json().catch(() => ({}));
       throw new ApiError((errBody as { erro?: string }).erro ?? "Credenciais invalidas", res.status);
     }
-    return res.json() as Promise<{
-      token: string;
-      empresaId: number;
-      empresaNome: string;
-      empresaCnpj: string;
-      usuarioId: number;
-      nome: string;
-      email: string;
-    }>;
+    return res.json() as Promise<LoginResponse>;
   },
+
+  register: async (payload: {
+    nome: string;
+    email: string;
+    senha: string;
+    nomeConta: string;
+  }) => {
+    const res = await fetch(`${API_URL}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new ApiError(
+        (errBody as { erro?: string; message?: string }).erro ??
+          (errBody as { message?: string }).message ??
+          "Falha no cadastro",
+        res.status,
+      );
+    }
+    return res.json() as Promise<LoginResponse>;
+  },
+
+  consultarCnpjPublico: async (cnpj: string) => {
+    const doc = cnpj.replace(/\D/g, "");
+    const res = await fetch(`${API_URL}/api/public/cnpj/${doc}`);
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new ApiError(
+        (errBody as { erro?: string; message?: string }).erro ??
+          (errBody as { message?: string }).message ??
+          "CNPJ nao encontrado",
+        res.status,
+      );
+    }
+    return res.json() as Promise<CnpjPublicoResponse>;
+  },
+
+  onboardingStatus: (token: string) =>
+    request<OnboardingStatusResponse>("/api/onboarding/status", token),
+
+  onboardingEmpresa: (token: string, payload: OnboardingEmpresaPayload) =>
+    request<LoginResponse>("/api/onboarding/empresa", token, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 
   validateEmbed: (t: string) =>
     fetch(`${API_URL}/api/auth/embed/validate?t=${encodeURIComponent(t)}`).then((r) =>
       r.ok ? r.json() : Promise.reject(new Error("Token invalido")),
     ),
+
+  sessaoAtual: (token: string) =>
+    request<Omit<LoginResponse, "token"> & { empresaId: number }>("/api/auth/me", token),
+
+  listarEmpresas: (token: string, q = "", limite = 40) => {
+    const params = new URLSearchParams({ limite: String(limite) });
+    if (q.trim()) params.set("q", q.trim());
+    return request<{ empresaAtualId: number; itens: EmpresaResumo[] }>(
+      `/api/auth/empresas?${params}`,
+      token,
+    );
+  },
+
+  trocarEmpresa: (token: string, empresaId: number) =>
+    request<LoginResponse>("/api/auth/trocar-empresa", token, {
+      method: "POST",
+      body: JSON.stringify({ empresaId }),
+    }),
 
   config: (token: string) => request<ConfigNfse>("/api/nfse/config", token),
 
@@ -209,11 +285,43 @@ export const api = {
       body: JSON.stringify(body ?? {}),
     }),
 
+  nfeListarNotas: (token: string, q: string) =>
+    request<{
+      itens: Array<{
+        id: number;
+        chave?: string;
+        serie?: string;
+        numero?: number;
+        statusProtocolo?: string;
+      }>;
+    }>(`/api/nfe/notas?q=${encodeURIComponent(q)}&size=15`, token),
+
+  nfeListarEntradas: (token: string, q: string) =>
+    request<
+      Array<{
+        id: number;
+        chave?: string;
+        serie?: string;
+        numero?: string;
+        nomeEmitente?: string;
+        cnpjEmitente?: string;
+        dataEmissao?: string;
+        valor?: number;
+      }>
+    >(`/api/nfe/notas-entrada?q=${encodeURIComponent(q)}`, token),
+
   nfeConsultarLote: (token: string, recibo: string) =>
     request<NfeConsultaResultado>(`/api/nfe/lotes/${encodeURIComponent(recibo)}`, token),
 
   nfeConsultarNota: (token: string, chave: string) =>
     request<NfeConsultaResultado>(`/api/nfe/notas/consultar/${chave}`, token),
+
+  nfeBaixarXmlsDestinatario: (token: string) =>
+    request<DistribuicaoDFeResultado>(
+      "/api/nfe/distribuicao/baixar",
+      token,
+      { method: "POST" },
+    ),
 
   nfeCancelar: (token: string, body: NfeCancelarBody) =>
     request<NfeEventoResultado>("/api/nfe/notas/cancelar", token, {
@@ -268,11 +376,21 @@ async function adminRequest<T>(path: string, adminKey: string, init?: RequestIni
   return res.json() as Promise<T>;
 }
 
+export type DistribuicaoDFeResultado = {
+  ok: boolean;
+  novas: number;
+  paginas?: number;
+  ultimoNsu?: string;
+  statusSefaz?: string;
+  motivo?: string;
+};
+
 export type EmpresaResumo = {
   id: number;
   nome: string;
   cnpj: string;
-  ativo: boolean;
+  atual?: boolean;
+  ativo?: boolean;
   nomeFantasia?: string;
   municipio?: string;
   uf?: string;
@@ -308,6 +426,8 @@ export type EmpresaResumo = {
   };
   cnaePrincipalDescricao?: string;
   situacaoCadastral?: string;
+  baixarXml?: boolean;
+  ultimoNsu?: string;
   enderecos?: EnderecoEmpresa[];
 };
 
@@ -358,6 +478,19 @@ export type DadosCnpjPublico = {
 };
 
 export const adminApi = {
+  login: async (secret: string) => {
+    const res = await fetch(`${API_URL}/api/admin/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secret }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new ApiError((body as { erro?: string }).erro ?? res.statusText, res.status);
+    }
+    return (await res.json()) as { token: string };
+  },
+
   listarEmpresas: (adminKey: string) =>
     adminRequest<{ itens: EmpresaResumo[] }>("/api/admin/empresas", adminKey),
 
@@ -509,6 +642,13 @@ export const adminApi = {
   excluirEmpresa: (adminKey: string, id: number) =>
     adminRequest<{ ok: boolean }>(`/api/admin/empresas/${id}`, adminKey, { method: "DELETE" }),
 
+  baixarXmlsDestinatario: (adminKey: string, empresaId: number) =>
+    adminRequest<DistribuicaoDFeResultado>(
+      `/api/admin/empresas/${empresaId}/distribuicao/baixar`,
+      adminKey,
+      { method: "POST" },
+    ),
+
   uploadLogo: async (adminKey: string, empresaId: number, arquivo: File) => {
     const fd = new FormData();
     fd.append("arquivo", arquivo);
@@ -554,6 +694,11 @@ export const empresaPortalApi = {
 
   excluirEmpresa: (token: string, id: number) =>
     request<{ ok: boolean }>(`/api/empresas/${id}`, token, { method: "DELETE" }),
+
+  baixarXmlsDestinatario: (token: string, empresaId: number) =>
+    request<DistribuicaoDFeResultado>(`/api/empresas/${empresaId}/distribuicao/baixar`, token, {
+      method: "POST",
+    }),
 
   uploadCertificado: async (token: string, empresaId: number, arquivo: File, senha: string) => {
     const fd = new FormData();
@@ -748,6 +893,7 @@ export type NfeItemBody = {
   unidade?: string;
   quantidade?: number;
   valorUnitario?: number;
+  valorDesconto?: number;
   ibsCbs?: {
     cst?: string;
     classificacaoTributaria?: string;
@@ -765,6 +911,47 @@ export type NfeEmitirLoteBody = {
   naturezaOperacao?: string;
   destinatario?: NfeDestinatarioBody;
   itens?: NfeItemBody[];
+  finalidade?: string;
+  consumidorFinal?: string;
+  indicadorPresenca?: string;
+  informacoesAdicionais?: string;
+  pagamento?: {
+    meioPagamento?: string;
+    indicadorPagamento?: string;
+  };
+  transporte?: {
+    modalidadeFrete?: string;
+    transportadorNome?: string;
+    transportadorDocumento?: string;
+    transportadorIe?: string;
+    transportadorMunicipio?: string;
+    transportadorUf?: string;
+    placa?: string;
+    placaUf?: string;
+    rntc?: string;
+    volumeQuantidade?: number;
+    volumeEspecie?: string;
+    volumeMarca?: string;
+    volumeNumeracao?: string;
+    pesoLiquido?: number;
+    pesoBruto?: number;
+    valorFrete?: number;
+    reboques?: Array<{ placa: string; uf?: string; rntc?: string }>;
+  };
+  referencias?: NfeReferenciaBody[];
+};
+
+export type NfeReferenciaBody = {
+  tipo: "NFE" | "NFP" | "CTE";
+  chave?: string;
+  codigoUf?: string;
+  anoMes?: string;
+  cnpj?: string;
+  cpf?: string;
+  inscricaoEstadual?: string;
+  modelo?: string;
+  serie?: string;
+  numero?: string;
 };
 
 export type NfeCancelarBody = {
@@ -877,3 +1064,59 @@ export function formatarCnpjCpf(doc: string): string {
   }
   return doc;
 }
+
+export type CnpjPublicoResponse = {
+  cnpj: string;
+  razaoSocial: string;
+  nomeFantasia: string;
+  email?: string;
+  telefone?: string;
+  situacaoCadastral?: string;
+  optanteSimples?: boolean;
+  endereco: {
+    cep: string;
+    logradouro: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    municipio: string;
+    uf: string;
+    codigoMunicipioIbge: string;
+  };
+  prefeitura: string;
+  codigoMunicipioIbge: string;
+  cnaePrincipal: { codigo: string; descricao: string };
+};
+
+export type OnboardingStatusResponse = {
+  onboardingRequired: boolean;
+  nome: string;
+  email: string;
+  contaId?: number;
+  contaNome?: string;
+  trialFim?: string;
+  assinaturaStatus?: string;
+  empresas: EmpresaResumo[];
+};
+
+export type OnboardingEmpresaPayload = {
+  cnpj: string;
+  nome: string;
+  nomeFantasia?: string;
+  email?: string;
+  telefone?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  municipio?: string;
+  uf?: string;
+  cnaePrincipal?: string;
+  cnaePrincipalDescricao?: string;
+  optanteSimples?: boolean;
+  situacaoCadastral?: string;
+  prefeitura: string;
+  codigoMunicipioIbge: string;
+  ambiente?: string;
+};

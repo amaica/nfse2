@@ -1,6 +1,5 @@
 package br.com.synki.nfse.portal.security;
 
-import br.com.synki.nfse.portal.config.PortalProperties;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,26 +12,29 @@ import java.io.IOException;
 @Component
 public class AdminAuthFilter extends OncePerRequestFilter {
 
-    private final PortalProperties props;
+    private final AdminTokenService tokenService;
 
-    public AdminAuthFilter(PortalProperties props) {
-        this.props = props;
+    public AdminAuthFilter(AdminTokenService tokenService) {
+        this.tokenService = tokenService;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/api/admin/");
+        var uri = request.getRequestURI();
+        if (!uri.startsWith("/api/admin/")) {
+            return true;
+        }
+        return uri.equals("/api/admin/login");
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        var secret = props.adminSecret();
         var key = request.getHeader("X-Admin-Key");
-        if (secret == null || secret.isBlank() || key == null || !secret.equals(key)) {
+        if (!tokenService.validar(key)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
-            response.getWriter().write("{\"erro\":\"Chave de administracao invalida\"}");
+            response.getWriter().write("{\"erro\":\"Sessao administrativa invalida ou expirada\"}");
             return;
         }
         chain.doFilter(request, response);

@@ -1,20 +1,28 @@
 @import "tailwindcss";
+@import "../styles/sass-theme.css";
 @import "../styles/fiscal-layout.css";
+@import "../styles/marketing-landing.css";
+@import "primereact/resources/themes/lara-light-green/theme.css";
+@import "primereact/resources/primereact.min.css";
+@import "primeicons/primeicons.css";
+@import "../styles/primereact-nfse.css";
 
 :root {
-  --background: #f6f7f9;
-  --foreground: #0f172a;
+  --background: #f9fafb;
+  --foreground: #111827;
   --card: #ffffff;
-  --border: #e2e8f0;
-  --muted: #64748b;
-  --brand: #61ad3e;
-  --brand-hover: #4f9632;
-  --brand-soft: #eef8e9;
+  --border: #dde5d4;
+  --muted: #5c6b55;
+  --brand: var(--primary-500);
+  --brand-hover: var(--primary-600);
+  --brand-soft: var(--primary-50);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary-500: #3d6b2f;
+  --color-primary-600: #2f5424;
   --font-sans: var(--font-geist-sans);
 }
 
@@ -45,6 +53,31 @@ body {
 
 .animate-in {
   animation: fade-in 0.35s ease-out;
+}
+
+/* Área logada: botões secundários comuns herdam tema agro */
+.layout-content .border-slate-300 {
+  border-color: var(--border);
+}
+
+.layout-content button.border-slate-300,
+.layout-content a.border-slate-300 {
+  color: #3d4f38;
+}
+
+.layout-content button.border-slate-300:hover,
+.layout-content a.border-slate-300:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-200);
+}
+
+.layout-content .bg-slate-50,
+.layout-content .bg-slate-50\/80 {
+  background-color: rgba(240, 245, 235, 0.75);
+}
+
+.layout-content .hover\:bg-slate-50:hover {
+  background-color: var(--primary-50);
 }
 
 /* Indicador dev Next.js (fallback se devIndicators não aplicou ainda) */

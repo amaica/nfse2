@@ -1,10 +1,16 @@
 package br.com.synki.nfse.portal.service;
 
 import br.com.synki.nfse.portal.config.FluxoImportProperties;
+import br.com.synki.nfse.portal.domain.Assinatura;
 import br.com.synki.nfse.portal.domain.ConfiguracaoNfse;
+import br.com.synki.nfse.portal.domain.Conta;
 import br.com.synki.nfse.portal.domain.Empresa;
 import br.com.synki.nfse.portal.domain.EmpresaEndereco;
 import br.com.synki.nfse.portal.domain.Usuario;
+import br.com.synki.nfse.portal.domain.UsuarioEmpresa;
+import br.com.synki.nfse.portal.repository.AssinaturaRepository;
+import br.com.synki.nfse.portal.repository.ContaEmpresaRepository;
+import br.com.synki.nfse.portal.repository.ContaRepository;
 import br.com.synki.nfse.portal.domain.fiscal.Cfop;
 import br.com.synki.nfse.portal.domain.fiscal.Ncm;
 import br.com.synki.nfse.portal.domain.fiscal.Pessoa;
@@ -28,6 +34,8 @@ import br.com.synki.nfse.portal.repository.fiscal.TributOperacaoFiscalRepository
 import br.com.synki.nfse.portal.repository.fiscal.TributNfseServicoRepository;
 import br.com.synki.nfse.portal.repository.fiscal.VeiculoRepository;
 import br.com.synki.nfse.portal.service.fiscal.NfseServicoSeedService;
+import br.com.synki.nfse.portal.service.fiscal.ProdutoClassificacaoService;
+import br.com.synki.nfse.portal.service.fiscal.TributacaoNfeSeedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -69,7 +78,13 @@ public class FluxoDataImportService {
     private final VeiculoRepository veiculoRepository;
     private final TributNfseServicoRepository nfseServicoRepository;
     private final NfseServicoSeedService nfseServicoSeedService;
+    private final TributacaoNfeSeedService tributacaoNfeSeedService;
+    private final ProdutoClassificacaoService produtoClassificacaoService;
     private final PasswordEncoder passwordEncoder;
+    private final MembershipService membershipService;
+    private final ContaEmpresaRepository contaEmpresaRepository;
+    private final ContaRepository contaRepository;
+    private final AssinaturaRepository assinaturaRepository;
 
     public FluxoDataImportService(
             FluxoImportProperties props,
@@ -87,7 +102,13 @@ public class FluxoDataImportService {
             VeiculoRepository veiculoRepository,
             TributNfseServicoRepository nfseServicoRepository,
             NfseServicoSeedService nfseServicoSeedService,
-            PasswordEncoder passwordEncoder) {
+            TributacaoNfeSeedService tributacaoNfeSeedService,
+            ProdutoClassificacaoService produtoClassificacaoService,
+            PasswordEncoder passwordEncoder,
+            MembershipService membershipService,
+            ContaEmpresaRepository contaEmpresaRepository,
+            ContaRepository contaRepository,
+            AssinaturaRepository assinaturaRepository) {
         this.props = props;
         this.empresaRepository = empresaRepository;
         this.enderecoRepository = enderecoRepository;
@@ -103,7 +124,13 @@ public class FluxoDataImportService {
         this.veiculoRepository = veiculoRepository;
         this.nfseServicoRepository = nfseServicoRepository;
         this.nfseServicoSeedService = nfseServicoSeedService;
+        this.tributacaoNfeSeedService = tributacaoNfeSeedService;
+        this.produtoClassificacaoService = produtoClassificacaoService;
         this.passwordEncoder = passwordEncoder;
+        this.membershipService = membershipService;
+        this.contaEmpresaRepository = contaEmpresaRepository;
+        this.contaRepository = contaRepository;
+        this.assinaturaRepository = assinaturaRepository;
     }
 
     public boolean isEnabled() {
@@ -115,7 +142,7 @@ public class FluxoDataImportService {
         return importar(false);
     }
 
-    @Transactional
+    @Transactional(timeout = 1800)
     public Map<String, Object> importar(boolean force) {
         if (!props.enabled()) {
             throw new IllegalStateException("Importacao fluxo desabilitada (nfse.fluxo.enabled=false)");
@@ -132,6 +159,7 @@ public class FluxoDataImportService {
             int enderecos = importarEnderecos(fluxo, empresaMap, ultimoNfePorSerie);
             stats.put("empresas", empresas);
             stats.put("enderecos", enderecos);
+            stats.putAll(provisionarContaEEquipe(empresaMap));
 
             if (force || cfopRepository.countByEmpresaIdIsNull() < 50) {
                 if (force) {
@@ -155,6 +183,7 @@ public class FluxoDataImportService {
             int totalProdutos = 0;
             int totalVeiculos = 0;
             int totalNfseServicos = 0;
+            int nfeSeedAjustes = 0;
             int totalGrupos = 0;
             Set<Long> empresasCadastro = new HashSet<>(empresaMap.values());
             if (props.replicarCadastrosEmpresaDemoId() > 0) {
@@ -183,13 +212,18 @@ public class FluxoDataImportService {
                     totalVeiculos += importarVeiculos(fluxo, empresaPortalId);
                 }
                 totalNfseServicos += nfseServicoSeedService.garantirCadastros(empresaPortalId);
+                nfeSeedAjustes += tributacaoNfeSeedService.garantirCadastros(empresaPortalId);
+                produtoClassificacaoService.garantirPadrao(empresaPortalId);
             }
             stats.put("clientes", totalClientes);
             stats.put("produtos", totalProdutos);
             stats.put("veiculos", totalVeiculos);
             stats.put("nfseServicos", totalNfseServicos);
+            stats.put("tributacaoNfeSeed", nfeSeedAjustes);
             stats.put("gruposTributarios", totalGrupos);
             stats.put("empresasComCadastros", empresasCadastro.size());
+            int vinculosAdmin = vincularAdminATodosEmitentes();
+            stats.put("vinculosAdminPlataforma", vinculosAdmin);
         } catch (SQLException ex) {
             throw new IllegalStateException("Falha ao conectar no banco fluxo: " + ex.getMessage(), ex);
         }
@@ -197,6 +231,144 @@ public class FluxoDataImportService {
         stats.put("ok", true);
         log.info("Importacao fluxo concluida: {}", stats);
         return stats;
+    }
+
+    private boolean contaUnicaHabilitada() {
+        String email = props.ownerEmail() == null ? "" : props.ownerEmail().trim();
+        return email.contains("@");
+    }
+
+    private Map<String, Object> provisionarContaEEquipe(Map<Integer, Long> empresaMap) {
+        var stats = new LinkedHashMap<String, Object>();
+        if (empresaMap.isEmpty() || !contaUnicaHabilitada()) {
+            stats.put("contaUnica", "ignorada");
+            return stats;
+        }
+
+        String ownerEmail = props.ownerEmail().trim().toLowerCase(java.util.Locale.ROOT);
+        String ownerNome = props.ownerNome() == null || props.ownerNome().isBlank()
+                ? "Gestor"
+                : truncar(props.ownerNome().trim(), 120);
+        String contaNome = props.contaNome() == null || props.contaNome().isBlank()
+                ? "Conta — " + ownerNome
+                : truncar(props.contaNome().trim(), 255);
+
+        Long empresaOwnerId = empresaMap.get((int) props.clienteEmpresaFluxoId());
+        if (empresaOwnerId == null) {
+            empresaOwnerId = empresaMap.values().iterator().next();
+        }
+
+        Usuario owner = usuarioRepository.findByEmail(ownerEmail).orElse(null);
+        if (owner == null) {
+            owner = Usuario.create(
+                    empresaOwnerId, ownerNome, ownerEmail, passwordEncoder.encode(props.defaultSenhaUsuario()));
+            owner.setPerfil(UsuarioEmpresa.PAPEL_OWNER);
+            owner = usuarioRepository.save(owner);
+            stats.put("ownerCriado", true);
+        } else {
+            owner.setNome(ownerNome);
+            owner.setEmpresaId(empresaOwnerId);
+            owner.setAtivo(true);
+            owner.setPerfil(UsuarioEmpresa.PAPEL_OWNER);
+            owner = usuarioRepository.save(owner);
+            stats.put("ownerCriado", false);
+        }
+
+        final Long ownerId = owner.getId();
+        Conta conta = contaRepository.findByOwnerUsuarioId(ownerId).orElse(null);
+        if (conta == null) {
+            conta = Conta.criar(contaNome, ownerId);
+            conta = contaRepository.save(conta);
+        } else {
+            conta.setNome(contaNome);
+            contaRepository.save(conta);
+        }
+
+        int vinculadas = 0;
+        for (Long empresaId : empresaMap.values()) {
+            membershipService.vincularEmpresaAContaExistente(
+                    conta.getId(), empresaId, owner, UsuarioEmpresa.PAPEL_OWNER);
+            if (!membershipService.hasAccess(ownerId, empresaId)) {
+                membershipService.vincularUsuarioEmpresa(
+                        ownerId, empresaId, conta.getId(), UsuarioEmpresa.PAPEL_OWNER);
+            }
+            vinculadas++;
+        }
+
+        int operadores = 0;
+        for (String item : props.operadores().split(";")) {
+            String trimmed = item.trim();
+            if (trimmed.isBlank()) {
+                continue;
+            }
+            String[] parts = trimmed.split("\\|", 2);
+            String email = parts[0].trim().toLowerCase(java.util.Locale.ROOT);
+            if (!email.contains("@")) {
+                continue;
+            }
+            String nome = parts.length > 1 && !parts[1].isBlank() ? truncar(parts[1].trim(), 120) : email;
+            Usuario operador = usuarioRepository.findByEmail(email).orElse(null);
+            if (operador == null) {
+                operador = Usuario.create(
+                        empresaOwnerId, nome, email, passwordEncoder.encode(props.defaultSenhaUsuario()));
+                operador.setPerfil(UsuarioEmpresa.PAPEL_OPERADOR);
+                operador = usuarioRepository.save(operador);
+            } else {
+                operador.setNome(nome);
+                operador.setEmpresaId(empresaOwnerId);
+                operador.setAtivo(true);
+                operador.setPerfil(UsuarioEmpresa.PAPEL_OPERADOR);
+                operador = usuarioRepository.save(operador);
+            }
+            for (Long empresaId : empresaMap.values()) {
+                membershipService.vincularUsuarioEmpresa(
+                        operador.getId(), empresaId, conta.getId(), UsuarioEmpresa.PAPEL_OPERADOR);
+            }
+            operadores++;
+        }
+
+        final Long contaId = conta.getId();
+        Assinatura assinatura = assinaturaRepository.findByContaId(contaId)
+                .orElseGet(() -> assinaturaRepository.save(Assinatura.trial(contaId)));
+        int nEmpresas = empresaMap.size();
+        assinatura.setStatus(Assinatura.STATUS_ATIVA);
+        assinatura.setEmpresasQuota(Math.max(assinatura.getEmpresasQuota(), Math.max(50, nEmpresas)));
+        assinatura.setUsuariosQuota(Math.max(assinatura.getUsuariosQuota(), 10));
+        assinatura.setNfseMesQuota(Math.max(assinatura.getNfseMesQuota(), 500));
+        assinatura.setNfeMesQuota(Math.max(assinatura.getNfeMesQuota(), 500));
+        assinatura.setPeriodoFim(Instant.now().plusSeconds(365L * 86400L));
+        assinatura.setUpdatedAt(Instant.now());
+        assinaturaRepository.save(assinatura);
+
+        stats.put("contaId", conta.getId());
+        stats.put("contaNome", conta.getNome());
+        stats.put("ownerEmail", ownerEmail);
+        stats.put("emitentesNaConta", vinculadas);
+        stats.put("operadores", operadores);
+        return stats;
+    }
+
+    private int vincularAdminATodosEmitentes() {
+        var admin = usuarioRepository.findByEmailAndAtivoTrue(props.adminPlataformaEmail().trim().toLowerCase());
+        if (admin.isEmpty()) {
+            log.warn("Admin plataforma {} nao encontrado — vinculos ignorados", props.adminPlataformaEmail());
+            return 0;
+        }
+        int count = 0;
+        for (var empresa : empresaRepository.findAll()) {
+            var contaId = contaEmpresaRepository.findByEmpresaId(empresa.getId())
+                    .map(ce -> ce.getContaId())
+                    .orElse(null);
+            if (contaId == null) {
+                continue;
+            }
+            if (!membershipService.hasAccess(admin.get().getId(), empresa.getId())) {
+                membershipService.vincularUsuarioEmpresa(
+                        admin.get().getId(), empresa.getId(), contaId, UsuarioEmpresa.PAPEL_OWNER);
+                count++;
+            }
+        }
+        return count;
     }
 
     private void limparCadastrosEmpresa(Long empresaId) {
@@ -251,7 +423,9 @@ public class FluxoDataImportService {
                 empresaRepository.save(empresa);
                 empresaMap.put(fluxoId, empresa.getId());
                 garantirConfiguracaoNfse(empresa, rs);
-                garantirUsuario(empresa, emailFluxo, doc);
+                if (!contaUnicaHabilitada()) {
+                    garantirUsuario(empresa, emailFluxo, doc);
+                }
                 count++;
             }
         }
@@ -471,6 +645,8 @@ public class FluxoDataImportService {
                 configs++;
             }
         }
+        configuraRepository.flush();
+        operacaoRepository.preencherCfopPadrao(empresaPortalId);
 
         stats.put("gruposTributarios", grupos);
         stats.put("operacoesFiscais", operacoes);
@@ -638,8 +814,11 @@ public class FluxoDataImportService {
     private int importarProdutos(Connection fluxo, Long empresaPortalId, Map<Integer, Long> grupoMap) throws SQLException {
         int count = 0;
         String sql = """
-                SELECT ID, CODIGO_INTERNO, NOME, NCM, GTIN, VALOR_VENDA, ID_GRUPO_TRIBUTARIO, INATIVO
-                FROM produto ORDER BY ID
+                SELECT p.ID, p.CODIGO_INTERNO, p.NOME, p.NCM, p.GTIN, p.VALOR_VENDA, p.VALOR_COMPRA, p.MARKUP,
+                       p.ID_GRUPO_TRIBUTARIO, p.INATIVO, u.SIGLA AS UNIDADE_SIGLA
+                FROM produto p
+                LEFT JOIN produto_unidade u ON u.id = p.ID_UNIDADE_PRODUTO
+                ORDER BY p.ID
                 """;
         try (var st = fluxo.prepareStatement(sql); var rs = st.executeQuery()) {
             while (rs.next()) {
@@ -659,6 +838,10 @@ public class FluxoDataImportService {
                     produto.setGtin(truncar(apenasDigitos(gtin), 14));
                 }
                 produto.setCodigoNcm(normalizarNcm(rs.getString("NCM")));
+                String unidade = rs.getString("UNIDADE_SIGLA");
+                produto.setUnidade(unidade != null && !unidade.isBlank() ? truncar(unidade.trim().toUpperCase(), 6) : "UN");
+                produto.setValorCusto(rs.getBigDecimal("VALOR_COMPRA"));
+                produto.setMarkup(rs.getBigDecimal("MARKUP"));
                 produto.setValorUnitario(rs.getBigDecimal("VALOR_VENDA"));
                 int grupoFluxo = rs.getInt("ID_GRUPO_TRIBUTARIO");
                 if (!rs.wasNull() && grupoMap.containsKey(grupoFluxo)) {
@@ -784,9 +967,10 @@ public class FluxoDataImportService {
     private Map<String, Long> carregarUltimosNumerosNfe(Connection fluxo) throws SQLException {
         var map = new HashMap<String, Long>();
         String sql = """
-                SELECT ID_EMPRESA, SERIE, MAX(NUMERO) AS ULTIMO
-                FROM nfe_numero
+                SELECT ID_EMPRESA, SERIE, MAX(CAST(NUMERO AS UNSIGNED)) AS ULTIMO
+                FROM nfe_cabecalho
                 WHERE ID_EMPRESA IS NOT NULL AND SERIE IS NOT NULL
+                  AND NUMERO IS NOT NULL AND NUMERO REGEXP '^[0-9]+$'
                 GROUP BY ID_EMPRESA, SERIE
                 """;
         try (var st = fluxo.prepareStatement(sql); var rs = st.executeQuery()) {

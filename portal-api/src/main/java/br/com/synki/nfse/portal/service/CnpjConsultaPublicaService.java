@@ -70,8 +70,9 @@ public class CnpjConsultaPublicaService {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            log.warn("Falha ao consultar CNPJ {}: {}", doc, e.getMessage());
-            throw new IllegalStateException("Nao foi possivel consultar o CNPJ: " + e.getMessage());
+            log.warn("Falha ao consultar CNPJ {}: {}", doc, e.toString());
+            throw new IllegalStateException(
+                    "Nao foi possivel consultar o CNPJ agora. Verifique sua conexao e tente novamente em instantes.");
         }
     }
 

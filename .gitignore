@@ -254,7 +254,9 @@ portal-api/.env
 portal-web/node_modules/
 portal-web/.next/
 portal-web/.env.local
+stripe
 .vscode/
 *.pfx
 data/
 danfse-*.pdf
+logs/

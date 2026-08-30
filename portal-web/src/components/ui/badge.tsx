@@ -13,9 +13,9 @@ export function Badge({
     <span
       className={cn(
         "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
-        variant === "success" && "bg-emerald-500/15 text-emerald-400",
-        variant === "warn" && "bg-amber-500/15 text-amber-400",
-        variant === "default" && "bg-zinc-500/15 text-zinc-300",
+        variant === "success" && "badge-agro-success",
+        variant === "warn" && "badge-agro-warn",
+        variant === "default" && "bg-[var(--primary-50)] text-[var(--primary-700)]",
         className,
       )}
     >

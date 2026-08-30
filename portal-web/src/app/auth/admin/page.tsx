@@ -2,53 +2,65 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AuthImmersiveShell } from "@/components/auth/AuthImmersiveShell";
+import Link from "next/link";
+import { KeyRound } from "lucide-react";
+import { LoginShell } from "@/components/auth/LoginShell";
+import { BaseInput } from "@/components/ui/BaseInput";
+import { BaseButton } from "@/components/ui/BaseButton";
 import { saveAdminKey } from "@/lib/app-session";
-
-const lbl = "mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/90";
-const inp =
-  "w-full rounded-xl border border-gray-200/90 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm outline-none";
-const btnPrimary =
-  "inline-flex w-full items-center justify-center rounded-xl bg-[#3d9c3d] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white";
+import { adminApi, ApiError } from "@/lib/api";
 
 export default function AdminAuthPage() {
   const router = useRouter();
   const [key, setKey] = useState("");
   const [erro, setErro] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!key.trim()) {
       setErro("Informe a chave admin");
       return;
     }
-    saveAdminKey(key.trim());
-    router.push("/cadastros/empresa");
+    setErro("");
+    setLoading(true);
+    try {
+      const { token } = await adminApi.login(key.trim());
+      saveAdminKey(token);
+      router.push("/cadastros/empresa");
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : "Falha ao autenticar");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <AuthImmersiveShell>
-      <form className="space-y-4" onSubmit={onSubmit}>
-        <h2 className="text-center text-sm font-medium text-white">Administração</h2>
-        <p className="text-center text-xs text-white/60">Chave NFSE_ADMIN_SECRET</p>
+    <LoginShell title="Administração" subtitle="Chave NFSE_ADMIN_SECRET para gestão de empresas">
+      <form className="space-y-5" onSubmit={onSubmit}>
         <div>
-          <label htmlFor="admin-key" className={lbl}>
-            Chave
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-agro-muted">
+            Chave administrativa
           </label>
-          <input
+          <BaseInput
             id="admin-key"
             type="password"
-            className={inp}
             value={key}
             onChange={(e) => setKey(e.target.value)}
+            placeholder="••••••••••••"
             autoComplete="off"
+            icon={<KeyRound className="h-4 w-4" />}
           />
         </div>
-        {erro && <p className="text-sm text-red-300">{erro}</p>}
-        <button type="submit" className={btnPrimary}>
-          Entrar
-        </button>
+
+        {erro && <p className="text-center text-sm font-medium text-rose-600">{erro}</p>}
+
+        <BaseButton type="submit" loading={loading}>Entrar</BaseButton>
+
+        <Link href="/login" className="link-agro block text-center text-sm">
+          Voltar ao login
+        </Link>
       </form>
-    </AuthImmersiveShell>
+    </LoginShell>
   );
 }

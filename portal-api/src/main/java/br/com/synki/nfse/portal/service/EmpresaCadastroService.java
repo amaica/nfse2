@@ -5,16 +5,21 @@ import br.com.synki.nfse.portal.domain.ConfiguracaoDocumento;
 import br.com.synki.nfse.portal.domain.ConfiguracaoNfse;
 import br.com.synki.nfse.portal.domain.Empresa;
 import br.com.synki.nfse.portal.domain.Usuario;
+import br.com.synki.nfse.portal.domain.UsuarioEmpresa;
 import br.com.synki.nfse.portal.repository.CertificadoRepository;
 import br.com.synki.nfse.portal.repository.ConfiguracaoDocumentoRepository;
 import br.com.synki.nfse.portal.repository.ConfiguracaoNfseRepository;
 import br.com.synki.nfse.portal.repository.EmpresaEnderecoRepository;
 import br.com.synki.nfse.portal.repository.EmpresaRepository;
 import br.com.synki.nfse.portal.repository.NfeEmissaoRepository;
+import br.com.synki.nfse.portal.repository.NfeEntradaRepository;
 import br.com.synki.nfse.portal.repository.NfseLogRepository;
 import br.com.synki.nfse.portal.repository.UsuarioRepository;
 import br.com.synki.nfse.portal.web.dto.CriarEmpresaRequest;
 import br.com.synki.nfse.portal.web.dto.AtualizarEmpresaRequest;
+import br.com.synki.nfse.portal.service.fiscal.NfseServicoSeedService;
+import br.com.synki.nfse.portal.service.fiscal.ProdutoClassificacaoService;
+import br.com.synki.nfse.portal.service.fiscal.TributacaoNfeSeedService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,12 +40,18 @@ public class EmpresaCadastroService {
     private final UsuarioRepository usuarioRepository;
     private final CertificadoRepository certificadoRepository;
     private final NfeEmissaoRepository nfeEmissaoRepository;
+    private final NfeEntradaRepository nfeEntradaRepository;
     private final NfseLogRepository nfseLogRepository;
     private final EmpresaEnderecoRepository enderecoRepository;
     private final EmpresaLogoService empresaLogoService;
     private final PasswordEncoder passwordEncoder;
     private final PortalProperties portalProperties;
     private final EmpresaEnderecoService enderecoService;
+    private final MembershipService membershipService;
+    private final AssinaturaService assinaturaService;
+    private final TributacaoNfeSeedService tributacaoNfeSeedService;
+    private final NfseServicoSeedService nfseServicoSeedService;
+    private final ProdutoClassificacaoService produtoClassificacaoService;
 
     public EmpresaCadastroService(
             EmpresaRepository empresaRepository,
@@ -49,24 +60,42 @@ public class EmpresaCadastroService {
             UsuarioRepository usuarioRepository,
             CertificadoRepository certificadoRepository,
             NfeEmissaoRepository nfeEmissaoRepository,
+            NfeEntradaRepository nfeEntradaRepository,
             NfseLogRepository nfseLogRepository,
             EmpresaEnderecoRepository enderecoRepository,
             EmpresaLogoService empresaLogoService,
             PasswordEncoder passwordEncoder,
             PortalProperties portalProperties,
-            EmpresaEnderecoService enderecoService) {
+            EmpresaEnderecoService enderecoService,
+            MembershipService membershipService,
+            AssinaturaService assinaturaService,
+            TributacaoNfeSeedService tributacaoNfeSeedService,
+            NfseServicoSeedService nfseServicoSeedService,
+            ProdutoClassificacaoService produtoClassificacaoService) {
         this.empresaRepository = empresaRepository;
         this.configuracaoRepository = configuracaoRepository;
         this.documentoRepository = documentoRepository;
         this.usuarioRepository = usuarioRepository;
         this.certificadoRepository = certificadoRepository;
         this.nfeEmissaoRepository = nfeEmissaoRepository;
+        this.nfeEntradaRepository = nfeEntradaRepository;
         this.nfseLogRepository = nfseLogRepository;
         this.enderecoRepository = enderecoRepository;
         this.empresaLogoService = empresaLogoService;
         this.passwordEncoder = passwordEncoder;
         this.portalProperties = portalProperties;
         this.enderecoService = enderecoService;
+        this.membershipService = membershipService;
+        this.assinaturaService = assinaturaService;
+        this.tributacaoNfeSeedService = tributacaoNfeSeedService;
+        this.nfseServicoSeedService = nfseServicoSeedService;
+        this.produtoClassificacaoService = produtoClassificacaoService;
+    }
+
+    public List<Map<String, Object>> listarParaUsuario(Long usuarioId) {
+        return membershipService.listarTodasEmpresasPermitidas(usuarioId).stream()
+                .map(this::resumoSeguro)
+                .toList();
     }
 
     public List<Map<String, Object>> listar() {
@@ -93,6 +122,11 @@ public class EmpresaCadastroService {
         return detalhe(empresa);
     }
 
+    public Map<String, Object> obterParaUsuario(Long id, Long usuarioId) {
+        membershipService.requireAccess(usuarioId, id);
+        return obter(id);
+    }
+
     public Map<String, Object> obterPorCnpj(String cnpj) {
         var doc = apenasDigitos(cnpj);
         var empresa = empresaRepository.findByCnpj(doc)
@@ -100,8 +134,44 @@ public class EmpresaCadastroService {
         return detalhe(empresa);
     }
 
+    public Map<String, Object> obterPorCnpjParaUsuario(String cnpj, Long usuarioId) {
+        var doc = apenasDigitos(cnpj);
+        var empresa = empresaRepository.findByCnpj(doc)
+                .orElseThrow(() -> new IllegalArgumentException("Empresa nao encontrada"));
+        membershipService.requireAccess(usuarioId, empresa.getId());
+        return detalhe(empresa);
+    }
+
     @Transactional
     public Map<String, Object> criar(CriarEmpresaRequest req) {
+        return criarInterno(req, null);
+    }
+
+    @Transactional
+    public Map<String, Object> criarParaUsuario(
+            CriarEmpresaRequest req,
+            Long criadorUsuarioId,
+            Long empresaSessaoId) {
+        membershipService.requireGestao(criadorUsuarioId, empresaSessaoId);
+        var contaId = membershipService.contaIdDaEmpresa(empresaSessaoId);
+        if (contaId == null) {
+            contaId = membershipService.contaIdDoUsuario(criadorUsuarioId, empresaSessaoId);
+        }
+        if (contaId != null) {
+            assinaturaService.requireNovaEmpresa(contaId);
+        }
+        return criarInterno(req, criadorUsuarioId);
+    }
+
+    @Transactional
+    public Map<String, Object> criarPrimeiraEmpresaConta(
+            CriarEmpresaRequest req,
+            Long ownerUsuarioId,
+            Long contaId) {
+        return criarInterno(req, ownerUsuarioId);
+    }
+
+    private Map<String, Object> criarInterno(CriarEmpresaRequest req, Long criadorUsuarioId) {
         var cnpj = apenasDigitos(req.cnpj());
         if (cnpj.length() != 11 && cnpj.length() != 14) {
             throw new IllegalArgumentException("CPF/CNPJ deve ter 11 ou 14 digitos");
@@ -131,11 +201,13 @@ public class EmpresaCadastroService {
         var nomeUsuario = req.usuarioNome() != null && !req.usuarioNome().isBlank()
                 ? req.usuarioNome().trim()
                 : "Integracao " + empresa.getNome();
-        usuarioRepository.save(Usuario.create(
+        var integrationUser = usuarioRepository.save(Usuario.create(
                 empresa.getId(),
                 nomeUsuario,
                 req.emailIntegracao().trim().toLowerCase(),
                 passwordEncoder.encode(req.senhaIntegracao())));
+
+        provisionarMembership(empresa, integrationUser, criadorUsuarioId);
 
         if (req.enderecos() != null && !req.enderecos().isEmpty()) {
             enderecoService.sincronizar(empresa.getId(), req.enderecos());
@@ -145,6 +217,9 @@ public class EmpresaCadastroService {
         }
         enderecoService.sincronizarEmpresaFromPrincipal(empresa);
         empresaRepository.save(empresa);
+        tributacaoNfeSeedService.garantirCadastros(empresa.getId());
+        nfseServicoSeedService.garantirCadastros(empresa.getId());
+        produtoClassificacaoService.garantirPadrao(empresa.getId());
 
         var det = detalhe(empresa);
         det.put("embedUrlCnpjComSenha", montarUrlCnpj(cnpj, req.senhaIntegracao()));
@@ -153,6 +228,16 @@ public class EmpresaCadastroService {
 
     @Transactional
     public Map<String, Object> atualizar(Long id, AtualizarEmpresaRequest req) {
+        return atualizarInterno(id, req, null);
+    }
+
+    @Transactional
+    public Map<String, Object> atualizarParaUsuario(Long id, AtualizarEmpresaRequest req, Long usuarioId) {
+        membershipService.requireGestao(usuarioId, id);
+        return atualizarInterno(id, req, usuarioId);
+    }
+
+    private Map<String, Object> atualizarInterno(Long id, AtualizarEmpresaRequest req, Long usuarioId) {
         var empresa = empresaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Empresa nao encontrada"));
         if (req.nome() != null && !req.nome().isBlank()) {
@@ -206,6 +291,9 @@ public class EmpresaCadastroService {
         if (req.optanteSimples() != null) {
             empresa.setOptanteSimples(req.optanteSimples());
         }
+        if (req.baixarXml() != null) {
+            empresa.setBaixarXml(req.baixarXml());
+        }
         empresaRepository.save(empresa);
 
         var cfg = configuracaoRepository.findByEmpresaId(id)
@@ -252,22 +340,61 @@ public class EmpresaCadastroService {
 
     @Transactional
     public void excluir(Long id) {
+        excluirInterno(id);
+    }
+
+    @Transactional
+    public void excluirParaUsuario(Long id, Long usuarioId) {
+        membershipService.requireGestao(usuarioId, id);
+        excluirInterno(id);
+    }
+
+    private void excluirInterno(Long id) {
         if (!empresaRepository.existsById(id)) {
             throw new IllegalArgumentException("Empresa nao encontrada");
         }
         nfseLogRepository.deleteByEmpresaId(id);
         nfeEmissaoRepository.deleteByEmpresaId(id);
+        nfeEntradaRepository.deleteByEmpresaId(id);
         certificadoRepository.deleteByEmpresaId(id);
         usuarioRepository.deleteByEmpresaId(id);
         documentoRepository.deleteByEmpresaId(id);
         configuracaoRepository.deleteByEmpresaId(id);
         enderecoRepository.deleteByEmpresaId(id);
+        membershipService.removerVinculosEmpresa(id);
         try {
             empresaLogoService.excluir(id);
         } catch (IOException ex) {
             throw new IllegalStateException("Falha ao remover logo da empresa", ex);
         }
         empresaRepository.deleteById(id);
+    }
+
+    private void provisionarMembership(
+            Empresa empresa,
+            Usuario integrationUser,
+            Long criadorUsuarioId) {
+        if (criadorUsuarioId == null) {
+            membershipService.provisionarContaParaEmpresa(empresa, integrationUser, UsuarioEmpresa.PAPEL_OWNER);
+            return;
+        }
+
+        var contaId = membershipService.contaIdDoUsuario(criadorUsuarioId);
+        if (contaId == null) {
+            var conta = membershipService.provisionarContaParaEmpresa(
+                    empresa, integrationUser, UsuarioEmpresa.PAPEL_OWNER);
+            membershipService.vincularUsuarioEmpresa(
+                    criadorUsuarioId, empresa.getId(), conta.getId(), UsuarioEmpresa.PAPEL_ADMIN);
+            return;
+        }
+
+        membershipService.vincularEmpresaAContaExistente(
+                contaId, empresa.getId(), integrationUser, UsuarioEmpresa.PAPEL_OPERADOR);
+        var papelCriador = membershipService.precisaOnboarding(criadorUsuarioId)
+                ? UsuarioEmpresa.PAPEL_OWNER
+                : UsuarioEmpresa.PAPEL_ADMIN;
+        membershipService.vincularUsuarioEmpresa(
+                criadorUsuarioId, empresa.getId(), contaId, papelCriador);
     }
 
     private void atualizarDocumentoFuturo(Long empresaId, String tipo, String serie, Long ultimoNumero) {
@@ -305,6 +432,7 @@ public class EmpresaCadastroService {
         empresa.setCnaePrincipal(apenasDigitos(req.cnaePrincipal()));
         empresa.setCnaePrincipalDescricao(blankToNull(req.cnaePrincipalDescricao()));
         empresa.setOptanteSimples(Boolean.TRUE.equals(req.optanteSimples()));
+        empresa.setBaixarXml(Boolean.TRUE.equals(req.baixarXml()));
         empresa.setSituacaoCadastral(blankToNull(req.situacaoCadastral()));
     }
 
@@ -319,6 +447,8 @@ public class EmpresaCadastroService {
         body.put("uf", empresa.getUf());
         body.put("cnaePrincipal", empresa.getCnaePrincipal());
         body.put("optanteSimples", empresa.isOptanteSimples());
+        body.put("baixarXml", empresa.isBaixarXml());
+        body.put("ultimoNsu", empresa.getUltimoNsu());
         body.put("certificadoCadastrado", certificadoRepository.findFirstByEmpresaIdOrderByCreatedAtDesc(empresa.getId()).isPresent());
         body.put("logoCadastrado", empresaLogoService.existe(empresa.getId()));
         configuracaoRepository.findByEmpresaId(empresa.getId()).ifPresent(cfg -> {

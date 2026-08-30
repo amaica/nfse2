@@ -1,7 +1,10 @@
 package br.com.synki.nfse.portal.web;
 
 import br.com.synki.nfse.portal.security.EmbedSession;
+import br.com.synki.nfse.portal.security.PortalAuthorization;
+import br.com.synki.nfse.portal.service.AssinaturaService;
 import br.com.synki.nfse.portal.service.AuditLogService;
+import br.com.synki.nfse.portal.service.ContabilidadeService;
 import br.com.synki.nfse.portal.service.EmissaoContextoService;
 import br.com.synki.nfse.portal.service.EmissaoDpsService;
 import br.com.synki.nfse.portal.service.NfseEmailService;
@@ -9,6 +12,7 @@ import br.com.synki.nfse.portal.service.NfseLibService;
 import br.com.synki.nfse.portal.service.CnaeService;
 import br.com.synki.nfse.portal.service.NbsService;
 import br.com.synki.nfse.portal.service.ServicosLc116Service;
+import br.com.synki.nfse.portal.service.NfseHistoricoService;
 import br.com.synki.nfse.portal.repository.NfseLogRepository;
 import br.com.synki.nfse.portal.web.dto.EmissaoCompletaRequest;
 import br.com.synki.nfse.portal.web.dto.EnviarDanfeEmailRequest;
@@ -31,10 +35,14 @@ public class NfseController {
     private final EmissaoContextoService emissaoContextoService;
     private final AuditLogService auditLogService;
     private final NfseLogRepository logRepository;
+    private final NfseHistoricoService nfseHistoricoService;
     private final ServicosLc116Service servicosLc116Service;
     private final NbsService nbsService;
     private final CnaeService cnaeService;
     private final NfseEmailService nfseEmailService;
+    private final PortalAuthorization authz;
+    private final AssinaturaService assinaturaService;
+    private final ContabilidadeService contabilidadeService;
 
     public NfseController(
             NfseLibService nfseLibService,
@@ -42,19 +50,27 @@ public class NfseController {
             EmissaoContextoService emissaoContextoService,
             AuditLogService auditLogService,
             NfseLogRepository logRepository,
+            NfseHistoricoService nfseHistoricoService,
             ServicosLc116Service servicosLc116Service,
             NbsService nbsService,
             CnaeService cnaeService,
-            NfseEmailService nfseEmailService) {
+            NfseEmailService nfseEmailService,
+            PortalAuthorization authz,
+            AssinaturaService assinaturaService,
+            ContabilidadeService contabilidadeService) {
         this.nfseLibService = nfseLibService;
         this.emissaoDpsService = emissaoDpsService;
         this.emissaoContextoService = emissaoContextoService;
         this.auditLogService = auditLogService;
         this.logRepository = logRepository;
+        this.nfseHistoricoService = nfseHistoricoService;
         this.servicosLc116Service = servicosLc116Service;
         this.nbsService = nbsService;
         this.cnaeService = cnaeService;
         this.nfseEmailService = nfseEmailService;
+        this.authz = authz;
+        this.assinaturaService = assinaturaService;
+        this.contabilidadeService = contabilidadeService;
     }
 
     @GetMapping("/emissao/contexto")
@@ -139,6 +155,7 @@ public class NfseController {
             @AuthenticationPrincipal EmbedSession session,
             @PathVariable String chave,
             @Valid @RequestBody EnviarDanfeEmailRequest body) throws Exception {
+        authz.requireOperador(session);
         var resultado = nfseEmailService.enviarDanfe(session.empresaId(), chave, body.destinatario(), body.mensagem());
         auditLogService.log(session.empresaId(), session.usuarioId(), "EMAIL_DANFE",
                 "DANFSe " + chave + " -> " + body.destinatario()
@@ -160,6 +177,17 @@ public class NfseController {
         return logRepository.findTop50ByEmpresaIdOrderByCreatedAtDesc(session.empresaId());
     }
 
+    @GetMapping("/emitidas")
+    public Object emitidas(
+            @AuthenticationPrincipal EmbedSession session,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "100") int limite) {
+        authz.requireGestao(session);
+        return Map.of(
+                "itens",
+                nfseHistoricoService.listarEmitidas(session.empresaId(), q, limite));
+    }
+
     @GetMapping("/config")
     public Object config(@AuthenticationPrincipal EmbedSession session) {
         var cfg = nfseLibService.configOrThrow(session.empresaId());
@@ -172,8 +200,12 @@ public class NfseController {
 
     @PostMapping("/emitir")
     public Object emitir(@AuthenticationPrincipal EmbedSession session, @Valid @RequestBody EmissaoCompletaRequest body) throws Exception {
+        authz.requireOperador(session);
+        assinaturaService.requireEmissaoNfse(session.empresaId());
         var sucesso = emissaoDpsService.emitir(session.empresaId(), body);
         auditLogService.log(session.empresaId(), session.usuarioId(), "EMISSAO", "NFSe " + sucesso.getChaveAcesso());
+        assinaturaService.registrarNfseEmitida(session.empresaId());
+        contabilidadeService.enviarNfseAposEmissao(session.empresaId(), sucesso.getChaveAcesso());
         return Map.of(
                 "sucesso", true,
                 "chaveAcesso", sucesso.getChaveAcesso(),

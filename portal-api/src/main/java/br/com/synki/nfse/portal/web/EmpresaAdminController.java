@@ -1,6 +1,7 @@
 package br.com.synki.nfse.portal.web;
 
 import br.com.synki.nfse.portal.service.EmpresaCadastroService;
+import br.com.synki.nfse.portal.service.NfeDistribuicaoDFeService;
 import br.com.synki.nfse.portal.web.dto.AtualizarEmpresaRequest;
 import br.com.synki.nfse.portal.web.dto.CriarEmpresaRequest;
 import jakarta.validation.Valid;
@@ -13,9 +14,13 @@ import java.util.Map;
 public class EmpresaAdminController {
 
     private final EmpresaCadastroService empresaCadastroService;
+    private final NfeDistribuicaoDFeService distribuicaoDFeService;
 
-    public EmpresaAdminController(EmpresaCadastroService empresaCadastroService) {
+    public EmpresaAdminController(
+            EmpresaCadastroService empresaCadastroService,
+            NfeDistribuicaoDFeService distribuicaoDFeService) {
         this.empresaCadastroService = empresaCadastroService;
+        this.distribuicaoDFeService = distribuicaoDFeService;
     }
 
     @GetMapping
@@ -48,5 +53,10 @@ public class EmpresaAdminController {
     public Object excluir(@PathVariable Long id) {
         empresaCadastroService.excluir(id);
         return Map.of("ok", true);
+    }
+
+    @PostMapping("/{id}/distribuicao/baixar")
+    public Object baixarXmlsDestinatario(@PathVariable Long id) throws Exception {
+        return distribuicaoDFeService.baixarEmpresa(id);
     }
 }

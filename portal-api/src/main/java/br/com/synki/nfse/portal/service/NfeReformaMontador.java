@@ -140,6 +140,7 @@ public final class NfeReformaMontador {
         ibsCbsTot.setVBCIBSCBS(totais.vBc());
 
         var gIbs = new NFNotaInfoIBSCBSTot.GIBS();
+        gIbs.setVCredPres(BigDecimal.ZERO);
         var gIbsUf = new NFNotaInfoIBSCBSTot.GIBS.GIBSUF();
         gIbsUf.setVDif(BigDecimal.ZERO);
         gIbsUf.setVDevTrib(BigDecimal.ZERO);

@@ -55,6 +55,16 @@ public class Empresa {
     @Column(name = "fluxo_legacy_id")
     private Integer fluxoLegacyId;
 
+    /** Se true, o job baixa XMLs de NF-e destinadas a este emitente (despesas / livro caixa). */
+    @Column(name = "baixar_xml", nullable = false)
+    private boolean baixarXml = false;
+
+    @Column(name = "ultimo_nsu", length = 15)
+    private String ultimoNsu;
+
+    @Column(name = "ultimo_nsu_baixado_em")
+    private Instant ultimoNsuBaixadoEm;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -79,6 +89,9 @@ public class Empresa {
     public boolean isOptanteSimples() { return optanteSimples; }
     public String getSituacaoCadastral() { return situacaoCadastral; }
     public Integer getFluxoLegacyId() { return fluxoLegacyId; }
+    public boolean isBaixarXml() { return baixarXml; }
+    public String getUltimoNsu() { return ultimoNsu; }
+    public Instant getUltimoNsuBaixadoEm() { return ultimoNsuBaixadoEm; }
 
     public static Empresa criar(String nome, String cnpj) {
         var e = new Empresa();
@@ -117,4 +130,7 @@ public class Empresa {
     public void setOptanteSimples(boolean optanteSimples) { this.optanteSimples = optanteSimples; }
     public void setSituacaoCadastral(String situacaoCadastral) { this.situacaoCadastral = situacaoCadastral; }
     public void setFluxoLegacyId(Integer fluxoLegacyId) { this.fluxoLegacyId = fluxoLegacyId; }
+    public void setBaixarXml(boolean baixarXml) { this.baixarXml = baixarXml; }
+    public void setUltimoNsu(String ultimoNsu) { this.ultimoNsu = ultimoNsu; }
+    public void setUltimoNsuBaixadoEm(Instant ultimoNsuBaixadoEm) { this.ultimoNsuBaixadoEm = ultimoNsuBaixadoEm; }
 }

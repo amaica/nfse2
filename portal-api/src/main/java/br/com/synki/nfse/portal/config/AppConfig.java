@@ -6,9 +6,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties({
         PortalProperties.class,
+        StripeProperties.class,
         FluxoImportProperties.class,
         MailProperties.class,
-        NfsePdfRetryProperties.class
+        NfsePdfRetryProperties.class,
+        NfeDistribuicaoProperties.class
 })
 public class AppConfig {
 }

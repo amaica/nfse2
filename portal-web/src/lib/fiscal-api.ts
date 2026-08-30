@@ -1,11 +1,61 @@
-import { ApiError } from "./api";
-import { getAppToken } from "./app-session";
+import { ApiError, type LoginResponse } from "./api";
+import { apiBaseUrl } from "./api-base";
+import { getAppToken, getRefreshToken, saveLoginResponse } from "./app-session";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_URL = apiBaseUrl();
 
-async function fiscalRequest<T>(path: string, init?: RequestInit): Promise<T> {
+async function tentarRefresh(): Promise<boolean> {
+  const refresh = getRefreshToken();
+  if (!refresh) return false;
+  try {
+    const res = await fetch(`${API_URL}/api/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken: refresh }),
+    });
+    if (!res.ok) return false;
+    const data = (await res.json()) as LoginResponse;
+    saveLoginResponse(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function fiscalRequest<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
   const token = getAppToken();
   if (!token) throw new ApiError("Sessão expirada — faça login novamente.", 401);
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...init?.headers,
+    },
+  });
+  if (res.status === 401 && !retried && (await tentarRefresh())) {
+    return fiscalRequest(path, init, true);
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(
+      (body as { erro?: string; message?: string }).erro ??
+        (body as { message?: string }).message ??
+        res.statusText,
+      res.status,
+    );
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
+/** GET/POST autenticado com refresh automático em 401. */
+async function fiscalApiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return fiscalRequest<T>(path, init);
+}
+
+/** Requisição autenticada com token explícito (convites, etc.). */
+export async function fiscalFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
@@ -27,6 +77,56 @@ async function fiscalRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export type GrupoTributarioDto = {
+  id?: number;
+  descricao: string;
+  origemMercadoria?: string;
+  observacao?: string;
+};
+
+export type OperacaoFiscalDto = {
+  id?: number;
+  descricao: string;
+  tipoOperacao?: string;
+  geraFinanceiro?: string;
+  movimentaEstoque?: string;
+  descricaoNaNf?: string;
+  cfop?: number | null;
+  observacao?: string;
+  principal?: string;
+  finalidadeOperacao?: string;
+  cMunFGIBS?: string;
+  tpNFDebito?: string;
+  tpNFCredito?: string;
+  tpEnteGov?: string;
+  pRedutor?: number | null;
+  tpOperGov?: string;
+  indIntermed?: string;
+  ibsCbsCst?: string;
+  ibsCbsClassTrib?: string;
+  aliquotaIbsUf?: number | null;
+  aliquotaIbsMun?: number | null;
+  aliquotaCbs?: number | null;
+  habilitarIbsCbs: boolean;
+};
+
+export type IcmsUfDto = {
+  id?: number;
+  ufDestino: string;
+  cfop?: number | null;
+  cst?: string;
+  csosn?: string;
+  aliquota?: number | null;
+  origemMercadoria?: string;
+};
+
+export type ConfigOfGtDto = {
+  id?: number;
+  tributOperacaoFiscalId?: number;
+  tributGrupoTributarioId?: number;
+  listaIcmsUf?: IcmsUfDto[];
+};
+
 export type FiscalField = {
   key: string;
   label: string;
@@ -36,8 +136,108 @@ export type FiscalField = {
   reforma?: boolean;
 };
 
+export type PessoaDto = {
+  id?: number;
+  nome: string;
+  nomeFantasia?: string;
+  tipo: string;
+  cpfCnpj?: string;
+  email?: string;
+  fone?: string;
+  celular?: string;
+  inscricaoEstadual?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  municipio?: string;
+  uf?: string;
+  cep?: string;
+  codigoMunicipioIbge?: string;
+  latitude?: string;
+  longitude?: string;
+  observacoes?: string;
+  ativo: boolean;
+};
+
+export type VeiculoDto = {
+  id?: number;
+  placa: string;
+  modelo?: string;
+  marca?: string;
+  renavam?: string;
+  tipoRodado?: string;
+  tipoCarroceria?: string;
+  ativo: boolean;
+};
+
+export type ProdutoDto = {
+  id?: number;
+  codigo: string;
+  nome: string;
+  descricaoPdv?: string;
+  gtin?: string;
+  codigoNcm?: string;
+  cest?: string;
+  exTipi?: string;
+  unidade: string;
+  origem?: string;
+  tipo?: string;
+  valorUnitario?: number;
+  valorCusto?: number;
+  markup?: number;
+  peso?: number;
+  estoqueMinimo?: number;
+  estoqueAtual?: number;
+  observacoes?: string;
+  grupoTributarioId?: number;
+  grupoId?: number;
+  subgrupoId?: number;
+  ativo: boolean;
+};
+
+export type TributNfseServicoDto = {
+  id?: number;
+  descricao: string;
+  itemListaServico: string;
+  codigoTributacaoMunicipio?: string;
+  nbs?: string;
+  cnae?: string;
+  descricaoServico?: string;
+  municipioPrestacaoIbge?: string;
+  aliquotaIss?: number | null;
+  tributacaoIssqn?: string;
+  issRetido?: string;
+  simplesNacional?: string;
+  regimeEspecial?: string;
+  cstPisCofins?: string;
+  aliquotaPis?: number | null;
+  aliquotaCofins?: number | null;
+  habilitarRetencoes?: boolean;
+  retencaoInss?: number | null;
+  retencaoIrrf?: number | null;
+  retencaoCsll?: number | null;
+  ibsCbsCst?: string;
+  ibsCbsClassTrib?: string;
+  aliquotaIbs?: number | null;
+  aliquotaCbs?: number | null;
+  habilitarIbsCbs: boolean;
+  principal: boolean;
+  ativo: boolean;
+};
+
 export const fiscalApi = {
+  request: fiscalApiRequest,
   list: <T>(endpoint: string) => fiscalRequest<T[]>(endpoint),
+  listPessoas: (q?: string) =>
+    fiscalRequest<PessoaDto[]>(
+      q?.trim() ? `/api/pessoas?q=${encodeURIComponent(q.trim())}` : "/api/pessoas",
+    ),
+  listProdutos: () => fiscalRequest<ProdutoDto[]>("/api/produto"),
+  listVeiculos: () => fiscalRequest<VeiculoDto[]>("/api/veiculo"),
+  listGruposTributarios: () => fiscalRequest<GrupoTributarioDto[]>("/api/tribut-grupo-tributario"),
+  listOperacoesFiscais: () => fiscalRequest<OperacaoFiscalDto[]>("/api/tribut-operacao-fiscal"),
+  listConfiguracoesOfGt: () => fiscalRequest<ConfigOfGtDto[]>("/api/tribut-configura-of-gt"),
   get: <T>(endpoint: string, id: number) => fiscalRequest<T>(`${endpoint}/${id}`),
   create: <T>(endpoint: string, body: unknown) =>
     fiscalRequest<T>(endpoint, { method: "POST", body: JSON.stringify(body) }),
@@ -52,18 +252,70 @@ export const fiscalApi = {
     ),
 
   operacoesSimples: () =>
-    fiscalRequest<Array<{ id: number; descricao: string; cfop: number; habilitarIbsCbs: boolean }>>(
-      "/api/tribut-operacao-fiscal?simple=true",
-    ),
+    fiscalRequest<
+      Array<{
+        id: number;
+        descricao: string;
+        descricaoNaNf?: string;
+        tipoOperacao?: string;
+        principal?: string;
+        cfop?: number;
+        geraFinanceiro?: string;
+        finalidadeOperacao?: string;
+        observacao?: string;
+        habilitarIbsCbs: boolean;
+      }>
+    >("/api/tribut-operacao-fiscal?simple=true"),
 
   produtosSimples: () =>
     fiscalRequest<Array<{ id: number; codigo: string; nome: string }>>("/api/produto?simple=true"),
 
+  buscaProdutos: (q: string) =>
+    fiscalRequest<
+      Array<{
+        id: number;
+        codigo: string;
+        nome: string;
+        unidade?: string;
+        valorUnitario?: number;
+      }>
+    >(`/api/produto/busca?q=${encodeURIComponent(q)}`),
+
   gruposTributarios: () => fiscalRequest<Array<{ id: number; descricao: string }>>("/api/tribut-grupo-tributario"),
+
+  buscaNcm: (q: string) =>
+    fiscalRequest<Array<{ id: number; codigo: string; descricao: string }>>(
+      `/api/ncm?q=${encodeURIComponent(q.trim())}`,
+    ),
+
+  produtoGrupos: () =>
+    fiscalRequest<Array<{ id: number; nome: string }>>("/api/produto-grupo"),
+
+  produtoSubgrupos: (grupoId?: number) =>
+    fiscalRequest<Array<{ id: number; produtoGrupoId: number; nome: string }>>(
+      grupoId
+        ? `/api/produto-subgrupo?grupoId=${grupoId}`
+        : "/api/produto-subgrupo",
+    ),
+
+  buscaCest: (q = "", ncm = "") => {
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("q", q.trim());
+    if (ncm.trim()) params.set("ncm", ncm.trim());
+    const qs = params.toString();
+    return fiscalRequest<Array<{ codigo: string; descricao: string; ncmPrefixo?: string }>>(
+      `/api/cest${qs ? `?${qs}` : ""}`,
+    );
+  },
 
   nfseServicos: () =>
     fiscalRequest<Array<{ id: number; descricao: string; itemListaServico: string }>>(
       "/api/tribut-nfse-servico?simple=true",
+    ),
+
+  listTributNfseServicos: (todos = true) =>
+    fiscalRequest<TributNfseServicoDto[]>(
+      `/api/tribut-nfse-servico?ativos=${todos ? "false" : "true"}`,
     ),
 };
 

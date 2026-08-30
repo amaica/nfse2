@@ -8,5 +8,12 @@ public record NfeEmitirLoteRequest(
         Boolean sincrono,
         String naturezaOperacao,
         NfeDestinatarioRequest destinatario,
-        List<NfeItemRequest> itens
+        List<NfeItemRequest> itens,
+        String finalidade,
+        String consumidorFinal,
+        String indicadorPresenca,
+        String informacoesAdicionais,
+        NfePagamentoRequest pagamento,
+        NfeTransporteRequest transporte,
+        List<NfeReferenciaRequest> referencias
 ) {}

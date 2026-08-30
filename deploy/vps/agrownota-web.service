@@ -1,0 +1,21 @@
+[Unit]
+Description=AgroNota Portal Web (Next.js)
+After=network-online.target agrownota-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=agrownota
+Group=agrownota
+WorkingDirectory=/opt/agrownota/portal-web
+EnvironmentFile=/opt/agrownota/portal-web/.env.local
+Environment=PORT=3010
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/agrownota/web.log
+StandardError=append:/var/log/agrownota/web.log
+
+[Install]
+WantedBy=multi-user.target

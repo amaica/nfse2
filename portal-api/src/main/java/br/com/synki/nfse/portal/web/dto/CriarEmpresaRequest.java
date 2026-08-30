@@ -37,5 +37,6 @@ public record CriarEmpresaRequest(
         Long ultimoNumeroNfe,
         String serieNfce,
         Long ultimoNumeroNfce,
+        Boolean baixarXml,
         List<EnderecoEmpresaRequest> enderecos
 ) {}

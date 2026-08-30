@@ -1,0 +1,139 @@
+/* PrimeReact AutoComplete — integração visual com o tema AgroNota */
+
+.nfse-ac-field .p-autocomplete {
+  width: 100%;
+  display: flex;
+}
+
+.nfse-ac-field .p-autocomplete .p-inputtext {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border, #dde5d4);
+  background: #fff;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  box-shadow: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nfse-ac-field .p-autocomplete.p-autocomplete-dd .p-inputtext {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.nfse-ac-field .p-autocomplete .p-inputtext:enabled:focus {
+  border-color: var(--brand, #3d6b2f);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand, #3d6b2f) 22%, transparent);
+  outline: none;
+}
+
+.nfse-ac-field .p-autocomplete-dropdown {
+  border-radius: 0 0.75rem 0.75rem 0;
+  border: 1px solid var(--border, #dde5d4);
+  border-left: 0;
+  background: #f8faf5;
+  color: var(--brand, #3d6b2f);
+  width: 2.75rem;
+}
+
+.nfse-ac-field .p-autocomplete-dropdown:hover {
+  background: var(--brand-soft, #eef5e8);
+}
+
+.nfse-ac-panel.p-autocomplete-panel {
+  border: 1px solid var(--border, #dde5d4);
+  border-radius: 0.85rem;
+  box-shadow: 0 12px 32px rgba(26, 50, 32, 0.12);
+  overflow: hidden;
+}
+
+.nfse-ac-panel .p-autocomplete-items {
+  padding: 0.35rem;
+}
+
+.nfse-ac-panel .p-autocomplete-item {
+  border-radius: 0.55rem;
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+}
+
+.nfse-ac-panel .p-autocomplete-item:hover,
+.nfse-ac-panel .p-autocomplete-item.p-highlight {
+  background: var(--brand-soft, #eef5e8) !important;
+  color: #1e3a18 !important;
+}
+
+.nfse-emissao-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 52rem;
+}
+
+.nfse-emissao-hero {
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #1a3220 0%, #2f5424 55%, #3d6b2f 100%);
+  color: #fff;
+  padding: 1.15rem 1.25rem;
+}
+
+.nfse-emissao-hero h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.nfse-emissao-hero p {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.nfse-emissao-card {
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 1.25rem 1.35rem 1.4rem;
+  box-shadow: 0 1px 0 rgba(26, 50, 32, 0.04);
+}
+
+.nfse-emissao-card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e3a18;
+}
+
+.nfse-emissao-card .sub {
+  margin: 0 0 1.15rem;
+  font-size: 0.85rem;
+  color: #5c6b55;
+}
+
+.nfse-adv-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px dashed var(--border);
+  background: #fbfcf8;
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.nfse-adv-toggle:hover {
+  background: #f3f7ee;
+}
+
+.nfse-adv-body {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.85rem;
+}

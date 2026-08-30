@@ -15,5 +15,9 @@ public interface TributConfiguraOfGtRepository extends JpaRepository<TributConfi
     @EntityGraph(attributePaths = "listaIcmsUf")
     Optional<TributConfiguraOfGt> findByIdAndEmpresaId(Long id, Long empresaId);
 
+    @EntityGraph(attributePaths = "listaIcmsUf")
+    Optional<TributConfiguraOfGt> findByEmpresaIdAndTributOperacaoFiscalIdAndTributGrupoTributarioId(
+            Long empresaId, Long tributOperacaoFiscalId, Long tributGrupoTributarioId);
+
     void deleteByEmpresaId(Long empresaId);
 }

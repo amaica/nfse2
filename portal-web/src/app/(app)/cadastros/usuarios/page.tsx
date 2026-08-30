@@ -1,24 +1,12 @@
-import { FiscalCrudWorkspace } from "@/components/fiscal/FiscalCrudWorkspace";
+"use client";
+
+import { GestaoGuard } from "@/components/auth/GestaoGuard";
+import { CadastroUsuariosWorkspace } from "@/components/cadastros/CadastroUsuariosWorkspace";
 
 export default function UsuariosPage() {
   return (
-    <FiscalCrudWorkspace
-      title="Cadastros — Usuários"
-      endpoint="/api/usuario"
-      columns={[
-        { key: "id", label: "Id" },
-        { key: "nome", label: "Nome" },
-        { key: "email", label: "E-mail" },
-        { key: "perfil", label: "Perfil" },
-      ]}
-      defaultForm={{ perfil: "OPERADOR", ativo: true }}
-      fields={[
-        { key: "nome", label: "Nome" },
-        { key: "email", label: "E-mail" },
-        { key: "senha", label: "Senha" },
-        { key: "cpf", label: "CPF" },
-        { key: "perfil", label: "Perfil" },
-      ]}
-    />
+    <GestaoGuard>
+      <CadastroUsuariosWorkspace />
+    </GestaoGuard>
   );
 }

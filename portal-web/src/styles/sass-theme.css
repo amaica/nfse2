@@ -1,0 +1,555 @@
+/* Tema Agro SyncNota — verde campo, trigo e terra */
+
+:root {
+  --primary-50: #f0f5eb;
+  --primary-100: #dce8d0;
+  --primary-200: #b8d4a3;
+  --primary-400: #5a8f42;
+  --primary-500: #3d6b2f;
+  --primary-600: #2f5424;
+  --primary-700: #1e3a18;
+  --accent-gold: #c4a035;
+  --accent-wheat: #e8d9a8;
+  --accent-earth: #6b4f2a;
+  --brand: var(--primary-500);
+  --brand-hover: var(--primary-600);
+  --brand-soft: var(--primary-50);
+  --surface: #f4f6f0;
+  --surface-card: #ffffff;
+  --border: #dde5d4;
+  --sidebar-from: #1a3220;
+  --sidebar-to: #0f1f14;
+}
+
+/* —— Login —— */
+.login-shell {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.login-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.login-bg__base {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 15%, rgba(61, 107, 47, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 85%, rgba(196, 160, 53, 0.16) 0%, transparent 50%),
+    radial-gradient(ellipse 55% 40% at 55% 8%, rgba(90, 143, 66, 0.12) 0%, transparent 45%),
+    linear-gradient(160deg, #f6f9f2 0%, #eef4e6 35%, #faf8f0 70%, #f3efe4 100%);
+}
+
+.login-bg__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  animation: login-float 18s ease-in-out infinite;
+}
+
+.login-bg__orb--1 {
+  width: 520px;
+  height: 520px;
+  top: -8%;
+  left: -6%;
+  background: linear-gradient(135deg, #5a8f42, #3d6b2f);
+}
+
+.login-bg__orb--2 {
+  width: 420px;
+  height: 420px;
+  bottom: -10%;
+  right: 12%;
+  background: linear-gradient(135deg, #c4a035, #8b6914);
+  animation-delay: -6s;
+}
+
+.login-bg__orb--3 {
+  width: 300px;
+  height: 300px;
+  top: 42%;
+  left: 40%;
+  background: linear-gradient(135deg, #6b9b4a, #2f5424);
+  opacity: 0.35;
+  animation-delay: -12s;
+}
+
+.login-bg__noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.login-glass-card {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 28px;
+  box-shadow:
+    0 0 0 1px rgba(61, 107, 47, 0.06),
+    0 12px 40px rgba(30, 58, 24, 0.08),
+    0 40px 80px rgba(196, 160, 53, 0.06);
+  padding: 2px;
+}
+
+.login-headline {
+  color: #1a2e16;
+  letter-spacing: -0.03em;
+}
+
+.login-headline__line {
+  display: block;
+}
+
+.login-headline__accent {
+  display: block;
+  background: linear-gradient(135deg, #2f5424 0%, #5a8f42 45%, #c4a035 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.login-eyebrow {
+  color: var(--primary-600);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.login-feature {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 1px 2px rgba(30, 58, 24, 0.04);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.login-feature:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 24px rgba(61, 107, 47, 0.12);
+}
+
+.login-feature__icon {
+  background: linear-gradient(145deg, rgba(61, 107, 47, 0.14), rgba(196, 160, 53, 0.1));
+  border: 1px solid rgba(61, 107, 47, 0.15);
+  color: var(--primary-600);
+}
+
+@keyframes login-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(24px, -18px) scale(1.04);
+  }
+  66% {
+    transform: translate(-16px, 12px) scale(0.97);
+  }
+}
+
+/* —— Botões e inputs —— */
+.btn-primary-gradient {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: linear-gradient(to right, var(--primary-500), var(--primary-600));
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(47, 84, 36, 0.28);
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+}
+
+.btn-primary-gradient:hover:not(:disabled) {
+  background: linear-gradient(to right, var(--primary-600), var(--primary-700));
+}
+
+.btn-primary-gradient:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-primary-gradient:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.input-saas {
+  width: 100%;
+  padding: 0.875rem 1rem 0.875rem 2.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: #fafcf7;
+  font-size: 0.875rem;
+  color: #1a2e16;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input-saas:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(61, 107, 47, 0.18);
+}
+
+.input-saas::placeholder {
+  color: #94a38a;
+}
+
+.link-agro {
+  color: var(--primary-600);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-agro:hover {
+  color: var(--primary-700);
+}
+
+/* —— App shell —— */
+.saas-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: #1a2e16;
+}
+
+.saas-brand__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(47, 84, 36, 0.35);
+}
+
+.saas-brand__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.page-header__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary-600);
+}
+
+.page-header__title {
+  margin-top: 0.35rem;
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #111827;
+}
+
+.page-header__subtitle {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  color: #6b7280;
+  max-width: 42rem;
+}
+
+/* Cards estilo multiatendimento */
+.page-card {
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.page-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.page-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: var(--primary-50);
+  color: var(--primary-600);
+}
+
+.page-card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.page-card__subtitle {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.125rem;
+}
+
+.page-card__body {
+  padding: 1.5rem;
+}
+
+.page-card__footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #f3f4f6;
+  background: #f9fafb;
+}
+
+.status-badge {
+  display: inline-flex;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status-badge--success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge--warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge--danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge--neutral {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.quota-bar {
+  height: 0.5rem;
+  width: 100%;
+  border-radius: 9999px;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.quota-bar__fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.quota-bar__fill--ok {
+  background: var(--primary-500);
+}
+
+.quota-bar__fill--warn {
+  background: #f59e0b;
+}
+
+.quota-bar__fill--danger {
+  background: #ef4444;
+}
+
+.agro-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.65rem;
+  background: var(--primary-50);
+  color: var(--primary-600);
+  border: 1px solid var(--primary-100);
+}
+
+.saas-dashboard-card {
+  display: block;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.saas-dashboard-card:hover {
+  border-color: rgba(61, 107, 47, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.saas-dashboard-card h2,
+.saas-dashboard-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.saas-dashboard-card p {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.empresa-switcher-btn {
+  display: inline-flex;
+  max-width: min(100vw - 8rem, 22rem);
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  text-align: left;
+  box-shadow: 0 1px 3px rgba(30, 58, 24, 0.06);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.empresa-switcher-btn:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-200);
+}
+
+.empresa-item-atual {
+  background: var(--primary-50) !important;
+}
+
+.app-loading {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  color: var(--primary-600);
+  font-weight: 500;
+}
+
+/* —— Utilitários agro (substituem slate genérico) —— */
+.text-agro-muted {
+  color: #5c6b55;
+}
+
+.text-agro-body {
+  color: #1a2e16;
+}
+
+.login-tabs {
+  display: flex;
+  margin-bottom: 2rem;
+  padding: 0.25rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(221, 229, 212, 0.8);
+  background: rgba(240, 245, 235, 0.85);
+}
+
+.login-tabs__btn {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #5c6b55;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.login-tabs__btn:hover:not(.login-tabs__btn--active) {
+  color: #2f5424;
+}
+
+.login-tabs__btn--active {
+  background: #fff;
+  color: #1a2e16;
+  box-shadow: 0 1px 4px rgba(47, 84, 36, 0.12);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #5c6b55;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-ghost:hover {
+  background: var(--primary-50);
+  color: var(--primary-700);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #3d4f38;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-secondary:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-200);
+}
+
+.badge-agro-success {
+  background: rgba(61, 107, 47, 0.14);
+  color: var(--primary-700);
+}
+
+.badge-agro-warn {
+  background: rgba(196, 160, 53, 0.18);
+  color: #6b4f2a;
+}
+
+.alert-agro-success {
+  border-color: var(--primary-200);
+  background: var(--primary-50);
+}
+
+.alert-agro-success svg {
+  color: var(--primary-600);
+}

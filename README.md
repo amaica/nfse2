@@ -1,5 +1,7 @@
 # NFS-e — biblioteca Java
 
+> **Portal SaaS SyncNota** (multiempresa, assinatura, onboarding): veja [PRODUTO.md](PRODUTO.md) · [SAAS-ROADMAP.md](SAAS-ROADMAP.md) · `./subir-portal.sh`
+
 Biblioteca para emissão e consulta de **Nota Fiscal de Serviço Eletrônica (NFS-e)** — ambiente **nacional (SEFIN/ADN)** e integrações **municipais** (São Paulo, Barueri, São José/SC).
 
 - **Java:** 21  

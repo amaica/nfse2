@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Base64;
 
@@ -46,7 +47,7 @@ public class EmbedTokenService {
             long exp = Long.parseLong(parts[2]);
             String sig = parts[3];
             String payload = parts[0] + "|" + parts[1] + "|" + parts[2];
-            if (!sign(payload).equals(sig)) {
+            if (!MessageDigest.isEqual(sign(payload).getBytes(StandardCharsets.UTF_8), sig.getBytes(StandardCharsets.UTF_8))) {
                 throw new IllegalArgumentException("Assinatura invalida");
             }
             if (exp != EXP_NUNCA && Instant.now().getEpochSecond() > exp) {

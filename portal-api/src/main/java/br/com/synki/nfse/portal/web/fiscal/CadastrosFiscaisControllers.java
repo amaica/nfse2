@@ -6,10 +6,13 @@ import br.com.synki.nfse.portal.domain.fiscal.Pessoa;
 import br.com.synki.nfse.portal.domain.fiscal.Produto;
 import br.com.synki.nfse.portal.domain.fiscal.Veiculo;
 import br.com.synki.nfse.portal.security.EmbedSession;
+import br.com.synki.nfse.portal.security.PortalAuthorization;
+import br.com.synki.nfse.portal.service.UsuarioContaService;
 import br.com.synki.nfse.portal.service.fiscal.CadastroFiscalService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,19 +33,28 @@ class CfopController {
     }
 
     @PutMapping("/{id}")
-    public Cfop atualizar(@PathVariable Long id, @RequestBody Cfop body) {
-        return service.atualizarCfop(id, body);
+    public Cfop atualizar(
+            @AuthenticationPrincipal EmbedSession session,
+            @PathVariable Long id,
+            @RequestBody Cfop body) {
+        return service.atualizarCfop(session.empresaId(), id, body);
     }
 
     @DeleteMapping("/{id}")
-    public void excluir(@PathVariable Long id) { service.excluirCfop(id); }
+    public void excluir(@AuthenticationPrincipal EmbedSession session, @PathVariable Long id) {
+        service.excluirCfop(session.empresaId(), id);
+    }
 }
 
 @RestController
 @RequestMapping("/api/ncm")
 class NcmController {
     private final CadastroFiscalService service;
-    NcmController(CadastroFiscalService service) { this.service = service; }
+    private final PortalAuthorization authz;
+    NcmController(CadastroFiscalService service, PortalAuthorization authz) {
+        this.service = service;
+        this.authz = authz;
+    }
 
     @GetMapping
     public List<Ncm> listar(@RequestParam(required = false) String q) {
@@ -50,15 +62,25 @@ class NcmController {
     }
 
     @PostMapping
-    public Ncm salvar(@RequestBody Ncm body) { return service.salvarNcm(body); }
+    public Ncm salvar(@AuthenticationPrincipal EmbedSession session, @RequestBody Ncm body) {
+        authz.requireGestao(session);
+        return service.salvarNcm(body);
+    }
 
     @PutMapping("/{id}")
-    public Ncm atualizar(@PathVariable Long id, @RequestBody Ncm body) {
+    public Ncm atualizar(
+            @AuthenticationPrincipal EmbedSession session,
+            @PathVariable Long id,
+            @RequestBody Ncm body) {
+        authz.requireGestao(session);
         return service.atualizarNcm(id, body);
     }
 
     @DeleteMapping("/{id}")
-    public void excluir(@PathVariable Long id) { service.excluirNcm(id); }
+    public void excluir(@AuthenticationPrincipal EmbedSession session, @PathVariable Long id) {
+        authz.requireGestao(session);
+        service.excluirNcm(id);
+    }
 }
 
 @RestController
@@ -128,10 +150,29 @@ class ProdutoController {
     public Object listar(
             @AuthenticationPrincipal EmbedSession session,
             @RequestParam(name = "simple", defaultValue = "false") boolean simple) {
-        var lista = service.listarProdutos(session.empresaId());
+        var lista = simple ? service.listarProdutosAtivos(session.empresaId()) : service.listarProdutos(session.empresaId());
         if (!simple) return lista;
         return lista.stream()
                 .map(p -> Map.of("id", p.getId(), "codigo", p.getCodigo(), "nome", p.getNome()))
+                .toList();
+    }
+
+    @GetMapping("/busca")
+    public List<Map<String, Object>> busca(
+            @AuthenticationPrincipal EmbedSession session,
+            @RequestParam String q) {
+        return service.buscarProdutos(session.empresaId(), q).stream()
+                .map(p -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", p.getId());
+                    m.put("codigo", p.getCodigo());
+                    m.put("nome", p.getNome());
+                    m.put("unidade", p.getUnidade() != null ? p.getUnidade() : "UN");
+                    if (p.getValorUnitario() != null) {
+                        m.put("valorUnitario", p.getValorUnitario());
+                    }
+                    return m;
+                })
                 .toList();
     }
 
@@ -169,11 +210,16 @@ class VeiculoController {
     public Object listar(
             @AuthenticationPrincipal EmbedSession session,
             @RequestParam(name = "simple", defaultValue = "false") boolean simple) {
-        var lista = service.listarVeiculos(session.empresaId());
+        var lista = simple ? service.listarVeiculosAtivos(session.empresaId()) : service.listarVeiculos(session.empresaId());
         if (!simple) return lista;
         return lista.stream()
                 .map(v -> Map.of("id", v.getId(), "placa", v.getPlaca(), "modelo", v.getModelo() != null ? v.getModelo() : ""))
                 .toList();
+    }
+
+    @GetMapping("/{id}")
+    public Veiculo buscar(@AuthenticationPrincipal EmbedSession session, @PathVariable Long id) {
+        return service.obterVeiculo(session.empresaId(), id);
     }
 
     @PostMapping
@@ -199,18 +245,29 @@ class VeiculoController {
 @RequestMapping("/api/usuario")
 class UsuarioFiscalController {
     private final CadastroFiscalService service;
-    UsuarioFiscalController(CadastroFiscalService service) { this.service = service; }
+    private final UsuarioContaService usuarioContaService;
+    private final PortalAuthorization authz;
+
+    UsuarioFiscalController(
+            CadastroFiscalService service,
+            UsuarioContaService usuarioContaService,
+            PortalAuthorization authz) {
+        this.service = service;
+        this.usuarioContaService = usuarioContaService;
+        this.authz = authz;
+    }
 
     @GetMapping
     public List<Map<String, Object>> listar(@AuthenticationPrincipal EmbedSession session) {
-        return service.listarUsuarios(session.empresaId());
+        authz.requireGestao(session);
+        return usuarioContaService.listarMembros(session.usuarioId(), session.empresaId());
     }
 
     @PostMapping
     public Map<String, Object> salvar(
             @AuthenticationPrincipal EmbedSession session,
             @RequestBody CadastroFiscalService.UsuarioRequest body) {
-        return service.salvarUsuario(session.empresaId(), body);
+        return service.salvarUsuario(session.usuarioId(), session.empresaId(), body);
     }
 
     @PutMapping("/{id}")
@@ -218,6 +275,6 @@ class UsuarioFiscalController {
             @AuthenticationPrincipal EmbedSession session,
             @PathVariable Long id,
             @RequestBody CadastroFiscalService.UsuarioRequest body) {
-        return service.atualizarUsuario(session.empresaId(), id, body);
+        return service.atualizarUsuario(session.usuarioId(), session.empresaId(), id, body);
     }
 }

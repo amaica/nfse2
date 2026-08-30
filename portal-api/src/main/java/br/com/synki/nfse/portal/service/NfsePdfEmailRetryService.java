@@ -48,6 +48,11 @@ public class NfsePdfEmailRetryService {
         if (!email.contains("@")) {
             return;
         }
+        if (repository.existsByEmpresaIdAndChaveAcessoAndDestinatarioAndStatus(
+                empresaId, chave, email, Status.ENVIADO)) {
+            log.info("DANFSe ja enviado para {} -> {} — reenvio automatico ignorado", chave, email);
+            return;
+        }
         var existente = repository.findByEmpresaIdAndChaveAcessoAndDestinatarioAndStatus(
                 empresaId, chave, email, Status.PENDENTE);
         if (existente.isPresent()) {
@@ -57,6 +62,12 @@ public class NfsePdfEmailRetryService {
         var item = NfsePdfEmailPendente.criar(empresaId, chave, email, mensagem);
         repository.save(item);
         log.info("Reenvio PDF agendado para {} -> {} (proxima tentativa imediata no job)", chave, email);
+    }
+
+    public boolean jaEnviado(Long empresaId, String chave, String destinatario) {
+        String email = destinatario == null ? "" : destinatario.trim().toLowerCase();
+        return repository.existsByEmpresaIdAndChaveAcessoAndDestinatarioAndStatus(
+                empresaId, chave, email, Status.ENVIADO);
     }
 
     @Scheduled(fixedDelayString = "${nfse.pdf-retry.interval-ms:60000}")
@@ -77,6 +88,13 @@ public class NfsePdfEmailRetryService {
     }
 
     private void processarItem(NfsePdfEmailPendente item, Instant agora) {
+        if (repository.existsByEmpresaIdAndChaveAcessoAndDestinatarioAndStatus(
+                item.getEmpresaId(), item.getChaveAcesso(), item.getDestinatario(), Status.ENVIADO)) {
+            item.marcarExpirado();
+            repository.save(item);
+            log.info("Reenvio PDF cancelado (ja enviado) para {} -> {}", item.getChaveAcesso(), item.getDestinatario());
+            return;
+        }
         try {
             byte[] pdf = nfseLibService.downloadPdf(item.getEmpresaId(), item.getChaveAcesso());
             if (pdf == null || pdf.length < 500) {
@@ -94,6 +112,14 @@ public class NfsePdfEmailRetryService {
             repository.save(item);
             log.info("DANFSe PDF reenviado com sucesso para {} -> {}", item.getChaveAcesso(), item.getDestinatario());
         } catch (Exception ex) {
+            if (repository.existsByEmpresaIdAndChaveAcessoAndDestinatarioAndStatus(
+                    item.getEmpresaId(), item.getChaveAcesso(), item.getDestinatario(), Status.ENVIADO)) {
+                item.marcarExpirado();
+                repository.save(item);
+                log.warn("Reenvio PDF encerrado apos envio parcial para {} -> {}: {}",
+                        item.getChaveAcesso(), item.getDestinatario(), ex.getMessage());
+                return;
+            }
             registrarFalha(item, agora, ex.getMessage());
         }
     }

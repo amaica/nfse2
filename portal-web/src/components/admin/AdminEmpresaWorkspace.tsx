@@ -53,6 +53,7 @@ function formParaCriarBody(form: EmpresaFormData) {
     senhaIntegracao: form.senhaIntegracao,
     serieNfe: principal?.serieNfe || "1",
     ultimoNumeroNfe: Number(principal?.ultimoNumeroNfe) || 0,
+    baixarXml: form.baixarXml,
     enderecos: form.enderecos.map(enderecoParaApi),
     cep: principal?.cep,
     logradouro: principal?.logradouro,
@@ -82,6 +83,14 @@ export function AdminEmpresaWorkspace() {
   const [logoArquivo, setLogoArquivo] = useState<File | null>(null);
   const [logoNome, setLogoNome] = useState<string | undefined>();
   const [certNome, setCertNome] = useState<string | undefined>();
+  const [baixandoXmls, setBaixandoXmls] = useState(false);
+  const [embedInfo, setEmbedInfo] = useState<{
+    cnpj?: string;
+    emailIntegracao?: string;
+    embedUrlCnpj?: string;
+    embedUrlCnpjComSenha?: string;
+    embedUrlEmail?: string;
+  } | null>(null);
 
   useEffect(() => {
     const token = getAppToken();
@@ -145,6 +154,13 @@ export function AdminEmpresaWorkspace() {
           ? await adminApi.obterEmpresa(adminKey, id)
           : await empresaPortalApi.obterEmpresa(appToken, id);
       setForm(detalheParaForm(det));
+      setEmbedInfo({
+        cnpj: det.cnpj,
+        emailIntegracao: det.emailIntegracao,
+        embedUrlCnpj: det.embedUrlCnpj,
+        embedUrlCnpjComSenha: det.embedUrlCnpjComSenha,
+        embedUrlEmail: det.embedUrlEmail,
+      });
       setEmpresaId(id);
       setCertNome(det.certificadoCadastrado ? "certificado cadastrado" : undefined);
       setLogoNome(det.logoCadastrado ? "logo cadastrado" : undefined);
@@ -167,6 +183,7 @@ export function AdminEmpresaWorkspace() {
     setCertArquivo(null);
     setCertSenha("");
     setLogoArquivo(null);
+    setEmbedInfo(null);
     setMensagem(null);
     setTela("formulario");
   }
@@ -174,15 +191,43 @@ export function AdminEmpresaWorkspace() {
   function voltarLista() {
     setTela("lista");
     setEmpresaId(null);
+    setEmbedInfo(null);
     setMensagem(null);
+    setBaixandoXmls(false);
   }
 
-  async function salvar(e: React.FormEvent) {
-    e.preventDefault();
+  async function baixarXmlsAgora() {
+    if (empresaId == null) return;
+    setBaixandoXmls(true);
+    setMensagem(null);
+    try {
+      const res =
+        modo === "admin"
+          ? await adminApi.baixarXmlsDestinatario(adminKey, empresaId)
+          : await empresaPortalApi.baixarXmlsDestinatario(appToken, empresaId);
+      const nsu = res.ultimoNsu ? ` NSU ${res.ultimoNsu}.` : "";
+      setMensagem({
+        tipo: "ok",
+        texto: `${res.novas} XML(s) de entrada gravados para o livro caixa (despesas).${nsu}`,
+      });
+    } catch (err) {
+      setMensagem({
+        tipo: "erro",
+        texto: err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Falha ao baixar XMLs",
+      });
+    } finally {
+      setBaixandoXmls(false);
+    }
+  }
+
+  async function salvar() {
     setCarregando(true);
     setMensagem(null);
     try {
       const doc = form.cpfCnpj.replace(/\D/g, "");
+      if (!form.nome.trim()) {
+        throw new Error("Informe a razão social do emitente.");
+      }
       if (doc.length !== 11 && doc.length !== 14) {
         throw new Error("Informe CPF (11 dígitos) ou CNPJ (14 dígitos)");
       }
@@ -206,6 +251,7 @@ export function AdminEmpresaWorkspace() {
           codigoMunicipioIbge: (principal?.codigoMunicipioIbge || form.codigoMunicipioIbge).replace(/\D/g, ""),
           serieRps: form.serieRps,
           ultimoNumeroNfse: Number(form.ultimoNumeroNfse) || 0,
+          baixarXml: form.baixarXml,
           enderecos: form.enderecos.map(enderecoParaApi),
           ...(form.senhaIntegracao.trim() ? { senhaIntegracao: form.senhaIntegracao } : {}),
         };
@@ -234,6 +280,19 @@ export function AdminEmpresaWorkspace() {
       }
 
       setMensagem({ tipo: "ok", texto: "Empresa salva com sucesso." });
+      if (id != null) {
+        const det =
+          modo === "admin"
+            ? await adminApi.obterEmpresa(adminKey, id)
+            : await empresaPortalApi.obterEmpresa(appToken, id);
+        setEmbedInfo({
+          cnpj: det.cnpj,
+          emailIntegracao: det.emailIntegracao,
+          embedUrlCnpj: det.embedUrlCnpj,
+          embedUrlCnpjComSenha: det.embedUrlCnpjComSenha,
+          embedUrlEmail: det.embedUrlEmail,
+        });
+      }
       await carregar();
       if (empresaId == null && id != null) {
         setEmpresaId(id);
@@ -266,16 +325,16 @@ export function AdminEmpresaWorkspace() {
   }
 
   if (inicializando || (carregando && !autenticado)) {
-    return <div className="fiscal-card text-slate-500">Carregando cadastro de empresas…</div>;
+    return <div className="fiscal-card text-slate-500">Carregando emitentes…</div>;
   }
 
   if (!autenticado) {
     return (
-      <div className="fiscal-card space-y-3 p-4">
-        <p className="text-sm text-red-600">{erro || "Não foi possível carregar as empresas."}</p>
+      <div className="fiscal-card space-y-3">
+        <p className="erp-alert erp-alert--error">{erro || "Não foi possível carregar as empresas."}</p>
         <button
           type="button"
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500"
+          className="fiscal-btn-primary"
           onClick={() => {
             setInicializando(true);
             setErro("");
@@ -298,7 +357,7 @@ export function AdminEmpresaWorkspace() {
 
   return (
     <div className="space-y-4">
-      {erro && <p className="text-sm text-red-600">{erro}</p>}
+      {erro && <p className="erp-alert erp-alert--error">{erro}</p>}
       {tela === "lista" ? (
         <EmpresaListagem
           empresas={empresas}
@@ -310,21 +369,25 @@ export function AdminEmpresaWorkspace() {
         />
       ) : (
         <EmpresaFormulario
-          titulo={empresaId == null ? "Cadastro empresa" : `Edição — ${form.nome || "empresa"}`}
+          titulo={empresaId == null ? "Novo emitente" : `Emitente ${form.nome || empresaId}`}
           form={form}
           empresaId={empresaId}
           carregando={carregando}
           certNome={certNome}
           logoNome={logoNome}
           mensagem={mensagem}
+          embedInfo={embedInfo}
           onChange={setForm}
-          onSalvar={salvar}
+          onSalvar={() => void salvar()}
           onVoltar={voltarLista}
+          onNovo={abrirNovo}
           onCertificado={(arq, senha) => {
             setCertArquivo(arq);
             setCertSenha(senha);
           }}
           onLogo={setLogoArquivo}
+          onBaixarXmls={() => void baixarXmlsAgora()}
+          baixandoXmls={baixandoXmls}
         />
       )}
       {modo === "admin" && (

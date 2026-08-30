@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record PortalProperties(
         String jwtSecret,
         int jwtExpirationMinutes,
+        int refreshExpirationDays,
         String corsOrigins,
         String adminSecret,
         String embedBaseUrl

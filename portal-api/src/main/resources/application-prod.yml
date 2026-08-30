@@ -1,0 +1,25 @@
+# Perfil produção — ative com SPRING_PROFILES_ACTIVE=prod
+spring:
+  jpa:
+    show-sql: false
+
+nfse:
+  portal:
+    # Seguranca por padrao: se NFSE_JWT_EXP_MIN nao for definido em producao, expira em 8h
+    # em vez de token permanente (default do perfil base, pensado para dev/embed local).
+    jwt-expiration-minutes: ${NFSE_JWT_EXP_MIN:480}
+  mail:
+    enabled: ${MAIL_ENABLED:true}
+  demo:
+    certificado-path: ${CERTIFICADO_PATH:}
+    certificado-senha: ${CERTIFICADO_SENHA:}
+
+logging:
+  level:
+    br.com.synki: INFO
+    org.springframework.web: WARN
+
+management:
+  endpoint:
+    health:
+      show-details: when_authorized

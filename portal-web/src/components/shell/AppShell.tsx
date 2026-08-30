@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { hasPortalAccess } from "@/lib/app-session";
+import { usePathname, useRouter } from "next/navigation";
+import { hasPortalAccess, isGestaoSession, isOnboardingSession } from "@/lib/app-session";
+import { isGestaoRoute } from "@/lib/menu-config";
 import { AppSidebar } from "./AppSidebar";
 import { AppTopbar } from "./AppTopbar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [ready, setReady] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -17,12 +19,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       router.replace("/login");
       return;
     }
+    if (isOnboardingSession()) {
+      router.replace("/onboarding");
+      return;
+    }
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- checagem única na montagem
   }, []);
 
+  useEffect(() => {
+    if (!ready) return;
+    if (isGestaoRoute(pathname) && !isGestaoSession()) {
+      router.replace("/painel");
+    }
+  }, [ready, pathname, router]);
+
   if (!ready) {
-    return <div className="flex min-h-screen items-center justify-center bg-slate-100">Carregando…</div>;
+    return <div className="app-loading">Carregando…</div>;
   }
 
   const containerClass = [
@@ -46,7 +59,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="content-breadcrumb sm:hidden">
           {/* breadcrumb mobile opcional */}
         </div>
-        <main className="layout-content">{children}</main>
+        <main className="layout-content">
+          <div className="app-page-container">{children}</div>
+        </main>
       </div>
     </div>
   );

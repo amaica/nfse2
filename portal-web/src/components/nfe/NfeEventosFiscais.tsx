@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { getAppToken } from "@/lib/app-session";
+import { EmitenteEmissaoBar } from "@/components/fiscal/EmitenteEmissaoBar";
 
 export function NfeEventosFiscais() {
   const token = getAppToken();
@@ -28,7 +29,9 @@ export function NfeEventosFiscais() {
   };
 
   return (
-    <div className="fiscal-card space-y-6">
+    <div className="space-y-4">
+      <EmitenteEmissaoBar dica="Eventos aplicam-se ao emitente da sessão (certificado e SEFAZ)." />
+      <div className="fiscal-card space-y-6">
       <h1 className="text-2xl font-semibold text-slate-800">NF-e — Eventos fiscais</h1>
 
       <section className="space-y-2 rounded-xl border border-slate-200 p-4">
@@ -110,6 +113,7 @@ export function NfeEventosFiscais() {
       {resultado && (
         <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs text-green-300">{resultado}</pre>
       )}
+      </div>
     </div>
   );
 }

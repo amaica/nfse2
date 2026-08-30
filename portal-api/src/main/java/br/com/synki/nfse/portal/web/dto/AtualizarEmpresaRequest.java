@@ -34,5 +34,6 @@ public record AtualizarEmpresaRequest(
         String serieNfce,
         Long ultimoNumeroNfce,
         String senhaIntegracao,
+        Boolean baixarXml,
         List<EnderecoEmpresaRequest> enderecos
 ) {}

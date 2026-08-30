@@ -4,10 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ArrowRightLeft,
+  BarChart3,
+  BookOpen,
   Box,
   Briefcase,
   Building2,
   Car,
+  ClipboardList,
+  Cog,
+  CreditCard,
   Database,
   ExternalLink,
   File,
@@ -15,17 +20,22 @@ import {
   Frame,
   Home,
   List,
+  Mail,
+  Network,
   Pencil,
   Percent,
+  Plug,
   Receipt,
+  Scale,
   Settings,
-  Network,
+  Shield,
   Tag,
   UserPlus,
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { APP_MENU, type MenuItem } from "@/lib/menu-config";
+import { getMenuForPapel, isGestaoPapel, type MenuItem } from "@/lib/menu-config";
+import { useAppSession } from "@/hooks/useAppSession";
 
 const ICONS: Record<string, LucideIcon> = {
   home: Home,
@@ -37,7 +47,9 @@ const ICONS: Record<string, LucideIcon> = {
   "arrow-right-left": ArrowRightLeft,
   tag: Tag,
   car: Car,
+  cog: Cog,
   percent: Percent,
+  scale: Scale,
   sitemap: Network,
   briefcase: Briefcase,
   settings: Settings,
@@ -48,6 +60,13 @@ const ICONS: Record<string, LucideIcon> = {
   receipt: Receipt,
   "external-link": ExternalLink,
   frame: Frame,
+  "credit-card": CreditCard,
+  "chart-bar": BarChart3,
+  "clipboard-list": ClipboardList,
+  shield: Shield,
+  plug: Plug,
+  mail: Mail,
+  book: BookOpen,
 };
 
 function MenuLink({ item, nested }: { item: MenuItem; nested?: boolean }) {
@@ -77,10 +96,14 @@ function MenuLink({ item, nested }: { item: MenuItem; nested?: boolean }) {
 }
 
 export function AppMenu() {
+  const { session, ready } = useAppSession();
+  const menu = ready ? getMenuForPapel(session?.papel) : getMenuForPapel(undefined);
+  const admin = ready && isGestaoPapel(session?.papel);
+
   return (
-    <nav className="layout-menu-container">
+    <nav className={`layout-menu-container ${admin ? "layout-menu--admin" : "layout-menu--user"}`}>
       <ul className="layout-menu">
-        {APP_MENU.map((item) =>
+        {menu.map((item) =>
           item.items ? (
             <li key={item.label} className="layout-root-menuitem">
               <div className="layout-menuitem-root-text">{item.label}</div>

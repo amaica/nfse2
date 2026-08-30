@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  agrownota-proxy:
+    image: nginx:1.27-alpine
+    configs:
+      - source: agrownota_nginx
+        target: /etc/nginx/nginx.conf
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - synkiNet
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=synkiNet
+        - traefik.http.routers.agrownota.rule=Host(`agrownota.synkicrm.com.br`)
+        - traefik.http.routers.agrownota.entrypoints=websecure
+        - traefik.http.routers.agrownota.tls=true
+        - traefik.http.routers.agrownota.tls.certresolver=letsencryptresolver
+        - traefik.http.services.agrownota.loadbalancer.server.port=80
+
+networks:
+  synkiNet:
+    external: true
+
+configs:
+  agrownota_nginx:
+    file: ./nginx-agrownota.conf
