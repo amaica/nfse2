@@ -57,9 +57,11 @@ export function AutoCompleteField({
 }: Props) {
   return (
     <div className={classNames("nfse-ac-field", className)}>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
+      {label ? (
+        <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-slate-700">
+          {label}
+        </label>
+      ) : null}
       {hint ? <p className="mb-1.5 text-xs text-slate-500">{hint}</p> : null}
       <div className={classNames("relative", loading && "opacity-80")}>
         <AutoComplete

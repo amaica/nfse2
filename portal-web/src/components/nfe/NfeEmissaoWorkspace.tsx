@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { AutoCompleteCompleteEvent } from "primereact/autocomplete";
 import {
   CheckCircle,
   FileDown,
@@ -9,7 +10,6 @@ import {
   Package,
   Plus,
   RefreshCw,
-  Search,
   Send,
   Trash2,
   Truck,
@@ -26,6 +26,7 @@ import { AssinaturaBanner } from "@/components/conta/AssinaturaBanner";
 import { mapEmissaoError } from "@/lib/assinatura";
 import { fmtCfop } from "@/lib/cfop";
 import { MoedaInput, QtyInput, fmtMoeda } from "@/components/fiscal/MoedaInput";
+import { AutoCompleteField, type AcOption } from "@/components/ui/AutoCompleteField";
 import {
   CONSUMIDOR_FINAL,
   FINALIDADES_NFE,
@@ -38,6 +39,12 @@ import {
   fmtAamm,
   parseChaveNfe,
 } from "@/lib/nfe-emissao-opcoes";
+
+function asOption(value: AcOption | string | null): AcOption | null {
+  if (!value) return null;
+  if (typeof value === "string") return { label: value, value };
+  return value;
+}
 
 type PessoaSug = { id: number; nome: string; cpfCnpj: string };
 type Operacao = {
@@ -166,19 +173,21 @@ export function NfeEmissaoWorkspace() {
   const [operacaoFiscalId, setOperacaoFiscalId] = useState<number | "">("");
   const [naturezaOperacao, setNaturezaOperacao] = useState("");
 
-  const [destQuery, setDestQuery] = useState("");
-  const [destSug, setDestSug] = useState<PessoaSug[]>([]);
+  const [destOpt, setDestOpt] = useState<AcOption | null>(null);
+  const [destSug, setDestSug] = useState<AcOption[]>([]);
   const [destinatario, setDestinatario] = useState<PessoaSug | null>(null);
   const [destEmail, setDestEmail] = useState("");
   const [destIe, setDestIe] = useState("");
 
   const [itens, setItens] = useState<ItemLinha[]>([]);
-  const [prodQuery, setProdQuery] = useState("");
-  const [prodSug, setProdSug] = useState<ProdutoSug[]>([]);
+  const [prodOpt, setProdOpt] = useState<AcOption | null>(null);
+  const [prodSug, setProdSug] = useState<AcOption[]>([]);
   const [prodSel, setProdSel] = useState<ProdutoSug | null>(null);
   const [addQtd, setAddQtd] = useState<number | undefined>(1);
   const [addValor, setAddValor] = useState<number | undefined>(undefined);
   const [addDesc, setAddDesc] = useState<number | undefined>(undefined);
+  const [natOpt, setNatOpt] = useState<AcOption | null>(null);
+  const [natSug, setNatSug] = useState<AcOption[]>([]);
 
   const [finalidade, setFinalidade] = useState("1");
   const [consumidorFinal, setConsumidorFinal] = useState("1");
@@ -193,9 +202,11 @@ export function NfeEmissaoWorkspace() {
   const [transpIe, setTranspIe] = useState("");
   const [transpMun, setTranspMun] = useState("");
   const [transpUf, setTranspUf] = useState("");
-  const [transpQuery, setTranspQuery] = useState("");
-  const [transpSug, setTranspSug] = useState<PessoaSug[]>([]);
+  const [transpOpt, setTranspOpt] = useState<AcOption | null>(null);
+  const [transpSug, setTranspSug] = useState<AcOption[]>([]);
   const [placa, setPlaca] = useState("");
+  const [placaOpt, setPlacaOpt] = useState<AcOption | null>(null);
+  const [placaSug, setPlacaSug] = useState<AcOption[]>([]);
   const [placaUf, setPlacaUf] = useState("");
   const [rntc, setRntc] = useState("");
   const [valorFrete, setValorFrete] = useState<number | undefined>(undefined);
@@ -210,9 +221,8 @@ export function NfeEmissaoWorkspace() {
 
   const [referencias, setReferencias] = useState<RefLinha[]>([]);
   const [refTipo, setRefTipo] = useState<"NFE" | "NFP">("NFE");
-  const [refChave, setRefChave] = useState("");
-  const [refQuery, setRefQuery] = useState("");
-  const [refSug, setRefSug] = useState<Array<{ rotulo: string; chave: string }>>([]);
+  const [refOpt, setRefOpt] = useState<AcOption | null>(null);
+  const [refSug, setRefSug] = useState<AcOption[]>([]);
   const [nfpUf, setNfpUf] = useState("");
   const [nfpAamm, setNfpAamm] = useState("");
   const [nfpCnpj, setNfpCnpj] = useState("");
@@ -251,10 +261,17 @@ export function NfeEmissaoWorkspace() {
     if (!op) {
       setOperacaoFiscalId("");
       setNaturezaOperacao("");
+      setNatOpt(null);
       return;
     }
     setOperacaoFiscalId(op.id);
     setNaturezaOperacao(naturezaDaOperacao(op));
+    setNatOpt({
+      label: labelNatureza(op),
+      value: String(op.id),
+      meta: naturezaDaOperacao(op),
+      raw: op,
+    });
     const fin = finalidadeDaOperacao(op);
     setFinalidade(fin);
     if (op.observacao?.trim()) {
@@ -273,14 +290,17 @@ export function NfeEmissaoWorkspace() {
     setResultado(null);
     setItens([]);
     setDestinatario(null);
-    setDestQuery("");
+    setDestOpt(null);
+    setDestSug([]);
     setProdSel(null);
-    setProdQuery("");
+    setProdOpt(null);
+    setProdSug([]);
     setAddValor(undefined);
     setAddDesc(undefined);
     setAddQtd(1);
     setOperacaoFiscalId("");
     setNaturezaOperacao("");
+    setNatOpt(null);
     setEnderecoId("");
     setFinalidade("1");
     setConsumidorFinal("1");
@@ -294,7 +314,11 @@ export function NfeEmissaoWorkspace() {
     setTranspIe("");
     setTranspMun("");
     setTranspUf("");
+    setTranspOpt(null);
+    setTranspSug([]);
     setPlaca("");
+    setPlacaOpt(null);
+    setPlacaSug([]);
     setPlacaUf("");
     setRntc("");
     setValorFrete(undefined);
@@ -306,8 +330,8 @@ export function NfeEmissaoWorkspace() {
     setPesoB("");
     setReboques([]);
     setReferencias([]);
-    setRefChave("");
-    setRefQuery("");
+    setRefOpt(null);
+    setRefSug([]);
     carregarContexto();
     fiscalApi
       .operacoesSimples()
@@ -360,23 +384,42 @@ export function NfeEmissaoWorkspace() {
     return { qtd, produtos, descontos, nota: Math.max(0, produtos - descontos) };
   }, [itens]);
 
-  const buscarDest = async (q: string) => {
-    setDestQuery(q);
-    setDestinatario(null);
-    if (q.trim().length < 2) {
+  const pessoaParaOpt = (p: PessoaSug): AcOption => ({
+    label: p.nome,
+    value: String(p.id),
+    meta: formatarCnpjCpf(p.cpfCnpj || "") || undefined,
+    raw: p,
+  });
+
+  const produtoParaOpt = (p: ProdutoSug): AcOption => ({
+    label: `${p.codigo} — ${p.nome}`,
+    value: String(p.id),
+    meta: p.valorUnitario && p.valorUnitario > 0 ? fmtMoeda(p.valorUnitario) : "sem preço",
+    raw: p,
+  });
+
+  const buscarDest = async (event: AutoCompleteCompleteEvent) => {
+    const q = event.query?.trim() ?? "";
+    if (q.length < 2) {
       setDestSug([]);
       return;
     }
     try {
-      setDestSug(await fiscalApi.buscaPessoas(q));
+      const pessoas = await fiscalApi.buscaPessoas(q);
+      setDestSug(pessoas.map(pessoaParaOpt));
     } catch {
       setDestSug([]);
     }
   };
 
-  const selecionarDest = async (p: PessoaSug) => {
+  const selecionarDest = async (opt: AcOption) => {
+    setDestOpt(opt);
+    const p = (opt.raw as PessoaSug | undefined) ?? {
+      id: Number(opt.value),
+      nome: opt.label,
+      cpfCnpj: "",
+    };
     setDestinatario(p);
-    setDestQuery(`${p.nome} — ${formatarCnpjCpf(p.cpfCnpj || "")}`);
     setDestSug([]);
     try {
       const full = await fiscalApi.get<{ email?: string; inscricaoEstadual?: string }>(
@@ -390,23 +433,28 @@ export function NfeEmissaoWorkspace() {
     }
   };
 
-  const buscarProd = async (q: string) => {
-    setProdQuery(q);
-    setProdSel(null);
-    if (q.trim().length < 2) {
+  const buscarProd = async (event: AutoCompleteCompleteEvent) => {
+    const q = event.query?.trim() ?? "";
+    if (q.length < 2) {
       setProdSug([]);
       return;
     }
     try {
-      setProdSug(await fiscalApi.buscaProdutos(q));
+      const produtos = await fiscalApi.buscaProdutos(q);
+      setProdSug(produtos.map(produtoParaOpt));
     } catch {
       setProdSug([]);
     }
   };
 
-  const selecionarProd = async (p: ProdutoSug) => {
+  const selecionarProd = async (opt: AcOption) => {
+    setProdOpt(opt);
+    const p = (opt.raw as ProdutoSug | undefined) ?? {
+      id: Number(opt.value),
+      codigo: "",
+      nome: opt.label,
+    };
     setProdSel(p);
-    setProdQuery(`${p.codigo} — ${p.nome}`);
     setProdSug([]);
     setAddValor(p.valorUnitario && p.valorUnitario > 0 ? p.valorUnitario : undefined);
     try {
@@ -417,6 +465,27 @@ export function NfeEmissaoWorkspace() {
     } catch {
       /* usa valor da busca */
     }
+  };
+
+  const buscarNatureza = (event: AutoCompleteCompleteEvent) => {
+    const q = (event.query ?? "").trim().toLowerCase();
+    const lista = [...saidas, ...entradas, ...outras];
+    setNatSug(
+      lista
+        .filter((o) => {
+          if (!q) return true;
+          const lab = labelNatureza(o).toLowerCase();
+          const nat = naturezaDaOperacao(o).toLowerCase();
+          return lab.includes(q) || nat.includes(q) || String(o.cfop ?? "").includes(q);
+        })
+        .slice(0, 40)
+        .map((o) => ({
+          label: labelNatureza(o),
+          value: String(o.id),
+          meta: naturezaDaOperacao(o),
+          raw: o,
+        })),
+    );
   };
 
   const atualizarItem = (key: string, patch: Partial<ItemLinha>) => {
@@ -468,7 +537,7 @@ export function NfeEmissaoWorkspace() {
         },
       ]);
       setProdSel(null);
-      setProdQuery("");
+      setProdOpt(null);
       setAddQtd(1);
       setAddValor(undefined);
       setAddDesc(undefined);
@@ -479,23 +548,29 @@ export function NfeEmissaoWorkspace() {
 
   const removerItem = (key: string) => setItens((prev) => prev.filter((i) => i.key !== key));
 
-  const buscarTransportadora = async (q: string) => {
-    setTranspQuery(q);
-    if (q.trim().length < 2) {
+  const buscarTransportadora = async (event: AutoCompleteCompleteEvent) => {
+    const q = event.query?.trim() ?? "";
+    if (q.length < 2) {
       setTranspSug([]);
       return;
     }
     try {
-      setTranspSug(await fiscalApi.buscaPessoas(q));
+      const pessoas = await fiscalApi.buscaPessoas(q);
+      setTranspSug(pessoas.map(pessoaParaOpt));
     } catch {
       setTranspSug([]);
     }
   };
 
-  const selecionarTransportadora = async (p: PessoaSug) => {
+  const selecionarTransportadora = async (opt: AcOption) => {
+    setTranspOpt(opt);
+    const p = (opt.raw as PessoaSug | undefined) ?? {
+      id: Number(opt.value),
+      nome: opt.label,
+      cpfCnpj: "",
+    };
     setTranspNome(p.nome);
     setTranspDoc(p.cpfCnpj || "");
-    setTranspQuery(`${p.nome} — ${formatarCnpjCpf(p.cpfCnpj || "")}`);
     setTranspSug([]);
     try {
       const full = await fiscalApi.get<{
@@ -511,30 +586,58 @@ export function NfeEmissaoWorkspace() {
     }
   };
 
-  const buscarRef = async (q: string) => {
-    setRefQuery(q);
-    if (!token || q.trim().length < 2) {
+  const buscarPlaca = (event: AutoCompleteCompleteEvent) => {
+    const q = (event.query ?? "").trim().toUpperCase();
+    setPlacaSug(
+      veiculos
+        .filter((v) => !q || v.placa.toUpperCase().includes(q) || (v.modelo || "").toUpperCase().includes(q))
+        .slice(0, 20)
+        .map((v) => ({
+          label: v.placa,
+          value: v.placa,
+          meta: v.modelo || undefined,
+          raw: v,
+        })),
+    );
+  };
+
+  const buscarRef = async (event: AutoCompleteCompleteEvent) => {
+    const q = event.query?.trim() ?? "";
+    const digits = q.replace(/\D/g, "");
+    if (digits.length === 44) {
+      setRefSug([
+        {
+          label: `Colar chave · ${digits}`,
+          value: digits,
+          meta: "Chave de 44 dígitos",
+        },
+      ]);
+      return;
+    }
+    if (!token || q.length < 2) {
       setRefSug([]);
       return;
     }
     try {
-      const [proprias, entradas] = await Promise.all([
+      const [proprias, entradasLista] = await Promise.all([
         api.nfeListarNotas(token, q).catch(() => ({ itens: [] })),
         api.nfeListarEntradas(token, q).catch(() => []),
       ]);
-      const lista: Array<{ rotulo: string; chave: string }> = [];
+      const lista: AcOption[] = [];
       for (const n of proprias.itens ?? []) {
         if (!n.chave) continue;
         lista.push({
-          rotulo: `Emitida nº ${n.numero ?? "—"} / ${n.serie ?? "—"} · ${n.chave}`,
-          chave: n.chave,
+          label: `Emitida nº ${n.numero ?? "—"} / ${n.serie ?? "—"}`,
+          value: n.chave,
+          meta: n.chave,
         });
       }
-      for (const n of entradas) {
+      for (const n of entradasLista) {
         if (!n.chave) continue;
         lista.push({
-          rotulo: `Entrada nº ${n.numero ?? "—"} · ${n.nomeEmitente ?? "emitente"} · ${n.chave}`,
-          chave: n.chave,
+          label: `Entrada nº ${n.numero ?? "—"} · ${n.nomeEmitente ?? "emitente"}`,
+          value: n.chave,
+          meta: n.chave,
         });
       }
       setRefSug(lista.slice(0, 20));
@@ -550,7 +653,7 @@ export function NfeEmissaoWorkspace() {
       return;
     }
     setRefSug([]);
-    setRefQuery("");
+    setRefOpt(null);
     setNfpUf(parsed.codigoUf);
     setNfpAamm(fmtAamm(parsed.anoMes));
     if (parsed.cnpj.startsWith("000")) {
@@ -573,16 +676,17 @@ export function NfeEmissaoWorkspace() {
           rotulo: rotulo || `NF-e ${parsed.numero} · série ${parsed.serie}`,
         },
       ]);
-      setRefChave("");
-    } else {
-      setRefChave(parsed.chave);
     }
   };
 
   const incluirReferencia = () => {
     setErro("");
     if (refTipo === "NFE") {
-      const parsed = parseChaveNfe(refChave || refQuery);
+      const raw =
+        (typeof refOpt === "object" && refOpt?.value) ||
+        (typeof refOpt === "string" ? refOpt : "") ||
+        "";
+      const parsed = parseChaveNfe(String(raw));
       if (!parsed) {
         setErro("Informe a chave de 44 dígitos da NF-e referenciada, ou busque uma nota já baixada/emitida.");
         return;
@@ -596,8 +700,7 @@ export function NfeEmissaoWorkspace() {
           rotulo: `NF-e ${parsed.numero} · série ${parsed.serie}`,
         },
       ]);
-      setRefChave("");
-      setRefQuery("");
+      setRefOpt(null);
       setRefSug([]);
       return;
     }
@@ -820,30 +923,24 @@ export function NfeEmissaoWorkspace() {
         <div className="nfe-panel__body">
           <div className="grid grid-cols-12 gap-3">
             <div className="col-span-12 md:col-span-6">
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Cliente / produtor / cerealista
-              </label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  className="fiscal-input nfe-search"
-                  placeholder="Nome ou CPF/CNPJ…"
-                  value={destQuery}
-                  onChange={(e) => void buscarDest(e.target.value)}
-                />
-              </div>
-              {destSug.length > 0 && (
-                <ul className="nfe-sug">
-                  {destSug.map((p) => (
-                    <li key={p.id}>
-                      <button type="button" onClick={() => void selecionarDest(p)}>
-                        <strong>{p.nome}</strong>
-                        <span className="ml-2 text-slate-500">{formatarCnpjCpf(p.cpfCnpj || "") || "—"}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <AutoCompleteField
+                id="nfe-dest"
+                label="Cliente / produtor / cerealista"
+                placeholder="Nome ou CPF/CNPJ…"
+                value={destOpt}
+                suggestions={destSug}
+                completeMethod={(e) => void buscarDest(e)}
+                dropdown
+                onChange={(v) => {
+                  const opt = asOption(v);
+                  if (opt && typeof v !== "string") {
+                    void selecionarDest(opt);
+                    return;
+                  }
+                  setDestOpt(opt);
+                  setDestinatario(null);
+                }}
+              />
             </div>
             <div className="col-span-12 md:col-span-3">
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -901,46 +998,26 @@ export function NfeEmissaoWorkspace() {
           {cfopPadrao ? <span className="nfe-cfop-chip">CFOP {cfopPadrao}</span> : null}
         </div>
         <div className="nfe-panel__body">
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Natureza da operação
-          </label>
-          <select
-            className="fiscal-input"
-            value={operacaoFiscalId}
-            onChange={(e) => {
-              const id = e.target.value ? Number(e.target.value) : "";
-              aplicarOperacao(operacoes.find((o) => o.id === id));
+          <AutoCompleteField
+            id="nfe-natureza"
+            label="Natureza da operação"
+            placeholder="Buscar natureza / CFOP…"
+            value={natOpt}
+            suggestions={natSug}
+            completeMethod={buscarNatureza}
+            forceSelection
+            dropdown
+            onChange={(v) => {
+              const opt = asOption(v);
+              setNatOpt(opt);
+              if (opt && typeof v !== "string") {
+                const op = (opt.raw as Operacao | undefined) ?? operacoes.find((o) => o.id === Number(opt.value));
+                aplicarOperacao(op);
+              } else if (!opt) {
+                aplicarOperacao(undefined);
+              }
             }}
-          >
-            <option value="">Selecione a natureza…</option>
-            {saidas.length > 0 && (
-              <optgroup label="Saídas (venda, remessa, devolução de compra)">
-                {saidas.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {labelNatureza(o)}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {entradas.length > 0 && (
-              <optgroup label="Entradas (compra, retorno, devolução de venda)">
-                {entradas.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {labelNatureza(o)}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {outras.length > 0 && (
-              <optgroup label="Outras">
-                {outras.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {labelNatureza(o)}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </select>
+          />
           <p className="mt-2 text-xs text-slate-500">
             O texto da NF-e (<strong>natOp</strong>) vem da operação fiscal cadastrada
             {naturezaOperacao ? (
@@ -1064,37 +1141,26 @@ export function NfeEmissaoWorkspace() {
         </div>
         <div className="nfe-panel__body space-y-4">
           <div className="nfe-add-grid">
-            <label className="text-sm">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Produto / mercadoria
-              </span>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  className="fiscal-input nfe-search"
-                  placeholder="Soja, milho, suíno, código…"
-                  value={prodQuery}
-                  onChange={(e) => void buscarProd(e.target.value)}
-                />
-              </div>
-              {prodSug.length > 0 && (
-                <ul className="nfe-sug">
-                  {prodSug.map((p) => (
-                    <li key={p.id}>
-                      <button type="button" onClick={() => void selecionarProd(p)}>
-                        <span className="font-mono text-xs text-slate-500">{p.codigo}</span>{" "}
-                        <strong>{p.nome}</strong>
-                        {p.valorUnitario ? (
-                          <span className="ml-2 text-slate-500">{fmtMoeda(p.valorUnitario)}</span>
-                        ) : (
-                          <span className="ml-2 text-amber-700">sem preço</span>
-                        )}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </label>
+            <div className="text-sm">
+              <AutoCompleteField
+                id="nfe-produto"
+                label="Produto / mercadoria"
+                placeholder="Soja, milho, suíno, código…"
+                value={prodOpt}
+                suggestions={prodSug}
+                completeMethod={(e) => void buscarProd(e)}
+                dropdown
+                onChange={(v) => {
+                  const opt = asOption(v);
+                  if (opt && typeof v !== "string") {
+                    void selecionarProd(opt);
+                    return;
+                  }
+                  setProdOpt(opt);
+                  setProdSel(null);
+                }}
+              />
+            </div>
             <label className="text-sm">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Qtd</span>
               <QtyInput value={addQtd} onChange={setAddQtd} />
@@ -1236,32 +1302,28 @@ export function NfeEmissaoWorkspace() {
           {modFrete !== "9" && (
             <>
               <div className="nfe-config-grid">
-                <label className="text-sm md:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Transportadora
-                  </span>
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                    <input
-                      className="fiscal-input nfe-search"
-                      placeholder="Nome ou CNPJ…"
-                      value={transpQuery || transpNome}
-                      onChange={(e) => void buscarTransportadora(e.target.value)}
-                    />
-                  </div>
-                  {transpSug.length > 0 && (
-                    <ul className="nfe-sug">
-                      {transpSug.map((p) => (
-                        <li key={p.id}>
-                          <button type="button" onClick={() => void selecionarTransportadora(p)}>
-                            <strong>{p.nome}</strong>
-                            <span className="ml-2 text-slate-500">{formatarCnpjCpf(p.cpfCnpj || "")}</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </label>
+                <div className="text-sm md:col-span-2">
+                  <AutoCompleteField
+                    id="nfe-transp"
+                    label="Transportadora"
+                    placeholder="Nome ou CNPJ…"
+                    value={transpOpt}
+                    suggestions={transpSug}
+                    completeMethod={(e) => void buscarTransportadora(e)}
+                    dropdown
+                    onChange={(v) => {
+                      const opt = asOption(v);
+                      if (opt && typeof v !== "string") {
+                        void selecionarTransportadora(opt);
+                        return;
+                      }
+                      setTranspOpt(opt);
+                      if (typeof v === "string") {
+                        setTranspNome(v);
+                      }
+                    }}
+                  />
+                </div>
                 <label className="text-sm">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                     CNPJ/CPF
@@ -1289,24 +1351,27 @@ export function NfeEmissaoWorkspace() {
                     ))}
                   </select>
                 </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Placa</span>
-                  <select className="fiscal-input" value={placa} onChange={(e) => setPlaca(e.target.value.toUpperCase())}>
-                    <option value="">Digite ou escolha</option>
-                    {veiculos.map((v) => (
-                      <option key={v.placa} value={v.placa}>
-                        {v.placa}
-                        {v.modelo ? ` · ${v.modelo}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    className="fiscal-input mt-1"
-                    placeholder="ou informe a placa"
-                    value={placa}
-                    onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+                <div className="text-sm">
+                  <AutoCompleteField
+                    id="nfe-placa"
+                    label="Placa"
+                    placeholder="Digite ou escolha…"
+                    value={placaOpt ?? (placa ? { label: placa, value: placa } : null)}
+                    suggestions={placaSug}
+                    completeMethod={buscarPlaca}
+                    dropdown
+                    onChange={(v) => {
+                      const opt = asOption(v);
+                      setPlacaOpt(opt);
+                      if (opt) {
+                        const placaVal = (typeof v === "string" ? v : opt.value).toUpperCase();
+                        setPlaca(placaVal);
+                      } else {
+                        setPlaca("");
+                      }
+                    }}
                   />
-                </label>
+                </div>
                 <label className="text-sm">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                     UF placa
@@ -1458,33 +1523,29 @@ export function NfeEmissaoWorkspace() {
           </div>
           {refTipo === "NFE" ? (
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Buscar nota emitida / DF-e de entrada ou colar a chave
-              </label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  className="fiscal-input nfe-search"
-                  placeholder="Número, chave ou emitente…"
-                  value={refQuery || refChave}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setRefChave(v.replace(/\D/g, "").slice(0, 44));
-                    void buscarRef(v);
-                  }}
-                />
-              </div>
-              {refSug.length > 0 && (
-                <ul className="nfe-sug">
-                  {refSug.map((n) => (
-                    <li key={n.chave}>
-                      <button type="button" onClick={() => aplicarChaveRef(n.chave, n.rotulo)}>
-                        {n.rotulo}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <AutoCompleteField
+                id="nfe-ref"
+                label="Buscar nota emitida / DF-e de entrada ou colar a chave"
+                placeholder="Número, chave ou emitente…"
+                value={refOpt}
+                suggestions={refSug}
+                completeMethod={(e) => void buscarRef(e)}
+                dropdown
+                onChange={(v) => {
+                  const opt = asOption(v);
+                  if (opt && typeof v !== "string") {
+                    aplicarChaveRef(opt.value, opt.label);
+                    return;
+                  }
+                  setRefOpt(opt);
+                  if (typeof v === "string") {
+                    const digits = v.replace(/\D/g, "").slice(0, 44);
+                    if (digits.length === 44) {
+                      aplicarChaveRef(digits);
+                    }
+                  }
+                }}
+              />
             </div>
           ) : (
             <div className="nfe-config-grid">
