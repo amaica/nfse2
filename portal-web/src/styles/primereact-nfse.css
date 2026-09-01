@@ -137,3 +137,20 @@
   display: grid;
   gap: 0.85rem;
 }
+
+/* UI AgrowSync — emissão NFS-e portada do agrowFront */
+.nfse-emissao-agrow .nfse-ac-field .p-autocomplete .p-inputtext:enabled:focus {
+  border-color: #16c15e;
+  box-shadow: 0 0 0 3px rgba(22, 193, 94, 0.18);
+}
+
+.nfse-emissao-agrow .nfse-ac-field .p-autocomplete-dropdown {
+  background: #f0fdf4;
+  color: #16c15e;
+}
+
+.nfse-emissao-agrow .nfse-ac-panel .p-autocomplete-item:hover,
+.nfse-emissao-agrow .nfse-ac-panel .p-autocomplete-item.p-highlight {
+  background: #ecfdf5 !important;
+  color: #065f46 !important;
+}

@@ -5,9 +5,9 @@ import { getAppToken } from "@/lib/app-session";
 import { PORTAL_EMPRESA_EVENT, type LoginResponse } from "@/lib/portal-empresa";
 import { EmitenteEmissaoBar } from "@/components/fiscal/EmitenteEmissaoBar";
 import { AssinaturaBanner } from "@/components/conta/AssinaturaBanner";
-import { EmissaoWizard } from "@/components/nfse/wizard/EmissaoWizard";
+import { NfseEmissaoAgrow } from "@/components/nfse/NfseEmissaoAgrow";
 
-/** Emissão NFS-e nativa no portal — iframe/embed fica em Conta → Integração ERP. */
+/** Emissão NFS-e — UI portada do AgrowSync (agrowFront). */
 export default function NfseEmissaoPage() {
   const [token, setToken] = useState<string | null>(null);
 
@@ -25,18 +25,14 @@ export default function NfseEmissaoPage() {
   }, []);
 
   if (!token) {
-    return (
-      <div className="fiscal-card text-sm text-slate-500">
-        Faça login para emitir NFS-e.
-      </div>
-    );
+    return <div className="fiscal-card text-sm text-slate-500">Faça login para emitir NFS-e.</div>;
   }
 
   return (
     <div className="space-y-4">
       <EmitenteEmissaoBar dica="Cadastros, serviços e numeração NFS-e são do emitente selecionado." />
       <AssinaturaBanner compact />
-      <EmissaoWizard token={token} />
+      <NfseEmissaoAgrow token={token} />
     </div>
   );
 }
