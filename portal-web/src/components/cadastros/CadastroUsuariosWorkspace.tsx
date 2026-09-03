@@ -84,6 +84,7 @@ export function CadastroUsuariosWorkspace() {
   const [salvando, setSalvando] = useState(false);
   const [gruposPermissao, setGruposPermissao] = useState<PortalPerfilDto[]>([]);
   const [portalPerfilId, setPortalPerfilId] = useState<number | "">("");
+  const [vinculosOriginais, setVinculosOriginais] = useState(0);
 
   const carregarLista = useCallback(async () => {
     const token = getAppToken();
@@ -152,6 +153,7 @@ export function CadastroUsuariosWorkspace() {
     setForm(emptyUsuario());
     setMarcadas(new Set());
     setPortalPerfilId("");
+    setVinculosOriginais(0);
   };
 
   const carregarGrupos = useCallback(async () => {
@@ -162,16 +164,50 @@ export function CadastroUsuariosWorkspace() {
     }
   }, []);
 
+  const garantirEmpresasDelegaveis = async (): Promise<EmpresaOpcao[]> => {
+    if (empresas.length > 0) return empresas;
+    try {
+      const delegaveis = await fiscalApi.request<EmpresaOpcao[]>("/api/conta/empresas-delegaveis");
+      setEmpresas(delegaveis);
+      return delegaveis;
+    } catch (e) {
+      setErro(mensagemErro(e, "Lista de emitentes indisponível"));
+      return [];
+    }
+  };
+
   const novo = async () => {
+    setErro("");
+    const lista = await garantirEmpresasDelegaveis();
     setEditId(null);
     setForm(emptyUsuario());
     setMarcadas(empresaId != null ? new Set([empresaId]) : new Set());
     setPortalPerfilId("");
+    setVinculosOriginais(0);
     setViewMode("form");
+    if (lista.length === 0) {
+      setAviso("Nenhum emitente disponível para vincular. Troque de emitente ou verifique se você é ADMIN.");
+    }
     await carregarGrupos();
   };
 
   const editar = async (row: UsuarioRow) => {
+    setErro("");
+    setAviso("");
+    const lista = await garantirEmpresasDelegaveis();
+    const delegaveis = new Set(lista.map((e) => e.id));
+    // Mantém todos os vínculos do usuário que o admin ainda administra
+    // (não cai para 1 emitente se a lista delegável ainda não carregou).
+    const vinculadas = (row.empresas ?? [])
+      .map((e) => e.empresaId)
+      .filter((id) => delegaveis.size === 0 || delegaveis.has(id));
+    const marcadasIds =
+      vinculadas.length > 0
+        ? vinculadas
+        : empresaId != null && (delegaveis.size === 0 || delegaveis.has(empresaId))
+          ? [empresaId]
+          : [];
+
     setEditId(row.id);
     setForm({
       nome: row.nome,
@@ -181,17 +217,17 @@ export function CadastroUsuariosWorkspace() {
       ativo: row.ativo !== false,
       senha: "",
     });
-    const delegaveis = new Set(empresas.map((e) => e.id));
-    const vinculadas = (row.empresas ?? [])
-      .map((e) => e.empresaId)
-      .filter((id) => delegaveis.has(id));
-    setMarcadas(new Set(vinculadas.length > 0 ? vinculadas : empresaId != null ? [empresaId] : []));
+    setMarcadas(new Set(marcadasIds));
+    setVinculosOriginais(vinculadas.length > 0 ? vinculadas.length : marcadasIds.length);
     const perfilFromEmp =
       row.empresas?.find((e) => e.empresaId === empresaId)?.portalPerfilId ??
       row.portalPerfilId ??
       row.empresas?.find((e) => e.portalPerfilId != null)?.portalPerfilId;
     setPortalPerfilId(perfilFromEmp ?? "");
     setViewMode("form");
+    if (lista.length === 0) {
+      setAviso("Lista de emitentes vazia — não salve ou os vínculos atuais podem ser perdidos.");
+    }
     await carregarGrupos();
   };
 
@@ -235,6 +271,22 @@ export function CadastroUsuariosWorkspace() {
     if (marcadas.size === 0) {
       setErro("Selecione ao menos um emitente.");
       return;
+    }
+    if (empresas.length === 0) {
+      setErro("Lista de emitentes indisponível. Clique em Atualizar na listagem e tente de novo.");
+      return;
+    }
+    if (
+      editId &&
+      vinculosOriginais > 5 &&
+      marcadas.size < vinculosOriginais &&
+      marcadas.size <= Math.max(3, Math.floor(vinculosOriginais / 2))
+    ) {
+      const ok = window.confirm(
+        `Atenção: este usuário tinha ${vinculosOriginais} emitentes e você marcou só ${marcadas.size}.\n\n` +
+          `Os emitentes desmarcados vão perder o acesso. Continuar?`,
+      );
+      if (!ok) return;
     }
     if (!isGestaoPerfil(form.perfil) && portalPerfilId === "") {
       setErro("Selecione o grupo de permissão (menus) ou cadastre um em Conta → Permissões.");
@@ -307,6 +359,11 @@ export function CadastroUsuariosWorkspace() {
         {erro ? (
           <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
             {erro}
+          </div>
+        ) : null}
+        {aviso && !erro ? (
+          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+            {aviso}
           </div>
         ) : null}
 
