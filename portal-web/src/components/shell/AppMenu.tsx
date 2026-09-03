@@ -9,6 +9,7 @@ import {
   Box,
   Briefcase,
   Building2,
+  Calendar,
   Car,
   ClipboardList,
   Cog,
@@ -34,7 +35,10 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { getMenuForPapel, isGestaoPapel, type MenuItem } from "@/lib/menu-config";
+import { isGestaoPapel } from "@/lib/menu-config";
+import { resolveOutcome } from "@/lib/menu/tree";
+import type { MenuNode } from "@/lib/menu/types";
+import { useMenus } from "@/lib/menu/useMenus";
 import { useAppSession } from "@/hooks/useAppSession";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -67,61 +71,70 @@ const ICONS: Record<string, LucideIcon> = {
   plug: Plug,
   mail: Mail,
   book: BookOpen,
+  calendar: Calendar,
 };
 
-function MenuLink({ item, nested }: { item: MenuItem; nested?: boolean }) {
+function MenuLeaf({ node, nested }: { node: MenuNode; nested?: boolean }) {
   const pathname = usePathname();
-  const Icon = item.icon ? ICONS[item.icon] : null;
-  const active = item.href && (pathname === item.href || pathname.startsWith(item.href + "/"));
+  const resolved = resolveOutcome(node.outcome, node.label);
+  if (!resolved) return null;
 
-  if (!item.href) return null;
-
+  const Icon = node.icon ? ICONS[node.icon] : null;
+  const active =
+    resolved.kind === "internal" &&
+    (pathname === resolved.href || pathname.startsWith(resolved.href + "/"));
   const className = `layout-menuitem-link ${active ? "active-route" : ""}`;
 
-  if (item.external) {
+  if (resolved.kind === "external") {
     return (
-      <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
-        {Icon && <Icon size={18} />}
-        <span className="layout-menuitem-text">{item.label}</span>
+      <a href={resolved.href} target="_blank" rel="noopener noreferrer" className={className}>
+        {Icon && <Icon size={nested ? 16 : 18} />}
+        <span className="layout-menuitem-text">{node.label}</span>
       </a>
     );
   }
 
   return (
-    <Link href={item.href} className={className}>
+    <Link href={resolved.href} className={className}>
       {Icon && <Icon size={nested ? 16 : 18} />}
-      <span className="layout-menuitem-text">{item.label}</span>
+      <span className="layout-menuitem-text">{node.label}</span>
     </Link>
   );
 }
 
 export function AppMenu() {
   const { session, ready } = useAppSession();
-  const menu = ready ? getMenuForPapel(session?.papel) : getMenuForPapel(undefined);
+  const { menuTree, loading } = useMenus();
   const admin = ready && isGestaoPapel(session?.papel);
 
   return (
     <nav className={`layout-menu-container ${admin ? "layout-menu--admin" : "layout-menu--user"}`}>
-      <ul className="layout-menu">
-        {menu.map((item) =>
-          item.items ? (
-            <li key={item.label} className="layout-root-menuitem">
-              <div className="layout-menuitem-root-text">{item.label}</div>
-              <ul className="submenu">
-                {item.items.map((sub) => (
-                  <li key={sub.label}>
-                    <MenuLink item={sub} nested />
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ) : (
-            <li key={item.label}>
-              <MenuLink item={item} />
-            </li>
-          ),
-        )}
-      </ul>
+      {loading && menuTree.length === 0 ? (
+        <p className="layout-menuitem-root-text" style={{ padding: "0.75rem 1rem" }}>
+          Carregando menu…
+        </p>
+      ) : (
+        <ul className="layout-menu">
+          {menuTree.map((item) =>
+            item.children.length > 0 ? (
+              <li key={item.id} className="layout-root-menuitem">
+                <div className="layout-menuitem-root-text">{item.label}</div>
+                <ul className="submenu">
+                  {item.children.map((sub) => (
+                    <li key={sub.id}>
+                      <MenuLeaf node={sub} nested />
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ) : (
+              <li key={item.id}>
+                <MenuLeaf node={item} />
+              </li>
+            ),
+          )}
+        </ul>
+      )}
     </nav>
   );
 }

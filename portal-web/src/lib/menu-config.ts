@@ -117,6 +117,7 @@ export const GESTAO_ROUTES = [
   "/nfse/emissao",
   "/nfse/mensais",
   "/nfse/emitidas",
+  "/parametros",
 ] as const;
 
 export function isGestaoRoute(path: string): boolean {
