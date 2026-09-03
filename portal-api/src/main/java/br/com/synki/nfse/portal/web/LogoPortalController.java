@@ -34,7 +34,7 @@ public class LogoPortalController {
             @AuthenticationPrincipal EmbedSession session,
             @PathVariable Long empresaId,
             @RequestParam("arquivo") MultipartFile arquivo) throws Exception {
-        membershipService.requireGestao(session.usuarioId(), empresaId);
+        membershipService.requireOperador(session.usuarioId(), empresaId);
         empresaLogoService.salvar(empresaId, arquivo);
         return Map.of("ok", true, "empresaId", empresaId);
     }

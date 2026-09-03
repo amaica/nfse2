@@ -233,7 +233,8 @@ public class EmpresaCadastroService {
 
     @Transactional
     public Map<String, Object> atualizarParaUsuario(Long id, AtualizarEmpresaRequest req, Long usuarioId) {
-        membershipService.requireGestao(usuarioId, id);
+        // OPERADOR precisa salvar emitente (ex.: certificado A1 no mesmo fluxo do formulário).
+        membershipService.requireOperador(usuarioId, id);
         return atualizarInterno(id, req, usuarioId);
     }
 

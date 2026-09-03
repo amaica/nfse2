@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,15 +33,18 @@ public class PortalPerfilService {
     @Transactional(readOnly = true)
     public List<PortalPerfilDto> listar(Long gestorId, Long empresaId) {
         membershipService.requireGestao(gestorId, empresaId);
-        Long contaId = requireConta(empresaId);
-        return repository.findByContaIdOrderByNomeAsc(contaId).stream().map(this::toDto).toList();
+        Set<Long> contas = contasComGestao(gestorId);
+        if (contas.isEmpty()) {
+            return List.of();
+        }
+        return repository.findByContaIdInOrderByNomeAsc(contas).stream().map(this::toDto).toList();
     }
 
     @Transactional(readOnly = true)
     public PortalPerfilDto buscar(Long gestorId, Long empresaId, Long id) {
         membershipService.requireGestao(gestorId, empresaId);
-        Long contaId = requireConta(empresaId);
-        return toDto(repository.findByIdAndContaId(id, contaId)
+        Set<Long> contas = contasComGestao(gestorId);
+        return toDto(repository.findByIdAndContaIdIn(id, contas)
                 .orElseThrow(() -> new NoSuchElementException("Perfil nao encontrado")));
     }
 
@@ -56,20 +60,27 @@ public class PortalPerfilService {
     @Transactional
     public PortalPerfilDto atualizar(Long gestorId, Long empresaId, Long id, PortalPerfilDto body) {
         membershipService.requireGestao(gestorId, empresaId);
-        Long contaId = requireConta(empresaId);
-        PortalPerfil perfil = repository.findByIdAndContaId(id, contaId)
+        Set<Long> contas = contasComGestao(gestorId);
+        PortalPerfil perfil = repository.findByIdAndContaIdIn(id, contas)
                 .orElseThrow(() -> new NoSuchElementException("Perfil nao encontrado"));
-        apply(perfil, body, contaId, id);
+        apply(perfil, body, perfil.getContaId(), id);
         return toDto(repository.save(perfil));
     }
 
     @Transactional
     public void excluir(Long gestorId, Long empresaId, Long id) {
         membershipService.requireGestao(gestorId, empresaId);
-        Long contaId = requireConta(empresaId);
-        PortalPerfil perfil = repository.findByIdAndContaId(id, contaId)
+        Set<Long> contas = contasComGestao(gestorId);
+        PortalPerfil perfil = repository.findByIdAndContaIdIn(id, contas)
                 .orElseThrow(() -> new NoSuchElementException("Perfil nao encontrado"));
         repository.delete(perfil);
+    }
+
+    private Set<Long> contasComGestao(Long gestorId) {
+        return membershipService.listarEmpresasDelegaveisPorGestor(gestorId).stream()
+                .map(e -> membershipService.contaIdDaEmpresa(e.getId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 
     private void apply(PortalPerfil perfil, PortalPerfilDto body, Long contaId, Long selfId) {

@@ -59,8 +59,9 @@ function PermissoesContent() {
         <div>
           <h1 className="text-xl font-semibold text-agro-body">Permissões de Acesso</h1>
           <p className="mt-1 text-sm text-agro-muted">
-            Cadastre grupos (perfis) e marque quais itens do menu cada grupo vê. Depois vincule o
-            grupo ao usuário em Cadastros → Usuários.
+            Cadastre grupos (perfis) e marque quais itens do menu cada grupo vê. A lista inclui os
+            perfis de todas as contas dos emitentes que você administra. Depois vincule o grupo ao
+            usuário em Cadastros → Usuários.
           </p>
         </div>
         <Link

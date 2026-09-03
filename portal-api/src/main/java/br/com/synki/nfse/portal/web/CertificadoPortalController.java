@@ -49,7 +49,7 @@ public class CertificadoPortalController {
             @PathVariable Long empresaId,
             @RequestParam("arquivo") MultipartFile arquivo,
             @RequestParam("senha") String senha) throws Exception {
-        membershipService.requireGestao(session.usuarioId(), empresaId);
+        membershipService.requireOperador(session.usuarioId(), empresaId);
         return certificadoService.salvar(empresaId, arquivo, senha);
     }
 }
