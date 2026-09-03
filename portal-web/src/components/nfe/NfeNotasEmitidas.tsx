@@ -190,13 +190,29 @@ export function NfeNotasEmitidas() {
     void carregar(vazio);
   };
 
-  const abrirDanfe = async (chave: string) => {
+  const abrirDanfe = async (chave: string, status?: string) => {
     if (!token) return;
+    const st = (status ?? "").trim();
+    if (st && st !== "100") {
+      const ok = window.confirm(
+        `O status desta nota não está como Autorizada (100).\nStatus atual: ${statusLabel(st)} (${st}).\n\n` +
+          "O DANFE só é gerado se o XML estiver autorizado (cStat 100).\nDeseja tentar mesmo assim?",
+      );
+      if (!ok) return;
+    }
+    setErro("");
     try {
       const res = await fetch(`${apiBaseUrl()}/api/nfe/notas/${chave}/danfe`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Falha ao abrir DANFE");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(
+          (body as { erro?: string; message?: string }).erro ??
+            (body as { message?: string }).message ??
+            "Falha ao abrir DANFE",
+        );
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank", "noopener,noreferrer");
@@ -486,8 +502,12 @@ export function NfeNotasEmitidas() {
                         <button
                           type="button"
                           className="fiscal-btn-icon"
-                          title="Imprimir DANFE"
-                          onClick={() => void abrirDanfe(n.chave)}
+                          title={
+                            n.statusProtocolo === "100" || !n.statusProtocolo
+                              ? "Imprimir DANFE"
+                              : `Status ${statusLabel(n.statusProtocolo)} — DANFE exige autorização (100)`
+                          }
+                          onClick={() => void abrirDanfe(n.chave, n.statusProtocolo)}
                         >
                           <Printer className="h-4 w-4" />
                         </button>
