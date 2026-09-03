@@ -344,7 +344,11 @@ export function CadastroUsuariosWorkspace() {
                   <select
                     className="fiscal-input"
                     value={form.perfil ?? "OPERADOR"}
-                    onChange={(e) => set("perfil", e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      set("perfil", v);
+                      if (isGestaoPerfil(v)) setPortalPerfilId("");
+                    }}
                   >
                     {PAPEIS.map((p) => (
                       <option key={p.value} value={p.value}>
@@ -352,34 +356,50 @@ export function CadastroUsuariosWorkspace() {
                       </option>
                     ))}
                   </select>
+                  <p className="mt-1 text-xs text-agro-muted">
+                    Operador/Visualizador usam o grupo de menus. Admin vê todos os menus.
+                  </p>
                 </FiscalField>
               </FiscalRow>
-              {!isGestaoPerfil(form.perfil) ? (
-                <FiscalField label="Grupo de permissão (menus)">
-                  <select
-                    className="fiscal-input"
-                    value={portalPerfilId === "" ? "" : String(portalPerfilId)}
-                    onChange={(e) =>
-                      setPortalPerfilId(e.target.value ? Number(e.target.value) : "")
-                    }
-                  >
-                    <option value="">Selecione…</option>
-                    {gruposPermissao.map((g) => (
+              <FiscalField label="Grupo de permissão (menus)">
+                <select
+                  className="fiscal-input"
+                  disabled={isGestaoPerfil(form.perfil)}
+                  value={portalPerfilId === "" ? "" : String(portalPerfilId)}
+                  onChange={(e) =>
+                    setPortalPerfilId(e.target.value ? Number(e.target.value) : "")
+                  }
+                >
+                  <option value="">
+                    {isGestaoPerfil(form.perfil)
+                      ? "— não se aplica a Administrador —"
+                      : gruposPermissao.length === 0
+                        ? "Nenhum grupo cadastrado (vá em Conta → Permissões)"
+                        : "Selecione…"}
+                  </option>
+                  {!isGestaoPerfil(form.perfil) &&
+                    gruposPermissao.map((g) => (
                       <option key={g.id} value={g.id}>
                         {g.nome}
                         {g.totalMenus != null ? ` (${g.totalMenus} menus)` : ""}
                       </option>
                     ))}
-                  </select>
-                  <p className="mt-1 text-xs text-agro-muted">
-                    Cadastre os grupos em Conta → Permissões (quais menus cada grupo vê).
+                </select>
+                {isGestaoPerfil(form.perfil) ? (
+                  <p className="mt-1 text-xs text-amber-700">
+                    Mude o papel para <strong>Operador</strong> para poder escolher o grupo
+                    (ex.: operador_werlang).
                   </p>
-                </FiscalField>
-              ) : (
-                <p className="text-sm text-agro-muted">
-                  Administrador vê todos os menus (não usa grupo de permissão).
-                </p>
-              )}
+                ) : gruposPermissao.length === 0 ? (
+                  <p className="mt-1 text-xs text-amber-700">
+                    Cadastre o grupo em Conta → Permissões e reabra este usuário.
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-agro-muted">
+                    Grupos cadastrados em Conta → Permissões.
+                  </p>
+                )}
+              </FiscalField>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
