@@ -5,6 +5,12 @@ import { Building2, Loader2, Pencil, Plus, RefreshCw, Search } from "lucide-reac
 import { ApiError, formatarCnpjCpf } from "@/lib/api";
 import { getAppToken } from "@/lib/app-session";
 import { fiscalApi } from "@/lib/fiscal-api";
+import {
+  listarCatalogoMenus,
+  listarMenusDoUsuario,
+  salvarMenusDoUsuario,
+} from "@/lib/menu/repository";
+import type { MenuItemDto } from "@/lib/menu/types";
 import { useEmpresaScope } from "@/hooks/useEmpresaScope";
 import { FiscalDetailToolbar } from "@/components/fiscal/FiscalDetailToolbar";
 import { FiscalField, FiscalRow, FiscalSection } from "@/components/fiscal/FiscalFormUi";
@@ -61,6 +67,46 @@ function mensagemErro(e: unknown, fallback: string): string {
   return fallback;
 }
 
+function isGestaoPerfil(perfil?: string) {
+  return perfil === "ADMIN" || perfil === "OWNER";
+}
+
+/** Lista plana com indentação visual (pai → filhos). */
+function menusOrdenados(catalogo: MenuItemDto[]): MenuItemDto[] {
+  const byParent = new Map<number | null, MenuItemDto[]>();
+  for (const m of catalogo) {
+    if (m.ativo === false) continue;
+    const pid = m.parent?.id ?? null;
+    const list = byParent.get(pid) ?? [];
+    list.push(m);
+    byParent.set(pid, list);
+  }
+  const sortFn = (a: MenuItemDto, b: MenuItemDto) =>
+    (a.ordemMenu ?? 0) - (b.ordemMenu ?? 0) ||
+    (a.label ?? "").localeCompare(b.label ?? "", "pt-BR");
+  const out: MenuItemDto[] = [];
+  const walk = (parentId: number | null) => {
+    const kids = (byParent.get(parentId) ?? []).slice().sort(sortFn);
+    for (const k of kids) {
+      out.push(k);
+      if (k.id != null) walk(k.id);
+    }
+  };
+  walk(null);
+  return out;
+}
+
+function depthOf(item: MenuItemDto, byId: Map<number, MenuItemDto>): number {
+  let d = 0;
+  let pid = item.parent?.id;
+  while (pid != null) {
+    d += 1;
+    pid = byId.get(pid)?.parent?.id;
+    if (d > 8) break;
+  }
+  return d;
+}
+
 export function CadastroUsuariosWorkspace() {
   const { empresaId, empresaNome, empresaCnpj } = useEmpresaScope();
   const [viewMode, setViewMode] = useState<"list" | "form">("list");
@@ -75,6 +121,10 @@ export function CadastroUsuariosWorkspace() {
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [catalogoMenus, setCatalogoMenus] = useState<MenuItemDto[]>([]);
+  const [menusMarcados, setMenusMarcados] = useState<Set<number>>(new Set());
+  const [menuEmpresaId, setMenuEmpresaId] = useState<number | null>(null);
+  const [carregandoMenus, setCarregandoMenus] = useState(false);
 
   const carregarLista = useCallback(async () => {
     const token = getAppToken();
@@ -142,16 +192,58 @@ export function CadastroUsuariosWorkspace() {
     setEditId(null);
     setForm(emptyUsuario());
     setMarcadas(new Set());
+    setMenusMarcados(new Set());
+    setMenuEmpresaId(null);
   };
 
-  const novo = () => {
+  const defaultMenusOperador = useCallback((catalogo: MenuItemDto[]) => {
+    return new Set(
+      catalogo
+        .filter((m) => m.id != null && m.ativo !== false && String(m.operadorTemAcesso ?? "SIM").toUpperCase() !== "NAO")
+        .map((m) => m.id as number),
+    );
+  }, []);
+
+  const carregarMenusUsuario = useCallback(
+    async (usuarioId: number | null, empId: number, catalogo: MenuItemDto[]) => {
+      setCarregandoMenus(true);
+      try {
+        if (usuarioId == null) {
+          setMenusMarcados(defaultMenusOperador(catalogo));
+          return;
+        }
+        const ids = await listarMenusDoUsuario(usuarioId, empId);
+        if (ids.length === 0) {
+          setMenusMarcados(defaultMenusOperador(catalogo));
+        } else {
+          setMenusMarcados(new Set(ids));
+        }
+      } catch {
+        setMenusMarcados(defaultMenusOperador(catalogo));
+      } finally {
+        setCarregandoMenus(false);
+      }
+    },
+    [defaultMenusOperador],
+  );
+
+  const novo = async () => {
     setEditId(null);
     setForm(emptyUsuario());
     setMarcadas(empresaId != null ? new Set([empresaId]) : new Set());
+    setMenuEmpresaId(empresaId ?? null);
     setViewMode("form");
+    try {
+      const catalogo = await listarCatalogoMenus();
+      setCatalogoMenus(catalogo);
+      setMenusMarcados(defaultMenusOperador(catalogo));
+    } catch {
+      setCatalogoMenus([]);
+      setMenusMarcados(new Set());
+    }
   };
 
-  const editar = (row: UsuarioRow) => {
+  const editar = async (row: UsuarioRow) => {
     setEditId(row.id);
     setForm({
       nome: row.nome,
@@ -166,7 +258,21 @@ export function CadastroUsuariosWorkspace() {
       .map((e) => e.empresaId)
       .filter((id) => delegaveis.has(id));
     setMarcadas(new Set(vinculadas.length > 0 ? vinculadas : empresaId != null ? [empresaId] : []));
+    const empMenus = empresaId ?? vinculadas[0] ?? null;
+    setMenuEmpresaId(empMenus);
     setViewMode("form");
+    try {
+      const catalogo = await listarCatalogoMenus();
+      setCatalogoMenus(catalogo);
+      if (empMenus != null && !isGestaoPerfil(row.perfil ?? row.papel)) {
+        await carregarMenusUsuario(row.id, empMenus, catalogo);
+      } else {
+        setMenusMarcados(new Set());
+      }
+    } catch {
+      setCatalogoMenus([]);
+      setMenusMarcados(new Set());
+    }
   };
 
   const set = (key: string, value: string | boolean) => {
@@ -192,6 +298,46 @@ export function CadastroUsuariosWorkspace() {
 
   const totalMarcados = marcadas.size;
   const totalEmitentes = empresas.length;
+
+  const toggleMenu = (id: number) => {
+    setMenusMarcados((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const marcarTodosMenus = () => {
+    setMenusMarcados(
+      new Set(catalogoMenus.filter((m) => m.id != null && m.ativo !== false).map((m) => m.id as number)),
+    );
+  };
+
+  const desmarcarTodosMenus = () => setMenusMarcados(new Set());
+
+  const trocarMenuEmpresa = async (empId: number) => {
+    setMenuEmpresaId(empId);
+    if (isGestaoPerfil(form.perfil)) {
+      setMenusMarcados(new Set());
+      return;
+    }
+    await carregarMenusUsuario(editId, empId, catalogoMenus);
+  };
+
+  const menusFlat = useMemo(() => menusOrdenados(catalogoMenus), [catalogoMenus]);
+  const menusById = useMemo(() => {
+    const map = new Map<number, MenuItemDto>();
+    for (const m of catalogoMenus) {
+      if (m.id != null) map.set(m.id, m);
+    }
+    return map;
+  }, [catalogoMenus]);
+
+  const empresasParaMenus = useMemo(
+    () => empresas.filter((e) => marcadas.has(e.id)),
+    [empresas, marcadas],
+  );
 
   const salvar = async () => {
     if (!form.nome?.trim()) {
@@ -243,6 +389,15 @@ export function CadastroUsuariosWorkspace() {
             papel: form.perfil ?? "OPERADOR",
           }),
         });
+
+        if (!isGestaoPerfil(form.perfil)) {
+          const alvo = menuEmpresaId != null && marcadas.has(menuEmpresaId)
+            ? menuEmpresaId
+            : empresaId;
+          if (alvo != null) {
+            await salvarMenusDoUsuario(usuarioId, Array.from(menusMarcados), alvo);
+          }
+        }
       }
 
       await carregarLista();
@@ -261,7 +416,7 @@ export function CadastroUsuariosWorkspace() {
           title={editId ? "Editar usuário" : "Novo usuário"}
           icon="users"
           onVoltar={irLista}
-          onNovo={novo}
+          onNovo={() => void novo()}
           onCancelar={irLista}
           onSalvar={salvar}
           saveDisabled={salvando}
@@ -391,6 +546,88 @@ export function CadastroUsuariosWorkspace() {
             </FiscalSection>
           </div>
         </div>
+
+        {!isGestaoPerfil(form.perfil) ? (
+          <div className="mt-4">
+            <FiscalSection title="Menus liberados por emitente">
+              <p className="mb-3 text-sm text-agro-muted">
+                Escolha o emitente e marque os itens do menu lateral que este usuário verá nele.
+                Outro emitente pode ter um conjunto diferente — selecione-o abaixo e ajuste antes de salvar.
+              </p>
+              {empresasParaMenus.length === 0 ? (
+                <p className="text-sm text-amber-700">Marque ao menos um emitente acima.</p>
+              ) : (
+                <>
+                  <FiscalField label="Emitente desta configuração">
+                    <select
+                      className="fiscal-input"
+                      value={menuEmpresaId ?? ""}
+                      onChange={(e) => void trocarMenuEmpresa(Number(e.target.value))}
+                    >
+                      {empresasParaMenus.map((emp) => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </FiscalField>
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm"
+                      onClick={marcarTodosMenus}
+                    >
+                      Marcar todos
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm"
+                      onClick={desmarcarTodosMenus}
+                    >
+                      Desmarcar todos
+                    </button>
+                    {carregandoMenus ? (
+                      <span className="inline-flex items-center gap-1 text-sm text-agro-muted">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="max-h-80 space-y-1 overflow-y-auto rounded-lg border border-[var(--border)] p-3">
+                    {menusFlat.length === 0 ? (
+                      <p className="text-sm text-agro-muted">Catálogo de menus indisponível.</p>
+                    ) : (
+                      menusFlat.map((m) => {
+                        if (m.id == null) return null;
+                        const depth = depthOf(m, menusById);
+                        return (
+                          <label
+                            key={m.id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[var(--primary-50)]"
+                            style={{ paddingLeft: `${0.5 + depth * 1.25}rem` }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={menusMarcados.has(m.id)}
+                              onChange={() => toggleMenu(m.id!)}
+                            />
+                            <span className="font-medium text-agro-body">{m.label}</span>
+                            {m.outcome ? (
+                              <span className="font-mono text-xs text-agro-muted">{m.outcome}</span>
+                            ) : null}
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+            </FiscalSection>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-agro-muted">
+            Perfil Administrador vê todos os menus deste emitente (não usa lista restrita).
+          </p>
+        )}
       </div>
     );
   }
@@ -408,7 +645,7 @@ export function CadastroUsuariosWorkspace() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="fiscal-btn-primary" onClick={novo}>
+          <button type="button" className="fiscal-btn-primary" onClick={() => void novo()}>
             <Plus className="h-4 w-4" /> Novo
           </button>
           <button
@@ -489,7 +726,7 @@ export function CadastroUsuariosWorkspace() {
                       type="button"
                       className="fiscal-btn-icon"
                       aria-label="Editar"
-                      onClick={() => editar(row)}
+                      onClick={() => void editar(row)}
                     >
                       <Pencil className="h-4 w-4" />
                     </button>

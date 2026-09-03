@@ -18,6 +18,7 @@ type UseMenusResult = {
 export function useMenus(): UseMenusResult {
   const { session, ready } = useAppSession();
   const gestao = ready && isGestaoPapel(session?.papel);
+  const empresaId = session?.empresaId;
   const [menus, setMenus] = useState<MenuItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [menuError, setMenuError] = useState(false);
@@ -36,17 +37,17 @@ export function useMenus(): UseMenusResult {
   }, []);
 
   useEffect(() => {
+    if (!ready) return;
     reload();
     const onUpdated = () => reload();
     window.addEventListener(MENU_UPDATED_EVENT, onUpdated);
     return () => window.removeEventListener(MENU_UPDATED_EVENT, onUpdated);
-  }, [reload]);
+  }, [ready, empresaId, reload]);
 
   const menuTree = useMemo(() => {
     if (menuError) return filterFallback(FALLBACK_MENU, gestao);
-    const visible = gestao
-      ? menus.map((m) => ({ ...m, operadorTemAcesso: "SIM" as const }))
-      : menus;
+    // API já filtra por ACL / papel — monta árvore sem filtrar operadorTemAcesso de novo
+    const visible = menus.map((m) => ({ ...m, operadorTemAcesso: "SIM" as const, ativo: true }));
     let tree = buildMenuTree(visible);
     if (gestao) {
       tree = tree.filter((n) => n.label !== "Emitente");
@@ -66,7 +67,6 @@ export function useMenus(): UseMenusResult {
 
 function filterFallback(tree: MenuNode[], gestao: boolean): MenuNode[] {
   if (gestao) {
-    // gestão: Conta cobre emitente; evita duplicar grupo Emitente do operador
     return tree.filter((n) => n.label !== "Emitente");
   }
   return tree

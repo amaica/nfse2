@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
 import { GestaoGuard } from "@/components/auth/GestaoGuard";
-import { buscarMenu, excluirMenu, listarMenus, salvarMenu } from "@/lib/menu/repository";
+import { buscarMenu, excluirMenu, listarCatalogoMenus, salvarMenu } from "@/lib/menu/repository";
 import type { MenuItemDto, SubmenuItem } from "@/lib/menu/types";
 
 type FormState = {
@@ -45,7 +45,7 @@ function CadastroMenuForm() {
 
   useEffect(() => {
     let cancelled = false;
-    void listarMenus()
+    void listarCatalogoMenus()
       .then((list) => {
         if (!cancelled) setMenus(list);
       })

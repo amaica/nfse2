@@ -1,7 +1,10 @@
 package br.com.synki.nfse.portal.service;
 
 import br.com.synki.nfse.portal.domain.PortalMenu;
+import br.com.synki.nfse.portal.domain.PortalMenuAcesso;
 import br.com.synki.nfse.portal.domain.PortalSubMenu;
+import br.com.synki.nfse.portal.domain.UsuarioEmpresa;
+import br.com.synki.nfse.portal.repository.PortalMenuAcessoRepository;
 import br.com.synki.nfse.portal.repository.PortalMenuRepository;
 import br.com.synki.nfse.portal.web.dto.MenuDto;
 import org.hibernate.Hibernate;
@@ -9,28 +12,103 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class MenuService {
 
-    private final PortalMenuRepository repository;
+    private static final Set<String> PAPEIS_GESTAO = Set.of(
+            UsuarioEmpresa.PAPEL_OWNER,
+            UsuarioEmpresa.PAPEL_ADMIN);
 
-    public MenuService(PortalMenuRepository repository) {
+    private final PortalMenuRepository repository;
+    private final PortalMenuAcessoRepository acessoRepository;
+    private final MembershipService membershipService;
+
+    public MenuService(
+            PortalMenuRepository repository,
+            PortalMenuAcessoRepository acessoRepository,
+            MembershipService membershipService) {
         this.repository = repository;
+        this.acessoRepository = acessoRepository;
+        this.membershipService = membershipService;
     }
 
     @Transactional(readOnly = true)
     public List<MenuDto> listar() {
-        List<PortalMenu> menus = repository.findAllByOrderByOrdemMenuAscLabelAsc();
-        List<MenuDto> out = new ArrayList<>(menus.size());
-        for (PortalMenu menu : menus) {
-            Hibernate.initialize(menu.getParent());
-            Hibernate.initialize(menu.getSubmenus());
-            out.add(toDto(menu));
+        return toDtoList(repository.findAllByOrderByOrdemMenuAscLabelAsc());
+    }
+
+    /** Menus visíveis no lateral para o usuário na empresa da sessão. */
+    @Transactional(readOnly = true)
+    public List<MenuDto> listarParaUsuario(Long usuarioId, Long empresaId) {
+        membershipService.requireAccess(usuarioId, empresaId);
+        String papel = membershipService.papelAtivo(usuarioId, empresaId);
+        List<PortalMenu> todos = repository.findAllByOrderByOrdemMenuAscLabelAsc();
+
+        if (PAPEIS_GESTAO.contains(papel)) {
+            return toDtoList(todos.stream().filter(PortalMenu::isAtivo).toList());
         }
-        return out;
+
+        List<Long> explicitos = acessoRepository.findMenuIdsByUsuarioIdAndEmpresaId(usuarioId, empresaId);
+        if (!explicitos.isEmpty()) {
+            Set<Long> liberados = expandirComAncestrais(todos, new HashSet<>(explicitos));
+            return toDtoList(todos.stream()
+                    .filter(m -> m.isAtivo() && m.getId() != null && liberados.contains(m.getId()))
+                    .toList());
+        }
+
+        // Sem ACL cadastrada: fallback legado (operadorTemAcesso = SIM)
+        return toDtoList(todos.stream()
+                .filter(m -> m.isAtivo()
+                        && !"NAO".equalsIgnoreCase(String.valueOf(m.getOperadorTemAcesso())))
+                .toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> listarMenuIdsDoUsuario(Long gestorId, Long empresaSessao, Long usuarioId, Long empresaId) {
+        membershipService.requireGestao(gestorId, empresaSessao);
+        membershipService.requireAccess(gestorId, empresaId);
+        membershipService.requireAccess(usuarioId, empresaId);
+        return acessoRepository.findMenuIdsByUsuarioIdAndEmpresaId(usuarioId, empresaId);
+    }
+
+    @Transactional
+    public void salvarMenusDoUsuario(
+            Long gestorId,
+            Long empresaSessao,
+            Long usuarioId,
+            Long empresaId,
+            List<Long> menuIds) {
+        membershipService.requireGestao(gestorId, empresaSessao);
+        membershipService.requireAccess(gestorId, empresaId);
+        membershipService.requireAccess(usuarioId, empresaId);
+
+        String papelAlvo = membershipService.papelAtivo(usuarioId, empresaId);
+        if (PAPEIS_GESTAO.contains(papelAlvo)) {
+            // ADMIN/OWNER vê tudo — limpa ACL específica
+            acessoRepository.deleteByUsuarioIdAndEmpresaId(usuarioId, empresaId);
+            return;
+        }
+
+        Set<Long> validos = repository.findAllById(menuIds == null ? List.of() : menuIds).stream()
+                .map(PortalMenu::getId)
+                .collect(Collectors.toSet());
+
+        acessoRepository.deleteByUsuarioIdAndEmpresaId(usuarioId, empresaId);
+        List<PortalMenuAcesso> rows = new ArrayList<>();
+        for (Long menuId : validos) {
+            rows.add(PortalMenuAcesso.of(usuarioId, empresaId, menuId));
+        }
+        if (!rows.isEmpty()) {
+            acessoRepository.saveAll(rows);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -62,8 +140,33 @@ public class MenuService {
         if (!repository.existsById(id)) {
             throw new NoSuchElementException("Menu nao encontrado");
         }
-        // filhos apontando para este menu: parent_id SET NULL via FK
         repository.deleteById(id);
+    }
+
+    private Set<Long> expandirComAncestrais(List<PortalMenu> todos, Set<Long> selecionados) {
+        Map<Long, PortalMenu> byId = todos.stream()
+                .filter(m -> m.getId() != null)
+                .collect(Collectors.toMap(PortalMenu::getId, m -> m, (a, b) -> a));
+        Set<Long> out = new LinkedHashSet<>(selecionados);
+        for (Long id : selecionados) {
+            PortalMenu cur = byId.get(id);
+            while (cur != null && cur.getParent() != null && cur.getParent().getId() != null) {
+                Long pid = cur.getParent().getId();
+                out.add(pid);
+                cur = byId.get(pid);
+            }
+        }
+        return out;
+    }
+
+    private List<MenuDto> toDtoList(List<PortalMenu> menus) {
+        List<MenuDto> out = new ArrayList<>(menus.size());
+        for (PortalMenu menu : menus) {
+            Hibernate.initialize(menu.getParent());
+            Hibernate.initialize(menu.getSubmenus());
+            out.add(toDto(menu));
+        }
+        return out;
     }
 
     private void apply(PortalMenu menu, MenuDto body, Long selfId) {

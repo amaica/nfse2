@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { GestaoGuard } from "@/components/auth/GestaoGuard";
-import { excluirMenu, listarMenus } from "@/lib/menu/repository";
+import { excluirMenu, listarCatalogoMenus } from "@/lib/menu/repository";
 import { buildMenuTreeAdmin, resolveOutcome, FALLBACK_MENU } from "@/lib/menu/tree";
 import type { MenuItemDto, MenuNode } from "@/lib/menu/types";
 
@@ -43,7 +43,7 @@ function ConfigurarMenuContent() {
     setLoading(true);
     setError("");
     try {
-      setMenus(await listarMenus());
+      setMenus(await listarCatalogoMenus());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao carregar menus");
       setMenus([]);
