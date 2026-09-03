@@ -3,6 +3,7 @@ package br.com.synki.nfse.portal.service.fiscal;
 import br.com.synki.nfse.portal.domain.Usuario;
 import br.com.synki.nfse.portal.domain.UsuarioEmpresa;
 import br.com.synki.nfse.portal.domain.fiscal.*;
+import br.com.synki.nfse.portal.repository.UsuarioEmpresaRepository;
 import br.com.synki.nfse.portal.repository.UsuarioRepository;
 import br.com.synki.nfse.portal.repository.fiscal.*;
 import br.com.synki.nfse.portal.service.MembershipService;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +30,7 @@ public class CadastroFiscalService {
     private final ProdutoRepository produtoRepo;
     private final VeiculoRepository veiculoRepo;
     private final UsuarioRepository usuarioRepo;
+    private final UsuarioEmpresaRepository usuarioEmpresaRepo;
     private final PasswordEncoder passwordEncoder;
     private final MembershipService membershipService;
 
@@ -38,6 +41,7 @@ public class CadastroFiscalService {
             ProdutoRepository produtoRepo,
             VeiculoRepository veiculoRepo,
             UsuarioRepository usuarioRepo,
+            UsuarioEmpresaRepository usuarioEmpresaRepo,
             PasswordEncoder passwordEncoder,
             MembershipService membershipService) {
         this.cfopRepo = cfopRepo;
@@ -46,6 +50,7 @@ public class CadastroFiscalService {
         this.produtoRepo = produtoRepo;
         this.veiculoRepo = veiculoRepo;
         this.usuarioRepo = usuarioRepo;
+        this.usuarioEmpresaRepo = usuarioEmpresaRepo;
         this.passwordEncoder = passwordEncoder;
         this.membershipService = membershipService;
     }
@@ -274,11 +279,11 @@ public class CadastroFiscalService {
     @Transactional
     public Map<String, Object> atualizarUsuario(Long gestorId, Long empresaId, Long id, UsuarioRequest req) {
         membershipService.requireGestao(gestorId, empresaId);
-        var contaId = membershipService.contaIdDaEmpresa(empresaId);
         var u = usuarioRepo.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Usuario nao encontrado"));
-        if (contaId != null && !membershipService.usuarioNaConta(id, contaId)) {
-            throw new NoSuchElementException("Usuario nao encontrado nesta conta");
+        // Mesmo escopo da listagem: qualquer emitente em que o gestor é OWNER/ADMIN
+        if (!gestorAdministraUsuario(gestorId, id)) {
+            throw new NoSuchElementException("Usuario nao encontrado entre os emitentes que voce administra");
         }
         u.setNome(req.nome());
         if (req.cpf() != null) u.setCpf(req.cpf().replaceAll("\\D", ""));
@@ -288,6 +293,17 @@ public class CadastroFiscalService {
             u.setSenha(passwordEncoder.encode(req.senha()));
         }
         return usuarioResumo(usuarioRepo.save(u), req.perfil());
+    }
+
+    private boolean gestorAdministraUsuario(Long gestorId, Long usuarioAlvoId) {
+        Set<Long> delegaveis = membershipService.listarEmpresasDelegaveisPorGestor(gestorId).stream()
+                .map(e -> e.getId())
+                .collect(Collectors.toSet());
+        if (delegaveis.isEmpty()) {
+            return false;
+        }
+        return usuarioEmpresaRepo.findByUsuarioIdAndAtivoTrueOrderByEmpresaIdAsc(usuarioAlvoId).stream()
+                .anyMatch(ue -> delegaveis.contains(ue.getEmpresaId()));
     }
 
     private static Map<String, Object> usuarioResumo(Usuario u, String papel) {

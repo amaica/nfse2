@@ -316,7 +316,9 @@ public class UsuarioContaService {
         body.put("cpf", user.getCpf() != null ? user.getCpf() : "");
         body.put("ativo", user.isAtivo());
         body.put("empresas", empresas);
-        body.put("papel", memberships.isEmpty() ? user.getPerfil() : memberships.getFirst().getPapel());
+        var papel = memberships.isEmpty() ? user.getPerfil() : memberships.getFirst().getPapel();
+        body.put("papel", papel);
+        body.put("perfil", papel != null ? papel : "OPERADOR");
         var perfilId = memberships.stream()
                 .map(UsuarioEmpresa::getPortalPerfilId)
                 .filter(id -> id != null)

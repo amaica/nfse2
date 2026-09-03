@@ -244,7 +244,11 @@ export function CadastroUsuariosWorkspace() {
     setSalvando(true);
     setErro("");
     const token = getAppToken();
-    if (!token) return;
+    if (!token) {
+      setErro("Sessão expirada — faça login novamente.");
+      setSalvando(false);
+      return;
+    }
 
     try {
       const body = {
@@ -282,7 +286,7 @@ export function CadastroUsuariosWorkspace() {
       await carregarLista();
       irLista();
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : "Erro ao salvar");
+      setErro(mensagemErro(e, "Erro ao salvar usuário"));
     } finally {
       setSalvando(false);
     }
@@ -300,7 +304,11 @@ export function CadastroUsuariosWorkspace() {
           onSalvar={salvar}
           saveDisabled={salvando}
         />
-        {erro && <p className="mb-3 text-sm text-red-600">{erro}</p>}
+        {erro ? (
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+            {erro}
+          </div>
+        ) : null}
 
         <div className="fiscal-form-columns">
           <div>
