@@ -2,10 +2,13 @@ package br.com.synki.nfse.portal.service;
 
 import br.com.synki.nfse.portal.domain.PortalMenu;
 import br.com.synki.nfse.portal.domain.PortalMenuAcesso;
+import br.com.synki.nfse.portal.domain.PortalPerfil;
 import br.com.synki.nfse.portal.domain.PortalSubMenu;
 import br.com.synki.nfse.portal.domain.UsuarioEmpresa;
 import br.com.synki.nfse.portal.repository.PortalMenuAcessoRepository;
 import br.com.synki.nfse.portal.repository.PortalMenuRepository;
+import br.com.synki.nfse.portal.repository.PortalPerfilRepository;
+import br.com.synki.nfse.portal.repository.UsuarioEmpresaRepository;
 import br.com.synki.nfse.portal.web.dto.MenuDto;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
@@ -29,14 +32,20 @@ public class MenuService {
 
     private final PortalMenuRepository repository;
     private final PortalMenuAcessoRepository acessoRepository;
+    private final PortalPerfilRepository perfilRepository;
+    private final UsuarioEmpresaRepository usuarioEmpresaRepository;
     private final MembershipService membershipService;
 
     public MenuService(
             PortalMenuRepository repository,
             PortalMenuAcessoRepository acessoRepository,
+            PortalPerfilRepository perfilRepository,
+            UsuarioEmpresaRepository usuarioEmpresaRepository,
             MembershipService membershipService) {
         this.repository = repository;
         this.acessoRepository = acessoRepository;
+        this.perfilRepository = perfilRepository;
+        this.usuarioEmpresaRepository = usuarioEmpresaRepository;
         this.membershipService = membershipService;
     }
 
@@ -49,13 +58,28 @@ public class MenuService {
     @Transactional(readOnly = true)
     public List<MenuDto> listarParaUsuario(Long usuarioId, Long empresaId) {
         membershipService.requireAccess(usuarioId, empresaId);
-        String papel = membershipService.papelAtivo(usuarioId, empresaId);
+        var membership = usuarioEmpresaRepository.findByUsuarioIdAndEmpresaIdAndAtivoTrue(usuarioId, empresaId)
+                .orElseThrow(() -> new NoSuchElementException("Membership nao encontrado"));
         List<PortalMenu> todos = repository.findAllByOrderByOrdemMenuAscLabelAsc();
 
-        if (PAPEIS_GESTAO.contains(papel)) {
+        if (PAPEIS_GESTAO.contains(membership.getPapel())) {
             return toDtoList(todos.stream().filter(PortalMenu::isAtivo).toList());
         }
 
+        // 1) Grupo de permissão (perfil) — prioridade
+        if (membership.getPortalPerfilId() != null) {
+            PortalPerfil perfil = perfilRepository.findById(membership.getPortalPerfilId()).orElse(null);
+            if (perfil != null && perfil.isAtivo() && perfil.getMenuIds() != null && !perfil.getMenuIds().isEmpty()) {
+                Set<Long> liberados = expandirComAncestrais(todos, new HashSet<>(perfil.getMenuIds()));
+                return toDtoList(todos.stream()
+                        .filter(m -> m.isAtivo() && m.getId() != null && liberados.contains(m.getId()))
+                        .toList());
+            }
+            // perfil sem menus → lateral vazio (só Início se existir no catálogo? não — vazio intencional)
+            return List.of();
+        }
+
+        // 2) ACL por usuário (legado)
         List<Long> explicitos = acessoRepository.findMenuIdsByUsuarioIdAndEmpresaId(usuarioId, empresaId);
         if (!explicitos.isEmpty()) {
             Set<Long> liberados = expandirComAncestrais(todos, new HashSet<>(explicitos));
@@ -64,7 +88,7 @@ public class MenuService {
                     .toList());
         }
 
-        // Sem ACL cadastrada: fallback legado (operadorTemAcesso = SIM)
+        // 3) Fallback operadorTemAcesso
         return toDtoList(todos.stream()
                 .filter(m -> m.isAtivo()
                         && !"NAO".equalsIgnoreCase(String.valueOf(m.getOperadorTemAcesso())))

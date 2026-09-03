@@ -195,7 +195,8 @@ public class UsuarioContaService {
             Long empresaSessaoId,
             Long usuarioAlvoId,
             List<Long> empresaIds,
-            String papel) {
+            String papel,
+            Long portalPerfilId) {
         membershipService.requireGestao(gestorId, empresaSessaoId);
         var delegaveis = membershipService.listarEmpresasDelegaveisPorGestor(gestorId).stream()
                 .map(e -> e.getId())
@@ -212,13 +213,14 @@ public class UsuarioContaService {
 
         var alvoIds = resolverEmpresasAlvo(delegaveis, empresaSessaoId, empresaIds);
         var papelFinal = papel != null ? papel : UsuarioEmpresa.PAPEL_OPERADOR;
+        Long perfilFinal = PAPEIS_GESTAO_LOCAL.contains(papelFinal) ? null : portalPerfilId;
 
         for (Long empId : alvoIds) {
             var contaId = membershipService.contaIdDaEmpresa(empId);
             if (contaId == null) {
                 continue;
             }
-            membershipService.vincularUsuarioEmpresa(usuarioAlvoId, empId, contaId, papelFinal);
+            membershipService.vincularUsuarioEmpresa(usuarioAlvoId, empId, contaId, papelFinal, perfilFinal);
         }
 
         var ativos = usuarioEmpresaRepository.findByUsuarioIdAndAtivoTrueOrderByEmpresaIdAsc(usuarioAlvoId);
@@ -234,6 +236,10 @@ public class UsuarioContaService {
                 .toList();
         return montarResumoMembro(usuario, memberships);
     }
+
+    private static final Set<String> PAPEIS_GESTAO_LOCAL = Set.of(
+            UsuarioEmpresa.PAPEL_OWNER,
+            UsuarioEmpresa.PAPEL_ADMIN);
 
     public List<Map<String, Object>> listarEmpresasDelegaveis(Long gestorId, Long empresaSessaoId) {
         membershipService.requireGestao(gestorId, empresaSessaoId);
@@ -283,6 +289,9 @@ public class UsuarioContaService {
                     var item = new LinkedHashMap<String, Object>();
                     item.put("empresaId", m.getEmpresaId());
                     item.put("papel", m.getPapel());
+                    if (m.getPortalPerfilId() != null) {
+                        item.put("portalPerfilId", m.getPortalPerfilId());
+                    }
                     if (emp != null) {
                         item.put("empresaNome", emp.getNome());
                         item.put("cnpj", emp.getCnpj());
@@ -299,6 +308,14 @@ public class UsuarioContaService {
         body.put("ativo", user.isAtivo());
         body.put("empresas", empresas);
         body.put("papel", memberships.isEmpty() ? user.getPerfil() : memberships.getFirst().getPapel());
+        var perfilId = memberships.stream()
+                .map(UsuarioEmpresa::getPortalPerfilId)
+                .filter(id -> id != null)
+                .findFirst()
+                .orElse(null);
+        if (perfilId != null) {
+            body.put("portalPerfilId", perfilId);
+        }
         return body;
     }
 

@@ -23,6 +23,7 @@ export const MENU_OUTCOME_PATHS: Record<string, string> = {
   "/conta/auditoria": "/conta/auditoria",
   "/conta/metricas": "/conta/metricas",
   "/parametros/configurar-menu": "/parametros/configurar-menu",
+  "/parametros/permissoes": "/parametros/permissoes",
 };
 
 export const MENU_LABEL_PATHS: Record<string, string> = {
@@ -42,4 +43,6 @@ export const MENU_LABEL_PATHS: Record<string, string> = {
   usuarios: "/cadastros/usuarios",
   emitentes: "/cadastros/empresa",
   "configurar menu": "/parametros/configurar-menu",
+  permissões: "/parametros/permissoes",
+  permissoes: "/parametros/permissoes",
 };

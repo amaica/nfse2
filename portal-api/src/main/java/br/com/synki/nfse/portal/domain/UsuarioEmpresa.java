@@ -31,6 +31,9 @@ public class UsuarioEmpresa {
     @Column(nullable = false)
     private boolean ativo = true;
 
+    @Column(name = "portal_perfil_id")
+    private Long portalPerfilId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -49,7 +52,9 @@ public class UsuarioEmpresa {
     public Long getContaId() { return contaId; }
     public String getPapel() { return papel; }
     public boolean isAtivo() { return ativo; }
+    public Long getPortalPerfilId() { return portalPerfilId; }
 
     public void setPapel(String papel) { this.papel = papel; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
+    public void setPortalPerfilId(Long portalPerfilId) { this.portalPerfilId = portalPerfilId; }
 }

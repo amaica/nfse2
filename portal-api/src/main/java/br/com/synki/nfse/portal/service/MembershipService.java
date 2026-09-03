@@ -209,16 +209,25 @@ public class MembershipService {
 
     @Transactional
     public void vincularUsuarioEmpresa(Long usuarioId, Long empresaId, Long contaId, String papel) {
+        vincularUsuarioEmpresa(usuarioId, empresaId, contaId, papel, null);
+    }
+
+    @Transactional
+    public void vincularUsuarioEmpresa(
+            Long usuarioId, Long empresaId, Long contaId, String papel, Long portalPerfilId) {
         var papelFinal = papel != null ? papel : UsuarioEmpresa.PAPEL_OPERADOR;
         var existente = usuarioEmpresaRepository.findByUsuarioIdAndEmpresaId(usuarioId, empresaId);
         if (existente.isPresent()) {
             var ue = existente.get();
             ue.setAtivo(true);
             ue.setPapel(papelFinal);
+            ue.setPortalPerfilId(portalPerfilId);
             usuarioEmpresaRepository.save(ue);
             return;
         }
-        usuarioEmpresaRepository.save(UsuarioEmpresa.vincular(usuarioId, empresaId, contaId, papelFinal));
+        var ue = UsuarioEmpresa.vincular(usuarioId, empresaId, contaId, papelFinal);
+        ue.setPortalPerfilId(portalPerfilId);
+        usuarioEmpresaRepository.save(ue);
     }
 
     /** Emitentes em que o usuário tem papel OWNER ou ADMIN (pode delegar acesso). */

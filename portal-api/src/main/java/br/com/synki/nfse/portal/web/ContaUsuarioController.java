@@ -28,7 +28,8 @@ public class ContaUsuarioController {
     public record VincularRequest(
             Long usuarioId,
             List<Long> empresaIds,
-            String papel) {}
+            String papel,
+            Long portalPerfilId) {}
 
     @GetMapping("/usuarios")
     public List<Map<String, Object>> listarMembros(@AuthenticationPrincipal EmbedSession session) {
@@ -69,6 +70,7 @@ public class ContaUsuarioController {
                 session.empresaId(),
                 body.usuarioId(),
                 body.empresaIds(),
-                body.papel());
+                body.papel(),
+                body.portalPerfilId());
     }
 }

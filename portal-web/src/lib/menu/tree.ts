@@ -68,6 +68,7 @@ export const FALLBACK_MENU: MenuNode[] = [
       { id: "fb-aud", label: "Auditoria", icon: "clipboard-list", outcome: "/conta/auditoria", children: [] },
       { id: "fb-met", label: "Métricas de uso", icon: "chart-bar", outcome: "/conta/metricas", children: [] },
       { id: "fb-menu", label: "Configurar Menu", icon: "list", outcome: "/parametros/configurar-menu", children: [] },
+      { id: "fb-perm", label: "Permissões", icon: "shield", outcome: "/parametros/permissoes", children: [] },
     ],
   },
 ];
