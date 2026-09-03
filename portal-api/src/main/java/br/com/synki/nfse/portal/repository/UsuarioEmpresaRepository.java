@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,8 @@ public interface UsuarioEmpresaRepository extends JpaRepository<UsuarioEmpresa, 
     List<UsuarioEmpresa> findByUsuarioIdAndAtivoTrueOrderByEmpresaIdAsc(Long usuarioId);
 
     List<UsuarioEmpresa> findByContaIdAndAtivoTrueOrderByUsuarioIdAsc(Long contaId);
+
+    List<UsuarioEmpresa> findByEmpresaIdInAndAtivoTrue(Collection<Long> empresaIds);
 
     List<UsuarioEmpresa> findByUsuarioIdAndContaIdAndAtivoTrue(Long usuarioId, Long contaId);
 

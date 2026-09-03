@@ -52,12 +52,15 @@ public class UsuarioContaService {
 
     public List<Map<String, Object>> listarMembros(Long gestorId, Long empresaSessaoId) {
         membershipService.requireGestao(gestorId, empresaSessaoId);
-        var contaId = membershipService.contaIdDaEmpresa(empresaSessaoId);
-        if (contaId == null) {
+
+        // Todas as empresas em que o gestor é OWNER/ADMIN (não só a conta do emitente atual)
+        var empresasGestao = membershipService.listarEmpresasDelegaveisPorGestor(gestorId);
+        if (empresasGestao.isEmpty()) {
             return List.of();
         }
+        var empresaIds = empresasGestao.stream().map(e -> e.getId()).collect(Collectors.toSet());
 
-        var porUsuario = usuarioEmpresaRepository.findByContaIdAndAtivoTrueOrderByUsuarioIdAsc(contaId).stream()
+        var porUsuario = usuarioEmpresaRepository.findByEmpresaIdInAndAtivoTrue(empresaIds).stream()
                 .collect(Collectors.groupingBy(UsuarioEmpresa::getUsuarioId));
 
         var resultado = new ArrayList<Map<String, Object>>();
@@ -66,9 +69,15 @@ public class UsuarioContaService {
             if (user == null || !user.isAtivo()) {
                 continue;
             }
-            var todasMemberships = usuarioEmpresaRepository
-                    .findByUsuarioIdAndAtivoTrueOrderByEmpresaIdAsc(entry.getKey());
-            resultado.add(montarResumoMembro(user, todasMemberships));
+            // Só vínculos nas empresas que o gestor administra
+            var membershipsVisiveis = entry.getValue().stream()
+                    .filter(ue -> empresaIds.contains(ue.getEmpresaId()))
+                    .sorted(Comparator.comparing(UsuarioEmpresa::getEmpresaId))
+                    .toList();
+            if (membershipsVisiveis.isEmpty()) {
+                continue;
+            }
+            resultado.add(montarResumoMembro(user, membershipsVisiveis));
         }
         resultado.sort(Comparator.comparing(m -> ((String) m.get("nome")).toLowerCase(Locale.ROOT)));
         return resultado;

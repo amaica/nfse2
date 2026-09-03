@@ -482,7 +482,7 @@ export function CadastroUsuariosWorkspace() {
           <h1 className="m-0 text-2xl font-semibold text-slate-800">Cadastro de usuários</h1>
           {empresaNome && (
             <p className="mt-1 text-sm text-slate-500">
-              Conta do emitente: <span className="font-medium text-slate-700">{empresaNome}</span>
+              Emitente ativo: <span className="font-medium text-slate-700">{empresaNome}</span>
               {empresaCnpj ? ` · ${formatarCnpjCpf(empresaCnpj)}` : ""}
             </p>
           )}
@@ -505,8 +505,8 @@ export function CadastroUsuariosWorkspace() {
       {aviso && !erro && <p className="mb-3 text-sm text-amber-700">{aviso}</p>}
 
       <p className="mb-4 text-sm text-slate-600">
-        Usuários listados pertencem à conta do emitente selecionado. Para dar acesso a outros
-        emitentes, edite o usuário e marque os emitentes desejados.
+        Lista todos os usuários dos emitentes em que você é OWNER ou ADMIN. Edite para alterar papel,
+        grupo de permissão e quais emitentes cada um acessa.
       </p>
 
       <div className="fiscal-table-caption">
