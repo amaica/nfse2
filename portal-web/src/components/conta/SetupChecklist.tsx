@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { fiscalApi } from "@/lib/fiscal-api";
 import { useAppSession } from "@/hooks/useAppSession";
+import { menuAllowsHref } from "@/lib/menu/tree";
+import { useMenus } from "@/lib/menu/useMenus";
 
 type Passo = {
   id: string;
@@ -23,6 +25,7 @@ type SetupData = {
 
 export function SetupChecklist() {
   const { session, ready } = useAppSession();
+  const { menuTree } = useMenus();
   const [data, setData] = useState<SetupData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,6 +51,11 @@ export function SetupChecklist() {
     void carregar();
   }, [ready, carregar]);
 
+  const passosVisiveis = useMemo(() => {
+    if (!data) return [];
+    return data.passos.filter((p) => menuAllowsHref(menuTree, p.href));
+  }, [data, menuTree]);
+
   if (!ready || !session?.empresaId) {
     return null;
   }
@@ -61,9 +69,12 @@ export function SetupChecklist() {
     );
   }
 
-  if (!data || data.completo) {
+  if (!data || data.completo || passosVisiveis.length === 0) {
     return null;
   }
+
+  const concluidosVisiveis = passosVisiveis.filter((p) => p.concluido).length;
+  const percentualVisivel = Math.round((concluidosVisiveis / passosVisiveis.length) * 100);
 
   return (
     <section className="mb-10">
@@ -73,18 +84,18 @@ export function SetupChecklist() {
             Configure em minutos
           </h2>
           <p className="mt-1 text-sm text-agro-muted">
-            {data.concluidos} de {data.total} concluídos
+            {concluidosVisiveis} de {passosVisiveis.length} concluídos
           </p>
         </div>
         <div className="h-2 w-32 overflow-hidden rounded-full bg-gray-200">
           <div
             className="h-full rounded-full bg-[var(--primary-600)] transition-all"
-            style={{ width: `${data.percentual}%` }}
+            style={{ width: `${percentualVisivel}%` }}
           />
         </div>
       </div>
       <div className="grid gap-2">
-        {data.passos.map((passo) => (
+        {passosVisiveis.map((passo) => (
           <Link
             key={passo.id}
             href={passo.href}
