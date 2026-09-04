@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -18,6 +18,8 @@ import { AssinaturaBanner } from "@/components/conta/AssinaturaBanner";
 import { SetupChecklist } from "@/components/conta/SetupChecklist";
 import { fiscalApi } from "@/lib/fiscal-api";
 import type { AssinaturaStatus } from "@/lib/assinatura";
+import { menuAllowsHref } from "@/lib/menu/tree";
+import { useMenus } from "@/lib/menu/useMenus";
 
 const acoesPrincipais = [
   {
@@ -45,6 +47,7 @@ const atalhosAdmin = [
 
 export default function PainelPage() {
   const { session, ready } = useAppSession();
+  const { menuTree, loading: menuLoading } = useMenus();
   const admin = ready && isGestaoPapel(session?.papel);
   const [assinatura, setAssinatura] = useState<AssinaturaStatus | null>(null);
 
@@ -54,6 +57,21 @@ export default function PainelPage() {
       .then(setAssinatura)
       .catch(() => setAssinatura(null));
   }, []);
+
+  const acoesVisiveis = useMemo(() => {
+    // Enquanto o menu carrega, não mostra atalhos que possam violar permissão
+    if (menuLoading && menuTree.length === 0) return [];
+    return acoesPrincipais.filter((a) => menuAllowsHref(menuTree, a.href));
+  }, [menuLoading, menuTree]);
+
+  const atalhosAdminVisiveis = useMemo(
+    () => atalhosAdmin.filter((a) => menuAllowsHref(menuTree, a.href)),
+    [menuTree],
+  );
+
+  const podeAssinatura = menuAllowsHref(menuTree, "/conta/assinatura");
+  const podeNfse = menuAllowsHref(menuTree, "/nfse/emissao");
+  const podeNfe = menuAllowsHref(menuTree, "/nfe/emissao");
 
   return (
     <div className="animate-in">
@@ -76,31 +94,31 @@ export default function PainelPage() {
 
       <AssinaturaBanner />
 
-      {/* Ações principais */}
-      <section className="mb-10">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-agro-muted">
-          O que você quer fazer?
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {acoesPrincipais.map((a) => (
-            <Link
-              key={a.href}
-              href={a.href}
-              className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${a.cor} p-6 text-white shadow-lg transition hover:scale-[1.01] hover:shadow-xl`}
-            >
-              <a.icon className="mb-3 h-8 w-8 opacity-90" />
-              <h3 className="text-xl font-semibold">{a.label}</h3>
-              <p className="mt-1 text-sm text-white/85">{a.desc}</p>
-              <ArrowRight className="absolute bottom-5 right-5 h-5 w-5 opacity-70 transition group-hover:translate-x-0.5" />
-            </Link>
-          ))}
-        </div>
-      </section>
+      {acoesVisiveis.length > 0 ? (
+        <section className="mb-10">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-agro-muted">
+            O que você quer fazer?
+          </h2>
+          <div className={`grid gap-4 ${acoesVisiveis.length > 1 ? "sm:grid-cols-2" : "sm:grid-cols-1 max-w-xl"}`}>
+            {acoesVisiveis.map((a) => (
+              <Link
+                key={a.href}
+                href={a.href}
+                className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${a.cor} p-6 text-white shadow-lg transition hover:scale-[1.01] hover:shadow-xl`}
+              >
+                <a.icon className="mb-3 h-8 w-8 opacity-90" />
+                <h3 className="text-xl font-semibold">{a.label}</h3>
+                <p className="mt-1 text-sm text-white/85">{a.desc}</p>
+                <ArrowRight className="absolute bottom-5 right-5 h-5 w-5 opacity-70 transition group-hover:translate-x-0.5" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <SetupChecklist />
 
-      {/* Resumo assinatura */}
-      {assinatura && (
+      {assinatura && (podeAssinatura || podeNfe || podeNfse) ? (
         <section className="mb-10">
           <div className="saas-dashboard-card flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -109,25 +127,32 @@ export default function PainelPage() {
                 {assinatura.mensagemStatus ?? `Status: ${assinatura.status}`}
               </p>
               <p className="mt-1 text-sm text-agro-muted">
-                NFS-e: {assinatura.nfseMesUsadas}/{assinatura.nfseMesQuota} · NF-e:{" "}
-                {assinatura.nfeMesUsadas}/{assinatura.nfeMesQuota}
+                {[
+                  podeNfse
+                    ? `NFS-e: ${assinatura.nfseMesUsadas}/${assinatura.nfseMesQuota}`
+                    : null,
+                  podeNfe ? `NF-e: ${assinatura.nfeMesUsadas}/${assinatura.nfeMesQuota}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             </div>
-            <Link href="/conta/assinatura" className="fiscal-btn-primary text-sm">
-              Gerenciar assinatura
-            </Link>
+            {podeAssinatura ? (
+              <Link href="/conta/assinatura" className="fiscal-btn-primary text-sm">
+                Gerenciar assinatura
+              </Link>
+            ) : null}
           </div>
         </section>
-      )}
+      ) : null}
 
-      {/* Admin */}
-      {admin && (
+      {admin && atalhosAdminVisiveis.length > 0 ? (
         <section>
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-agro-muted">
             Administração
           </h2>
           <div className="grid gap-3 sm:grid-cols-3">
-            {atalhosAdmin.map((item) => (
+            {atalhosAdminVisiveis.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -141,7 +166,7 @@ export default function PainelPage() {
             ))}
           </div>
         </section>
-      )}
+      ) : null}
     </div>
   );
 }

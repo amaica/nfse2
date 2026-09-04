@@ -197,3 +197,22 @@ export function nodeContainsActiveRoute(node: MenuNode, pathname: string): boole
     node.children.some((child) => nodeContainsActiveRoute(child, pathname))
   );
 }
+
+/** True se algum item do menu (incluindo filhos) aponta para o href informado. */
+export function menuAllowsHref(tree: MenuNode[], href: string): boolean {
+  const target = (href.split(/[?#]/, 1)[0] || "/").replace(/\/+$/, "") || "/";
+  const walk = (nodes: MenuNode[]): boolean => {
+    for (const node of nodes) {
+      const resolved = resolveOutcome(node.outcome, node.label);
+      if (resolved?.kind === "internal") {
+        const path = (resolved.href.split(/[?#]/, 1)[0] || "/").replace(/\/+$/, "") || "/";
+        if (path === target || target.startsWith(`${path}/`) || path.startsWith(`${target}/`)) {
+          return true;
+        }
+      }
+      if (walk(node.children)) return true;
+    }
+    return false;
+  };
+  return walk(tree);
+}
