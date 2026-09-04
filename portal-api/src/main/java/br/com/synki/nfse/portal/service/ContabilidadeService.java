@@ -71,7 +71,8 @@ public class ContabilidadeService {
             String emailContabilidade,
             boolean envioAutomatico,
             boolean enviarNfse,
-            boolean enviarNfe) {
+            boolean enviarNfe,
+            boolean enviarNfeEntrada) {
         var cfg = configRepository.findById(empresaId).orElseGet(() -> {
             var novo = ConfigContabilidade.padrao(empresaId);
             novo.setEmpresaId(empresaId);
@@ -88,6 +89,7 @@ public class ContabilidadeService {
         cfg.setEnvioAutomatico(envioAutomatico);
         cfg.setEnviarNfse(enviarNfse);
         cfg.setEnviarNfe(enviarNfe);
+        cfg.setEnviarNfeEntrada(enviarNfeEntrada);
         cfg.setUpdatedAt(Instant.now());
         configRepository.save(cfg);
         return toMap(cfg);
@@ -267,6 +269,7 @@ public class ContabilidadeService {
         body.put("envioAutomatico", cfg.isEnvioAutomatico());
         body.put("enviarNfse", cfg.isEnviarNfse());
         body.put("enviarNfe", cfg.isEnviarNfe());
+        body.put("enviarNfeEntrada", cfg.isEnviarNfeEntrada());
         body.put("updatedAt", cfg.getUpdatedAt() != null ? cfg.getUpdatedAt().toString() : null);
         return body;
     }

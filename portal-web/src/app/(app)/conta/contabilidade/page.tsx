@@ -12,6 +12,7 @@ type ConfigContabilidade = {
   envioAutomatico: boolean;
   enviarNfse: boolean;
   enviarNfe: boolean;
+  enviarNfeEntrada: boolean;
 };
 
 type LancamentoItem = {
@@ -64,6 +65,7 @@ function ContabilidadeConteudo() {
     envioAutomatico: false,
     enviarNfse: true,
     enviarNfe: true,
+    enviarNfeEntrada: false,
   });
   const [de, setDe] = useState(primeiroDiaAno());
   const [ate, setAte] = useState(hojeIso());
@@ -345,8 +347,29 @@ function ContabilidadeConteudo() {
           </label>
           <label className="flex cursor-pointer items-center gap-2 text-sm">
             <input type="checkbox" checked={config.envioAutomatico} onChange={(e) => setConfig((c) => ({ ...c, envioAutomatico: e.target.checked }))} />
-            Ativar envio automático após cada emissão
+            Ativar envio automático
           </label>
+          <div className="flex flex-wrap gap-4 text-sm text-agro-body">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input type="checkbox" checked={config.enviarNfse} onChange={(e) => setConfig((c) => ({ ...c, enviarNfse: e.target.checked }))} />
+              NFS-e emitidas
+            </label>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input type="checkbox" checked={config.enviarNfe} onChange={(e) => setConfig((c) => ({ ...c, enviarNfe: e.target.checked }))} />
+              NF-e emitidas
+            </label>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={config.enviarNfeEntrada}
+                onChange={(e) => setConfig((c) => ({ ...c, enviarNfeEntrada: e.target.checked }))}
+              />
+              NF-e recebidas (DF-e) — ZIP periódico
+            </label>
+          </div>
+          <p className="text-xs text-agro-muted">
+            DF-e: com «Baixar notas DF-e» no emitente, o cron baixa da SEFAZ e, se marcado acima, envia ZIP das novas ao e-mail.
+          </p>
           <button type="button" className="fiscal-btn-primary inline-flex items-center gap-2" onClick={() => void salvar()} disabled={salvando}>
             <Save className="h-4 w-4" />
             {salvando ? "Salvando…" : "Salvar"}

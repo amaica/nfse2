@@ -54,7 +54,8 @@ public class ContabilidadeController {
                 body.emailContabilidade(),
                 body.envioAutomatico(),
                 body.enviarNfse(),
-                body.enviarNfe());
+                body.enviarNfe(),
+                body.enviarNfeEntrada() != null && body.enviarNfeEntrada());
         auditLogService.log(session.empresaId(), session.usuarioId(), "CONTABILIDADE_CONFIG",
                 "Envio automatico=" + body.envioAutomatico() + " email=" + body.emailContabilidade());
         return resultado;

@@ -9,8 +9,11 @@ import br.com.synki.nfse.portal.service.EmissaoNfeService;
 import br.com.synki.nfse.portal.service.NfeContextoService;
 import br.com.synki.nfse.portal.service.NfeDanfeService;
 import br.com.synki.nfse.portal.service.NfeDistribuicaoDFeService;
+import br.com.synki.nfse.portal.service.NfeEmailService;
+import br.com.synki.nfse.portal.service.NfeEntradaService;
 import br.com.synki.nfse.portal.service.NfeOperacoesService;
 import br.com.synki.nfse.portal.repository.NfeEmissaoRepository;
+import br.com.synki.nfse.portal.web.dto.EnviarDanfeEmailRequest;
 import br.com.synki.nfse.portal.web.dto.nfe.*;
 import com.fincatto.documentofiscal.DFModelo;
 import jakarta.validation.Valid;
@@ -31,34 +34,40 @@ public class NfeController {
     private final EmissaoNfeService emissaoService;
     private final NfeOperacoesService operacoesService;
     private final NfeDanfeService danfeService;
+    private final NfeEmailService nfeEmailService;
     private final AuditLogService auditLogService;
     private final PortalAuthorization authz;
     private final AssinaturaService assinaturaService;
     private final ContabilidadeService contabilidadeService;
     private final NfeEmissaoRepository nfeEmissaoRepository;
     private final NfeDistribuicaoDFeService distribuicaoDFeService;
+    private final NfeEntradaService nfeEntradaService;
 
     public NfeController(
             NfeContextoService contextoService,
             EmissaoNfeService emissaoService,
             NfeOperacoesService operacoesService,
             NfeDanfeService danfeService,
+            NfeEmailService nfeEmailService,
             AuditLogService auditLogService,
             PortalAuthorization authz,
             AssinaturaService assinaturaService,
             ContabilidadeService contabilidadeService,
             NfeEmissaoRepository nfeEmissaoRepository,
-            NfeDistribuicaoDFeService distribuicaoDFeService) {
+            NfeDistribuicaoDFeService distribuicaoDFeService,
+            NfeEntradaService nfeEntradaService) {
         this.contextoService = contextoService;
         this.emissaoService = emissaoService;
         this.operacoesService = operacoesService;
         this.danfeService = danfeService;
+        this.nfeEmailService = nfeEmailService;
         this.auditLogService = auditLogService;
         this.authz = authz;
         this.assinaturaService = assinaturaService;
         this.contabilidadeService = contabilidadeService;
         this.nfeEmissaoRepository = nfeEmissaoRepository;
         this.distribuicaoDFeService = distribuicaoDFeService;
+        this.nfeEntradaService = nfeEntradaService;
     }
 
     @GetMapping("/notas")
@@ -87,10 +96,52 @@ public class NfeController {
     }
 
     @GetMapping("/notas-entrada")
-    public Object listarEntradas(
+    public Object listarEntradasAutocomplete(
             @AuthenticationPrincipal EmbedSession session,
             @RequestParam(required = false) String q) {
         return emissaoService.listarEntradas(session.empresaId(), q);
+    }
+
+    @GetMapping("/entradas")
+    public Object listarEntradasDfe(
+            @AuthenticationPrincipal EmbedSession session,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String de,
+            @RequestParam(required = false) String ate,
+            @RequestParam(required = false) String q) {
+        authz.requireOperador(session);
+        return nfeEntradaService.listar(session.empresaId(), parseData(de), parseData(ate), q, page, size);
+    }
+
+    @GetMapping("/entradas/export.zip")
+    public ResponseEntity<byte[]> exportarEntradasZip(
+            @AuthenticationPrincipal EmbedSession session,
+            @RequestParam(required = false) String de,
+            @RequestParam(required = false) String ate,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) List<Long> ids) throws Exception {
+        authz.requireOperador(session);
+        auditLogService.log(session.empresaId(), session.usuarioId(), "EXPORT_XML_NFE_ENTRADA",
+                ids != null ? ids.size() + " ids" : "filtro");
+        byte[] zip = nfeEntradaService.exportarZip(session.empresaId(), parseData(de), parseData(ate), q, ids);
+        String filename = "nfe-entrada-" + session.empresaId() + ".zip";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .body(zip);
+    }
+
+    @GetMapping(value = "/entradas/{id}/xml", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<byte[]> xmlEntrada(
+            @AuthenticationPrincipal EmbedSession session,
+            @PathVariable Long id) {
+        authz.requireOperador(session);
+        String xml = nfeEntradaService.xmlPorId(session.empresaId(), id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"nfe-entrada-" + id + ".xml\"")
+                .contentType(MediaType.APPLICATION_XML)
+                .body(xml.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     @GetMapping("/notas/export.zip")
@@ -181,6 +232,17 @@ public class NfeController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"danfe-" + chave + ".pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
+    }
+
+    @PostMapping("/notas/{chave}/danfe/email")
+    public Object enviarDanfePorEmail(
+            @AuthenticationPrincipal EmbedSession session,
+            @PathVariable String chave,
+            @Valid @RequestBody EnviarDanfeEmailRequest body) throws Exception {
+        authz.requireOperador(session);
+        nfeEmailService.enviarDanfe(session.empresaId(), chave, body.destinatario(), body.mensagem());
+        auditLogService.log(session.empresaId(), session.usuarioId(), "EMAIL_DANFE_NFE", chave);
+        return Map.of("ok", true, "destinatario", body.destinatario().trim().toLowerCase());
     }
 
     @GetMapping("/notas/{chave}/xml")

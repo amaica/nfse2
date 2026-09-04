@@ -15,8 +15,10 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
@@ -29,23 +31,26 @@ public class NfeDistribuicaoDFeService {
     private final EmpresaRepository empresaRepository;
     private final NfeEntradaRepository entradaRepository;
     private final NfeLibService nfeLibService;
+    private final NfeEntradaEmailService entradaEmailService;
 
     public NfeDistribuicaoDFeService(
             NfeDistribuicaoProperties props,
             EmpresaRepository empresaRepository,
             NfeEntradaRepository entradaRepository,
-            NfeLibService nfeLibService) {
+            NfeLibService nfeLibService,
+            NfeEntradaEmailService entradaEmailService) {
         this.props = props;
         this.empresaRepository = empresaRepository;
         this.entradaRepository = entradaRepository;
         this.nfeLibService = nfeLibService;
+        this.entradaEmailService = entradaEmailService;
     }
 
     public Map<String, Object> baixarEmpresa(Long empresaId) throws Exception {
         var empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new IllegalArgumentException("Empresa nao encontrada"));
         if (!empresa.isBaixarXml()) {
-            throw new IllegalStateException("Emitente nao marcado para baixar XML (Baixar XML = NAO)");
+            throw new IllegalStateException("Emitente nao marcado para baixar XML (Baixar notas DF-e = NAO)");
         }
         if (!nfeLibService.temCertificado(empresaId)) {
             throw new IllegalStateException("Cadastre o certificado A1 do emitente para baixar XMLs");
@@ -54,7 +59,7 @@ public class NfeDistribuicaoDFeService {
         var facade = nfeLibService.facadeForEmpresa(empresaId);
         var uf = nfeLibService.ufEmitente(empresaId, null);
         String ultNsu = padNsu(empresa.getUltimoNsu());
-        int novas = 0;
+        List<Long> idsNovas = new ArrayList<>();
         int paginas = 0;
         String ultimoStat = "";
 
@@ -69,7 +74,7 @@ public class NfeDistribuicaoDFeService {
             }
             if (ret.getLote() != null && ret.getLote().getDocZip() != null) {
                 for (NFDistribuicaoDocumentoZip doc : ret.getLote().getDocZip()) {
-                    novas += processarDocumento(empresaId, doc, facade, uf, empresa.getCnpj());
+                    idsNovas.addAll(processarDocumento(empresaId, doc, facade, uf, empresa.getCnpj()));
                 }
             }
             if (ret.getUltimoNSU() != null && !ret.getUltimoNSU().isBlank()) {
@@ -86,13 +91,18 @@ public class NfeDistribuicaoDFeService {
             }
         }
 
+        if (!idsNovas.isEmpty()) {
+            entradaEmailService.enviarNovasSeConfigurado(empresaId, idsNovas);
+        }
+
         var body = new LinkedHashMap<String, Object>();
         body.put("ok", true);
-        body.put("novas", novas);
+        body.put("novas", idsNovas.size());
+        body.put("idsNovas", idsNovas);
         body.put("paginas", paginas);
         body.put("ultimoNsu", ultNsu);
         body.put("statusSefaz", ultimoStat);
-        body.put("motivo", "XMLs de entrada gravados para o livro caixa (despesas)");
+        body.put("motivo", "XMLs de entrada gravados (DF-e destinatario)");
         return body;
     }
 
@@ -110,7 +120,7 @@ public class NfeDistribuicaoDFeService {
         return ok;
     }
 
-    private int processarDocumento(
+    private List<Long> processarDocumento(
             Long empresaId,
             NFDistribuicaoDocumentoZip doc,
             com.fincatto.documentofiscal.nfe400.webservices.WSFacade facade,
@@ -119,26 +129,30 @@ public class NfeDistribuicaoDFeService {
         String schema = doc.getSchema() == null ? "" : doc.getSchema();
         String xml = decodeGzip(doc.getValue());
         if (xml == null || xml.isBlank()) {
-            return 0;
+            return List.of();
         }
         if (schema.toLowerCase().contains("procnfe")) {
-            return gravarProcNfe(empresaId, xml, doc.getNsu(), schema);
+            Long id = gravarProcNfe(empresaId, xml, doc.getNsu(), schema);
+            return id != null ? List.of(id) : List.of();
         }
         if (schema.toLowerCase().contains("resnfe")) {
             String chave = NotaXmlExtrator.extrairChaveNfe(xml).orElse(null);
             if (chave == null || entradaRepository.existsByEmpresaIdAndChave(empresaId, chave)) {
-                return 0;
+                return List.of();
             }
             try {
                 var ret = facade.consultarDistribuicaoDFe(cpfCnpj, uf, chave, null, null);
                 if (ret.getLote() != null && ret.getLote().getDocZip() != null) {
-                    int gravados = 0;
+                    List<Long> gravados = new ArrayList<>();
                     for (NFDistribuicaoDocumentoZip full : ret.getLote().getDocZip()) {
                         String fullSchema = full.getSchema() == null ? "" : full.getSchema();
                         if (!fullSchema.toLowerCase().contains("procnfe")) {
                             continue;
                         }
-                        gravados += gravarProcNfe(empresaId, decodeGzip(full.getValue()), full.getNsu(), fullSchema);
+                        Long id = gravarProcNfe(empresaId, decodeGzip(full.getValue()), full.getNsu(), fullSchema);
+                        if (id != null) {
+                            gravados.add(id);
+                        }
                     }
                     return gravados;
                 }
@@ -146,16 +160,16 @@ public class NfeDistribuicaoDFeService {
                 log.debug("Nao foi possivel baixar XML completo da chave {}: {}", chave, ex.getMessage());
             }
         }
-        return 0;
+        return List.of();
     }
 
-    private int gravarProcNfe(Long empresaId, String xml, String nsu, String schema) {
+    private Long gravarProcNfe(Long empresaId, String xml, String nsu, String schema) {
         if (xml == null || xml.isBlank()) {
-            return 0;
+            return null;
         }
         String chave = NotaXmlExtrator.extrairChaveNfe(xml).orElse(null);
         if (chave == null || entradaRepository.existsByEmpresaIdAndChave(empresaId, chave)) {
-            return 0;
+            return null;
         }
         var meta = NotaXmlExtrator.metadadosNfeEntrada(xml, chave);
         var entrada = new NfeEntrada();
@@ -171,8 +185,7 @@ public class NfeDistribuicaoDFeService {
         entrada.setNatureza(meta.natureza());
         entrada.setValor(meta.valor());
         entrada.setXml(xml);
-        entradaRepository.save(entrada);
-        return 1;
+        return entradaRepository.save(entrada).getId();
     }
 
     static String decodeGzip(String base64) {

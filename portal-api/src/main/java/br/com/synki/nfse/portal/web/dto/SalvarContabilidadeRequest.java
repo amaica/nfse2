@@ -4,5 +4,6 @@ public record SalvarContabilidadeRequest(
         String emailContabilidade,
         boolean envioAutomatico,
         boolean enviarNfse,
-        boolean enviarNfe
+        boolean enviarNfe,
+        Boolean enviarNfeEntrada
 ) {}

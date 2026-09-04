@@ -23,6 +23,9 @@ public class ConfigContabilidade {
     @Column(name = "enviar_nfe", nullable = false)
     private boolean enviarNfe = true;
 
+    @Column(name = "enviar_nfe_entrada", nullable = false)
+    private boolean enviarNfeEntrada = false;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 
@@ -37,6 +40,7 @@ public class ConfigContabilidade {
     public boolean isEnvioAutomatico() { return envioAutomatico; }
     public boolean isEnviarNfse() { return enviarNfse; }
     public boolean isEnviarNfe() { return enviarNfe; }
+    public boolean isEnviarNfeEntrada() { return enviarNfeEntrada; }
     public Instant getUpdatedAt() { return updatedAt; }
 
     public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
@@ -44,5 +48,6 @@ public class ConfigContabilidade {
     public void setEnvioAutomatico(boolean envioAutomatico) { this.envioAutomatico = envioAutomatico; }
     public void setEnviarNfse(boolean enviarNfse) { this.enviarNfse = enviarNfse; }
     public void setEnviarNfe(boolean enviarNfe) { this.enviarNfe = enviarNfe; }
+    public void setEnviarNfeEntrada(boolean enviarNfeEntrada) { this.enviarNfeEntrada = enviarNfeEntrada; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }

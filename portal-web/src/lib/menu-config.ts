@@ -17,6 +17,7 @@ export function isGestaoPapel(papel?: string | null): boolean {
 const NFE_ITENS: MenuItem[] = [
   { label: "Emitir NF-e", icon: "pencil", href: "/nfe/emissao" },
   { label: "NF-e — XMLs / DANFE", icon: "list", href: "/nfe/notas-emitidas" },
+  { label: "NF-e recebidas (DF-e)", icon: "download", href: "/nfe/notas-entrada" },
   { label: "Eventos da NF-e", icon: "file-edit", href: "/nfe/eventos-fiscais" },
 ];
 
