@@ -152,7 +152,7 @@ public class EmpresaCadastroService {
             CriarEmpresaRequest req,
             Long criadorUsuarioId,
             Long empresaSessaoId) {
-        membershipService.requireGestao(criadorUsuarioId, empresaSessaoId);
+        membershipService.requireOperador(criadorUsuarioId, empresaSessaoId);
         var contaId = membershipService.contaIdDaEmpresa(empresaSessaoId);
         if (contaId == null) {
             contaId = membershipService.contaIdDoUsuario(criadorUsuarioId, empresaSessaoId);
@@ -346,7 +346,7 @@ public class EmpresaCadastroService {
 
     @Transactional
     public void excluirParaUsuario(Long id, Long usuarioId) {
-        membershipService.requireGestao(usuarioId, id);
+        membershipService.requireOperador(usuarioId, id);
         excluirInterno(id);
     }
 

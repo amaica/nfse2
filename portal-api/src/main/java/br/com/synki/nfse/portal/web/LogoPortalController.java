@@ -43,7 +43,7 @@ public class LogoPortalController {
     public Object remover(
             @AuthenticationPrincipal EmbedSession session,
             @PathVariable Long empresaId) throws Exception {
-        membershipService.requireGestao(session.usuarioId(), empresaId);
+        membershipService.requireOperador(session.usuarioId(), empresaId);
         empresaLogoService.excluir(empresaId);
         return Map.of("ok", true);
     }
