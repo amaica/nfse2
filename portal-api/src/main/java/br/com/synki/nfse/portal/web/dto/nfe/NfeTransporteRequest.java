@@ -20,5 +20,30 @@ public record NfeTransporteRequest(
         BigDecimal pesoLiquido,
         BigDecimal pesoBruto,
         BigDecimal valorFrete,
-        List<NfeReboqueRequest> reboques
-) {}
+        List<NfeReboqueRequest> reboques,
+        List<NfeVolumeRequest> volumes
+) {
+    public NfeTransporteRequest(
+            String modalidadeFrete,
+            String transportadorNome,
+            String transportadorDocumento,
+            String transportadorIe,
+            String transportadorMunicipio,
+            String transportadorUf,
+            String placa,
+            String placaUf,
+            String rntc,
+            Integer volumeQuantidade,
+            String volumeEspecie,
+            String volumeMarca,
+            String volumeNumeracao,
+            BigDecimal pesoLiquido,
+            BigDecimal pesoBruto,
+            BigDecimal valorFrete,
+            List<NfeReboqueRequest> reboques) {
+        this(modalidadeFrete, transportadorNome, transportadorDocumento, transportadorIe,
+                transportadorMunicipio, transportadorUf, placa, placaUf, rntc,
+                volumeQuantidade, volumeEspecie, volumeMarca, volumeNumeracao,
+                pesoLiquido, pesoBruto, valorFrete, reboques, null);
+    }
+}

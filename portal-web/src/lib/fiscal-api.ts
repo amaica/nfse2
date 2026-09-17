@@ -108,6 +108,10 @@ export type OperacaoFiscalDto = {
   aliquotaIbsMun?: number | null;
   aliquotaCbs?: number | null;
   habilitarIbsCbs: boolean;
+  habilitarIs?: boolean;
+  isCst?: string;
+  isClassTrib?: string;
+  aliquotaIs?: number | null;
 };
 
 export type IcmsUfDto = {
@@ -136,6 +140,22 @@ export type FiscalField = {
   reforma?: boolean;
 };
 
+export type PessoaEnderecoDto = {
+  id?: number;
+  inscricaoEstadual?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  municipio?: string;
+  uf?: string;
+  cep?: string;
+  codigoMunicipioIbge?: string;
+  principal?: boolean;
+  ativo?: boolean;
+  valores?: string;
+};
+
 export type PessoaDto = {
   id?: number;
   nome: string;
@@ -158,6 +178,7 @@ export type PessoaDto = {
   longitude?: string;
   observacoes?: string;
   ativo: boolean;
+  enderecos?: PessoaEnderecoDto[];
 };
 
 export type VeiculoDto = {
@@ -237,6 +258,12 @@ export const fiscalApi = {
   listVeiculos: () => fiscalRequest<VeiculoDto[]>("/api/veiculo"),
   listGruposTributarios: () => fiscalRequest<GrupoTributarioDto[]>("/api/tribut-grupo-tributario"),
   listOperacoesFiscais: () => fiscalRequest<OperacaoFiscalDto[]>("/api/tribut-operacao-fiscal"),
+  listCstIbsCbs: () => fiscalRequest<Array<{ codigo: string; descricao: string; label: string }>>("/api/tributacao/reforma/cst-ibs-cbs"),
+  listClassTrib: (cst?: string) =>
+    fiscalRequest<Array<{ codigo: string; descricao: string; label: string }>>(
+      `/api/tributacao/reforma/class-trib${cst ? `?cst=${encodeURIComponent(cst)}` : ""}`,
+    ),
+  listCstIs: () => fiscalRequest<Array<{ codigo: string; descricao: string; label: string }>>("/api/tributacao/reforma/cst-is"),
   listConfiguracoesOfGt: () => fiscalRequest<ConfigOfGtDto[]>("/api/tribut-configura-of-gt"),
   get: <T>(endpoint: string, id: number) => fiscalRequest<T>(`${endpoint}/${id}`),
   create: <T>(endpoint: string, body: unknown) =>

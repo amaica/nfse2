@@ -12,6 +12,7 @@ import br.com.synki.nfse.portal.web.dto.nfe.NfeItemRequest;
 import br.com.synki.nfse.portal.web.dto.nfe.NfeReferenciaRequest;
 import br.com.synki.nfse.portal.web.dto.nfe.NfeReboqueRequest;
 import br.com.synki.nfse.portal.web.dto.nfe.NfeTransporteRequest;
+import br.com.synki.nfse.portal.web.dto.nfe.NfeVolumeRequest;
 import com.fincatto.documentofiscal.DFAmbiente;
 import com.fincatto.documentofiscal.DFConfig;
 import com.fincatto.documentofiscal.DFModelo;
@@ -112,13 +113,18 @@ public class NfeMontadorService {
         info.setItens(itens);
 
         NfeReformaMontador.TotaisIbsCbs totaisIbs = null;
+        BigDecimal totalIs = BigDecimal.ZERO;
         for (var item : itens) {
             if (item.getImposto() != null && item.getImposto().getIbsCbs() != null) {
                 totaisIbs = NfeReformaMontador.acumular(totaisIbs, item.getImposto().getIbsCbs());
             }
+            if (item.getImposto() != null && item.getImposto().getIs() != null) {
+                totalIs = NfeReformaMontador.acumularIs(totalIs, item.getImposto().getIs());
+            }
         }
         var total = montarTotal(totalProdutos, totalDesconto, totalNota, valorFrete);
         NfeReformaMontador.aplicarTotais(total, totaisIbs);
+        NfeReformaMontador.aplicarTotaisIs(total, totalIs);
         info.setTotal(total);
         info.setTransporte(montarTransporte(req));
         info.setPagamento(montarPagamento(totalNota, req));
@@ -205,28 +211,84 @@ public class NfeMontadorService {
     private NFNotaInfoDestinatario montarDestinatario(
             NfeDestinatarioRequest req, DFAmbiente ambiente, EmpresaEndereco enderecoEmitente) {
         var dest = new NFNotaInfoDestinatario();
-        if (ambiente == DFAmbiente.HOMOLOGACAO && (req == null || req.nome() == null || req.nome().isBlank())) {
+        String ie = req != null && req.inscricaoEstadual() != null
+                ? req.inscricaoEstadual().replaceAll("[^0-9A-Za-z]", "").trim().toUpperCase()
+                : "";
+        // SEFAZ exige xNome fixo em homologação (cStat 598 se diferente).
+        if (ambiente == DFAmbiente.HOMOLOGACAO) {
             dest.setRazaoSocial(DEST_HOMOLOG);
-            dest.setCnpj(CNPJ_DEST_HOMOLOG);
-            dest.setIndicadorIEDestinatario(NFIndicadorIEDestinatario.NAO_CONTRIBUINTE);
-            dest.setEndereco(montarEndereco(enderecoEmitente));
+            var doc = req != null && req.documento() != null ? req.documento().replaceAll("\\D", "") : "";
+            if (doc.length() == 14) {
+                dest.setCnpj(doc);
+            } else if (doc.length() == 11) {
+                dest.setCpf(doc);
+            } else {
+                dest.setCnpj(CNPJ_DEST_HOMOLOG);
+            }
+            aplicarIeDestinatario(dest, ie, doc.length() == 14);
+            if (req != null && req.email() != null && !req.email().isBlank()) {
+                dest.setEmail(req.email());
+            }
+            dest.setEndereco(montarEnderecoDestinatario(req, enderecoEmitente));
             return dest;
         }
-        var doc = req.documento() != null ? req.documento().replaceAll("\\D", "") : CNPJ_DEST_HOMOLOG;
-        dest.setRazaoSocial(truncar(req.nome() != null ? req.nome() : DEST_HOMOLOG, 60));
+        if (req == null) {
+            throw new IllegalArgumentException("Destinatario obrigatorio em producao");
+        }
+        var doc = req.documento() != null ? req.documento().replaceAll("\\D", "") : "";
+        dest.setRazaoSocial(truncar(req.nome() != null ? req.nome() : "DESTINATARIO", 60));
         if (doc.length() == 14) {
             dest.setCnpj(doc);
         } else if (doc.length() == 11) {
             dest.setCpf(doc);
         } else {
-            dest.setCnpj(CNPJ_DEST_HOMOLOG);
+            throw new IllegalArgumentException("Documento do destinatario invalido");
         }
-        dest.setIndicadorIEDestinatario(NFIndicadorIEDestinatario.NAO_CONTRIBUINTE);
+        aplicarIeDestinatario(dest, ie, doc.length() == 14);
         if (req.email() != null && !req.email().isBlank()) {
             dest.setEmail(req.email());
         }
-        dest.setEndereco(montarEndereco(enderecoEmitente));
+        dest.setEndereco(montarEnderecoDestinatario(req, enderecoEmitente));
         return dest;
+    }
+
+    /** Preferência: endereço do destinatário (cliente/IE-Endereço); fallback emitente só se vazio. */
+    private NFEndereco montarEnderecoDestinatario(NfeDestinatarioRequest req, EmpresaEndereco fallbackEmitente) {
+        if (req != null && temTexto(req.logradouro()) && temTexto(req.codigoMunicipioIbge()) && temTexto(req.uf())) {
+            var e = new NFEndereco();
+            e.setLogradouro(truncar(req.logradouro().trim(), 60));
+            e.setNumero(temTexto(req.numero()) ? truncar(req.numero().trim(), 60) : "S/N");
+            if (temTexto(req.complemento())) {
+                e.setComplemento(truncar(req.complemento().trim(), 60));
+            }
+            e.setBairro(temTexto(req.bairro()) ? truncar(req.bairro().trim(), 60) : "CENTRO");
+            e.setCodigoMunicipio(req.codigoMunicipioIbge().replaceAll("\\D", ""));
+            e.setDescricaoMunicipio(temTexto(req.municipio()) ? truncar(req.municipio().trim(), 60) : "MUNICIPIO");
+            e.setUf(DFUnidadeFederativa.valueOfCodigo(req.uf().trim().toUpperCase()));
+            if (temTexto(req.cep())) {
+                e.setCep(req.cep().replaceAll("\\D", ""));
+            }
+            return e;
+        }
+        return montarEndereco(fallbackEmitente);
+    }
+
+    private static void aplicarIeDestinatario(NFNotaInfoDestinatario dest, String ie, boolean pessoaJuridica) {
+        if (ie != null && !ie.isBlank() && !"ISENTO".equalsIgnoreCase(ie)) {
+            dest.setIndicadorIEDestinatario(NFIndicadorIEDestinatario.CONTRIBUINTE_ICMS);
+            dest.setInscricaoEstadual(ie);
+            return;
+        }
+        if (ie != null && "ISENTO".equalsIgnoreCase(ie)) {
+            dest.setIndicadorIEDestinatario(NFIndicadorIEDestinatario.CONTRIBUINTE_ISENTO_INSCRICAO_CONTRIBUINTES_ICMS);
+            return;
+        }
+        // CNPJ sem IE em operação de mercadoria: SEFAZ RS rejeita indIEDest=9 (cStat 232).
+        if (pessoaJuridica) {
+            dest.setIndicadorIEDestinatario(NFIndicadorIEDestinatario.CONTRIBUINTE_ISENTO_INSCRICAO_CONTRIBUINTES_ICMS);
+            return;
+        }
+        dest.setIndicadorIEDestinatario(NFIndicadorIEDestinatario.NAO_CONTRIBUINTE);
     }
 
     private NFEndereco montarEndereco(EmpresaEndereco endereco) {
@@ -292,7 +354,8 @@ public class NfeMontadorService {
                 req.quantidade() != null ? req.quantidade() : BigDecimal.ONE,
                 req.valorUnitario() != null ? req.valorUnitario() : p.getValorUnitario(),
                 req.valorDesconto(),
-                req.ibsCbs())).orElse(req);
+                req.ibsCbs(),
+                req.impostoSeletivo())).orElse(req);
     }
 
     private TributOperacaoFiscal resolverOperacaoFiscal(Long empresaId, Long operacaoFiscalId) {
@@ -374,6 +437,10 @@ public class NfeMontadorService {
         var ibsCbs = NfeReformaMontador.montarIbsCbsItem(vLiquido, req.ibsCbs(), operacaoFiscal);
         if (ibsCbs != null) {
             imposto.setIbsCbs(ibsCbs);
+        }
+        var impostoIs = NfeReformaMontador.montarIsItem(vLiquido, req.impostoSeletivo(), operacaoFiscal);
+        if (impostoIs != null) {
+            imposto.setIs(impostoIs);
         }
 
         var item = new NFNotaInfoItem();
@@ -477,29 +544,63 @@ public class NfeMontadorService {
                 transporte.setReboques(reboques);
             }
         }
-        if (temVolume(t)) {
-            var vol = new NFNotaInfoVolume();
-            if (t.volumeQuantidade() != null && t.volumeQuantidade() > 0) {
-                vol.setQuantidadeVolumesTransportados(BigInteger.valueOf(t.volumeQuantidade()));
+        var volumesXml = new ArrayList<NFNotaInfoVolume>();
+        if (t.volumes() != null) {
+            for (NfeVolumeRequest v : t.volumes()) {
+                var vol = montarVolume(v);
+                if (vol != null) {
+                    volumesXml.add(vol);
+                }
             }
-            if (temTexto(t.volumeEspecie())) {
-                vol.setEspecieVolumesTransportados(truncar(t.volumeEspecie().trim(), 60));
+        }
+        if (volumesXml.isEmpty() && temVolume(t)) {
+            var legado = new NfeVolumeRequest(
+                    t.volumeQuantidade(), t.volumeEspecie(), t.volumeMarca(), t.volumeNumeracao(),
+                    t.pesoLiquido(), t.pesoBruto());
+            var vol = montarVolume(legado);
+            if (vol != null) {
+                volumesXml.add(vol);
             }
-            if (temTexto(t.volumeMarca())) {
-                vol.setMarca(truncar(t.volumeMarca().trim(), 60));
-            }
-            if (temTexto(t.volumeNumeracao())) {
-                vol.setNumeracaoVolumesTransportados(truncar(t.volumeNumeracao().trim(), 60));
-            }
-            if (t.pesoLiquido() != null && t.pesoLiquido().signum() > 0) {
-                vol.setPesoLiquido(t.pesoLiquido().setScale(3, RoundingMode.HALF_UP));
-            }
-            if (t.pesoBruto() != null && t.pesoBruto().signum() > 0) {
-                vol.setPesoBruto(t.pesoBruto().setScale(3, RoundingMode.HALF_UP));
-            }
-            transporte.setVolumes(List.of(vol));
+        }
+        if (!volumesXml.isEmpty()) {
+            transporte.setVolumes(volumesXml);
         }
         return transporte;
+    }
+
+    private NFNotaInfoVolume montarVolume(NfeVolumeRequest v) {
+        if (v == null) {
+            return null;
+        }
+        boolean tem = (v.quantidade() != null && v.quantidade() > 0)
+                || temTexto(v.especie())
+                || temTexto(v.marca())
+                || temTexto(v.numeracao())
+                || (v.pesoLiquido() != null && v.pesoLiquido().signum() > 0)
+                || (v.pesoBruto() != null && v.pesoBruto().signum() > 0);
+        if (!tem) {
+            return null;
+        }
+        var vol = new NFNotaInfoVolume();
+        if (v.quantidade() != null && v.quantidade() > 0) {
+            vol.setQuantidadeVolumesTransportados(BigInteger.valueOf(v.quantidade()));
+        }
+        if (temTexto(v.especie())) {
+            vol.setEspecieVolumesTransportados(truncar(v.especie().trim(), 60));
+        }
+        if (temTexto(v.marca())) {
+            vol.setMarca(truncar(v.marca().trim(), 60));
+        }
+        if (temTexto(v.numeracao())) {
+            vol.setNumeracaoVolumesTransportados(truncar(v.numeracao().trim(), 60));
+        }
+        if (v.pesoLiquido() != null && v.pesoLiquido().signum() > 0) {
+            vol.setPesoLiquido(v.pesoLiquido().setScale(3, RoundingMode.HALF_UP));
+        }
+        if (v.pesoBruto() != null && v.pesoBruto().signum() > 0) {
+            vol.setPesoBruto(v.pesoBruto().setScale(3, RoundingMode.HALF_UP));
+        }
+        return vol;
     }
 
     private NFNotaInfoPagamento montarPagamento(BigDecimal valorNota, NfeEmitirLoteRequest req) {

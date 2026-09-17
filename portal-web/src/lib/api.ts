@@ -316,6 +316,37 @@ export const api = {
   nfeConsultarNota: (token: string, chave: string) =>
     request<NfeConsultaResultado>(`/api/nfe/notas/consultar/${chave}`, token),
 
+  nfeEnviarDanfeEmail: (token: string, chave: string, destinatario: string, mensagem?: string) =>
+    request<{ ok: boolean; destinatario: string }>(
+      `/api/nfe/notas/${encodeURIComponent(chave)}/danfe/email`,
+      token,
+      {
+        method: "POST",
+        body: JSON.stringify({ destinatario, mensagem: mensagem ?? "" }),
+      },
+    ),
+
+  nfeImprimirDanfe: async (token: string, chave: string) => {
+    const blob = await fetchPdfBlob(
+      `/api/nfe/notas/${encodeURIComponent(chave)}/danfe`,
+      token,
+    );
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, "_blank", "noopener,noreferrer");
+    if (!w) {
+      URL.revokeObjectURL(url);
+      throw new ApiError("Permita pop-ups para imprimir o DANFE.", 0);
+    }
+    w.addEventListener("load", () => {
+      try {
+        w.print();
+      } catch {
+        /* o usuário pode usar Ctrl+P na aba do PDF */
+      }
+    });
+    window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+  },
+
   nfeBaixarXmlsDestinatario: (token: string) =>
     request<DistribuicaoDFeResultado>(
       "/api/nfe/distribuicao/baixar",
@@ -882,6 +913,14 @@ export type NfeDestinatarioBody = {
   documento?: string;
   email?: string;
   inscricaoEstadual?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  municipio?: string;
+  uf?: string;
+  cep?: string;
+  codigoMunicipioIbge?: string;
 };
 
 export type NfeItemBody = {
@@ -937,6 +976,14 @@ export type NfeEmitirLoteBody = {
     pesoBruto?: number;
     valorFrete?: number;
     reboques?: Array<{ placa: string; uf?: string; rntc?: string }>;
+    volumes?: Array<{
+      quantidade?: number;
+      especie?: string;
+      marca?: string;
+      numeracao?: string;
+      pesoLiquido?: number;
+      pesoBruto?: number;
+    }>;
   };
   referencias?: NfeReferenciaBody[];
 };

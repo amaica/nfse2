@@ -14,6 +14,7 @@ import {
   labelOpcao,
 } from "@/lib/nfse-servico-opcoes";
 import { useEmpresaScope } from "@/hooks/useEmpresaScope";
+import { useReformaCatalogo } from "@/hooks/useReformaCatalogo";
 import { FiscalDetailToolbar } from "@/components/fiscal/FiscalDetailToolbar";
 import { FiscalField, FiscalRow, FiscalSection } from "@/components/fiscal/FiscalFormUi";
 
@@ -73,6 +74,7 @@ export function CadastroNfseServicoWorkspace() {
   const [tab, setTab] = useState<TabId>("ident");
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const { csts, classTribs } = useReformaCatalogo(form.ibsCbsCst);
 
   const carregarLista = useCallback(async () => {
     setLoadingList(true);
@@ -510,24 +512,40 @@ export function CadastroNfseServicoWorkspace() {
             </label>
             <FiscalRow>
               <FiscalField label="CST IBS/CBS">
-                <input
+                <select
                   className="fiscal-input fiscal-input--mono"
-                  maxLength={3}
                   value={form.ibsCbsCst ?? ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, ibsCbsCst: e.target.value.replace(/\D/g, "").slice(0, 3) }))
-                  }
-                />
+                  onChange={(e) => {
+                    const cst = e.target.value;
+                    setForm((f) => ({
+                      ...f,
+                      ibsCbsCst: cst,
+                      ibsCbsClassTrib:
+                        f.ibsCbsClassTrib?.startsWith(cst) ? f.ibsCbsClassTrib : `${cst}001`.slice(0, 6),
+                    }));
+                  }}
+                >
+                  <option value="">— Selecione —</option>
+                  {csts.map((o) => (
+                    <option key={o.codigo} value={o.codigo}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </FiscalField>
               <FiscalField label="Classificação tributária (cClassTrib)">
-                <input
+                <select
                   className="fiscal-input fiscal-input--mono"
-                  maxLength={6}
                   value={form.ibsCbsClassTrib ?? ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, ibsCbsClassTrib: e.target.value.replace(/\D/g, "").slice(0, 6) }))
-                  }
-                />
+                  onChange={(e) => setForm((f) => ({ ...f, ibsCbsClassTrib: e.target.value }))}
+                >
+                  <option value="">— Selecione —</option>
+                  {classTribs.map((o) => (
+                    <option key={o.codigo} value={o.codigo}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </FiscalField>
             </FiscalRow>
             <FiscalRow>

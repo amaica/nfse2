@@ -118,10 +118,6 @@ export function NfseEmissaoAgrow({ token }: { token: string }) {
 
   const buscarCliente = useCallback(async (event: AutoCompleteCompleteEvent) => {
     const q = event.query?.trim() ?? "";
-    if (q.length < 2) {
-      setClienteSug([]);
-      return;
-    }
     try {
       const pessoas = await fiscalApi.buscaPessoas(q);
       setClienteSug(

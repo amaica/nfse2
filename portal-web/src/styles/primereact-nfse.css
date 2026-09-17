@@ -41,7 +41,24 @@
   background: var(--brand-soft, #eef5e8);
 }
 
+.nfse-ac-field--invalid .p-autocomplete .p-inputtext {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.nfse-ac-field--invalid .p-autocomplete .p-inputtext:enabled:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18);
+}
+
+.nfse-ac-field--invalid .p-autocomplete-dropdown {
+  border-color: #dc2626;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
 .nfse-ac-panel.p-autocomplete-panel {
+  z-index: 10050 !important;
   border: 1px solid var(--border, #dde5d4);
   border-radius: 0.85rem;
   box-shadow: 0 12px 32px rgba(26, 50, 32, 0.12);

@@ -5,6 +5,7 @@ import br.com.synki.nfse.portal.repository.UsuarioEmpresaRepository;
 import br.com.synki.nfse.portal.repository.UsuarioRepository;
 import br.com.synki.nfse.portal.repository.fiscal.CfopRepository;
 import br.com.synki.nfse.portal.repository.fiscal.NcmRepository;
+import br.com.synki.nfse.portal.repository.fiscal.PessoaEnderecoRepository;
 import br.com.synki.nfse.portal.repository.fiscal.PessoaRepository;
 import br.com.synki.nfse.portal.repository.fiscal.ProdutoRepository;
 import br.com.synki.nfse.portal.repository.fiscal.VeiculoRepository;
@@ -40,6 +41,7 @@ class CadastroFiscalServiceTest {
     @Mock private CfopRepository cfopRepo;
     @Mock private NcmRepository ncmRepo;
     @Mock private PessoaRepository pessoaRepo;
+    @Mock private PessoaEnderecoRepository pessoaEnderecoRepo;
     @Mock private ProdutoRepository produtoRepo;
     @Mock private VeiculoRepository veiculoRepo;
     @Mock private UsuarioRepository usuarioRepo;
@@ -52,7 +54,7 @@ class CadastroFiscalServiceTest {
     @BeforeEach
     void setUp() {
         service = new CadastroFiscalService(
-                cfopRepo, ncmRepo, pessoaRepo, produtoRepo, veiculoRepo,
+                cfopRepo, ncmRepo, pessoaRepo, pessoaEnderecoRepo, produtoRepo, veiculoRepo,
                 usuarioRepo, usuarioEmpresaRepo, passwordEncoder, membershipService);
     }
 

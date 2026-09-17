@@ -40,6 +40,9 @@ export function mapEmissaoError(message: string): string {
   if (m.includes("cota") && m.includes("nf-e")) {
     return "Você atingiu o limite mensal de NF-e. Aumente seu plano em Conta → Assinatura.";
   }
+  if (m.includes("vcredprescondsus") || m.includes("ibscbstot")) {
+    return "Erro nos totais IBS/CBS da nota. Atualize o portal e tente de novo — se persistir, avise o suporte.";
+  }
   return message;
 }
 

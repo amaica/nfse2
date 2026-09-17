@@ -199,12 +199,11 @@ public class DpsMontadorService {
             }
         }
 
-        if (req.ibsCbs() != null && Boolean.TRUE.equals(req.ibsCbs().habilitar())) {
-            var ibs = new NFSeSefinNacionalInfoIBSCBS();
-            if (blankToNull(req.ibsCbs().classificacaoOperacao()) != null) {
-                ibs.setcIndOp(req.ibsCbs().classificacaoOperacao());
+        if (NfseReformaMontador.deveIncluir(req.ibsCbs())) {
+            var ibs = NfseReformaMontador.montar(req.ibsCbs());
+            if (ibs != null) {
+                inf.setInfoIBSCBS(ibs);
             }
-            inf.setInfoIBSCBS(ibs);
         }
 
         if (req.informacoesAdicionais() != null) {

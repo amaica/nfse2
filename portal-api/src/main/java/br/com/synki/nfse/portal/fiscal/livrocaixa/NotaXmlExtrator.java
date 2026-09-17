@@ -1,5 +1,6 @@
 package br.com.synki.nfse.portal.fiscal.livrocaixa;
 
+import com.fincatto.documentofiscal.nfe400.classes.NFTipo;
 import com.fincatto.documentofiscal.nfe400.classes.nota.NFNotaProcessada;
 import com.fincatto.documentofiscal.utils.DFPersister;
 import org.slf4j.Logger;
@@ -55,16 +56,22 @@ public final class NotaXmlExtrator {
                 }
             }
 
+            String tpNf = tipoNotaCodigo(ide.getTipo());
+            var movimento = movimentoPorTpNf(tpNf);
+            String rotulo = movimento == LancamentoLivroCaixa.TipoMovimento.DESPESA
+                    ? "Despesa — entrada"
+                    : "Receita — saída";
             return Optional.of(new LancamentoLivroCaixa(
                     data,
                     "NF-e",
                     numero,
                     chave,
-                    "Receita — NF-e nº " + numero + (nomeDest.isBlank() ? "" : " — " + nomeDest),
+                    rotulo + " — NF-e nº " + numero + (nomeDest.isBlank() ? "" : " — " + nomeDest),
                     nomeDest,
                     docDest,
                     total.setScale(2, RoundingMode.HALF_UP),
-                    LancamentoLivroCaixa.TipoMovimento.RECEITA));
+                    movimento,
+                    tpNf));
         } catch (Exception ex) {
             log.debug("NF-e via fincatto falhou, tentando DOM: {}", ex.getMessage());
             return extrairNfeDom(xml, chaveFallback);
@@ -83,20 +90,54 @@ public final class NotaXmlExtrator {
             var chave = extrairChaveNfe(xml).orElse(chaveFallback);
             var nomeDest = primeiroTexto(doc, "xNome");
             var docDest = coalesce(primeiroTexto(doc, "CNPJ"), primeiroTexto(doc, "CPF"));
+            String tpNf = normalizarTpNf(primeiroTexto(doc, "tpNF"));
+            var movimento = movimentoPorTpNf(tpNf);
+            String rotulo = movimento == LancamentoLivroCaixa.TipoMovimento.DESPESA
+                    ? "Despesa — entrada"
+                    : "Receita — saída";
             return Optional.of(new LancamentoLivroCaixa(
                     data,
                     "NF-e",
                     numero,
                     chave,
-                    "Receita — NF-e nº " + numero,
+                    rotulo + " — NF-e nº " + numero,
                     nomeDest,
                     docDest,
                     valor.setScale(2, RoundingMode.HALF_UP),
-                    LancamentoLivroCaixa.TipoMovimento.RECEITA));
+                    movimento,
+                    tpNf));
         } catch (Exception ex) {
             log.debug("NF-e DOM falhou: {}", ex.getMessage());
             return Optional.empty();
         }
+    }
+
+    /** tpNF 0 = entrada (sai $$); 1 ou ausente = saída (entra $$). */
+    static String tipoNotaCodigo(NFTipo tipo) {
+        if (tipo == null || tipo == NFTipo.SAIDA) {
+            return "1";
+        }
+        if (tipo == NFTipo.ENTRADA) {
+            return "0";
+        }
+        return "1";
+    }
+
+    static String normalizarTpNf(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "1";
+        }
+        var t = raw.trim();
+        if ("0".equals(t) || "E".equalsIgnoreCase(t) || "ENTRADA".equalsIgnoreCase(t)) {
+            return "0";
+        }
+        return "1";
+    }
+
+    static LancamentoLivroCaixa.TipoMovimento movimentoPorTpNf(String tpNf) {
+        return "0".equals(tpNf)
+                ? LancamentoLivroCaixa.TipoMovimento.DESPESA
+                : LancamentoLivroCaixa.TipoMovimento.RECEITA;
     }
 
     public static Optional<LancamentoLivroCaixa> extrairNfse(String xml, String chaveFallback) {
@@ -225,11 +266,12 @@ public final class NotaXmlExtrator {
                 "NF-e entrada",
                 numero,
                 meta.chave(),
-                "Despesa — NF-e nº " + numero + (nome.isBlank() ? "" : " — " + nome),
+                "Despesa — DF-e nº " + numero + (nome.isBlank() ? "" : " — " + nome),
                 nome,
                 meta.cnpjEmitente() != null ? meta.cnpjEmitente() : "",
                 meta.valor().setScale(2, RoundingMode.HALF_UP),
-                LancamentoLivroCaixa.TipoMovimento.DESPESA));
+                LancamentoLivroCaixa.TipoMovimento.DESPESA,
+                "0"));
     }
 
     public record MetadadosNfeEntrada(

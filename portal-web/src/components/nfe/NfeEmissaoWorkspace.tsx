@@ -7,8 +7,11 @@ import {
   FileDown,
   FileStack,
   Leaf,
+  Loader2,
+  Mail,
   Package,
   Plus,
+  Printer,
   RefreshCw,
   Send,
   Trash2,
@@ -17,7 +20,7 @@ import {
   Wheat,
 } from "lucide-react";
 import { api, ApiError, formatarCnpjCpf, type NfeContexto, type NfeItemBody } from "@/lib/api";
-import { fiscalApi, type VeiculoDto } from "@/lib/fiscal-api";
+import { fiscalApi, type PessoaDto, type PessoaEnderecoDto, type VeiculoDto } from "@/lib/fiscal-api";
 import { apiBaseUrl } from "@/lib/api-base";
 import { getAppToken } from "@/lib/app-session";
 import { useEmpresaScope } from "@/hooks/useEmpresaScope";
@@ -25,6 +28,7 @@ import { EmitenteEmissaoBar } from "@/components/fiscal/EmitenteEmissaoBar";
 import { AssinaturaBanner } from "@/components/conta/AssinaturaBanner";
 import { mapEmissaoError } from "@/lib/assinatura";
 import { fmtCfop } from "@/lib/cfop";
+import { UNIDADES_PRODUTO } from "@/lib/produto-unidades";
 import { MoedaInput, QtyInput, fmtMoeda } from "@/components/fiscal/MoedaInput";
 import { AutoCompleteField, type AcOption } from "@/components/ui/AutoCompleteField";
 import {
@@ -97,6 +101,86 @@ type RefLinha = {
 
 type ReboqueLinha = { key: string; placa: string; uf: string; rntc: string };
 
+type VolumeLinha = {
+  key: string;
+  quantidade?: number;
+  especie: string;
+  marca: string;
+  numeracao: string;
+  pesoLiquido: string;
+  pesoBruto: string;
+};
+
+type DestEnderecoOpt = {
+  key: string;
+  label: string;
+  inscricaoEstadual: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  municipio: string;
+  uf: string;
+  cep: string;
+  codigoMunicipioIbge: string;
+};
+
+function rotuloIeEndereco(ie: string, logradouro: string, municipio: string, uf: string) {
+  const ieLab = ie?.trim() || "—";
+  const log = logradouro?.trim() || "";
+  const cid = [municipio?.trim(), uf?.trim()].filter(Boolean).join("/");
+  return `IE:${ieLab} - ${log}${cid ? ` - ${cid}` : ""}`;
+}
+
+function enderecosDoCliente(full: PessoaDto): DestEnderecoOpt[] {
+  const out: DestEnderecoOpt[] = [];
+  const temPrincipal =
+    !!(full.logradouro?.trim() || full.inscricaoEstadual?.trim() || full.municipio?.trim());
+  if (temPrincipal) {
+    out.push({
+      key: "principal",
+      label: rotuloIeEndereco(
+        full.inscricaoEstadual ?? "",
+        full.logradouro ?? "",
+        full.municipio ?? "",
+        full.uf ?? "",
+      ),
+      inscricaoEstadual: full.inscricaoEstadual ?? "",
+      logradouro: full.logradouro ?? "",
+      numero: full.numero ?? "",
+      complemento: full.complemento ?? "",
+      bairro: full.bairro ?? "",
+      municipio: full.municipio ?? "",
+      uf: full.uf ?? "",
+      cep: full.cep ?? "",
+      codigoMunicipioIbge: full.codigoMunicipioIbge ?? "",
+    });
+  }
+  for (const e of full.enderecos ?? []) {
+    out.push(enderecoAdicionalParaOpt(e));
+  }
+  return out;
+}
+
+function enderecoAdicionalParaOpt(e: PessoaEnderecoDto): DestEnderecoOpt {
+  const key = e.id != null ? `id-${e.id}` : `tmp-${e.inscricaoEstadual}-${e.logradouro}`;
+  return {
+    key,
+    label:
+      e.valores ||
+      rotuloIeEndereco(e.inscricaoEstadual ?? "", e.logradouro ?? "", e.municipio ?? "", e.uf ?? ""),
+    inscricaoEstadual: e.inscricaoEstadual ?? "",
+    logradouro: e.logradouro ?? "",
+    numero: e.numero ?? "",
+    complemento: e.complemento ?? "",
+    bairro: e.bairro ?? "",
+    municipio: e.municipio ?? "",
+    uf: e.uf ?? "",
+    cep: e.cep ?? "",
+    codigoMunicipioIbge: e.codigoMunicipioIbge ?? "",
+  };
+}
+
 function geraFinanceiro(op?: Operacao | null) {
   const v = (op?.geraFinanceiro || "S").toUpperCase();
   return v === "S" || v === "1" || v === "SIM";
@@ -168,6 +252,10 @@ export function NfeEmissaoWorkspace() {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
   const [resultado, setResultado] = useState<Record<string, unknown> | null>(null);
+  const [emailDanfe, setEmailDanfe] = useState("");
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
+  const [emailMsg, setEmailMsg] = useState("");
+  const [emailErro, setEmailErro] = useState("");
 
   const [enderecoId, setEnderecoId] = useState<number | "">("");
   const [operacaoFiscalId, setOperacaoFiscalId] = useState<number | "">("");
@@ -178,6 +266,9 @@ export function NfeEmissaoWorkspace() {
   const [destinatario, setDestinatario] = useState<PessoaSug | null>(null);
   const [destEmail, setDestEmail] = useState("");
   const [destIe, setDestIe] = useState("");
+  const [destEnderecos, setDestEnderecos] = useState<DestEnderecoOpt[]>([]);
+  const [destEndKey, setDestEndKey] = useState("");
+  const [destEndereco, setDestEndereco] = useState<DestEnderecoOpt | null>(null);
 
   const [itens, setItens] = useState<ItemLinha[]>([]);
   const [prodOpt, setProdOpt] = useState<AcOption | null>(null);
@@ -186,6 +277,7 @@ export function NfeEmissaoWorkspace() {
   const [addQtd, setAddQtd] = useState<number | undefined>(1);
   const [addValor, setAddValor] = useState<number | undefined>(undefined);
   const [addDesc, setAddDesc] = useState<number | undefined>(undefined);
+  const [addUnidade, setAddUnidade] = useState("UN");
   const [natOpt, setNatOpt] = useState<AcOption | null>(null);
   const [natSug, setNatSug] = useState<AcOption[]>([]);
 
@@ -210,12 +302,7 @@ export function NfeEmissaoWorkspace() {
   const [placaUf, setPlacaUf] = useState("");
   const [rntc, setRntc] = useState("");
   const [valorFrete, setValorFrete] = useState<number | undefined>(undefined);
-  const [volQtd, setVolQtd] = useState<number | undefined>(undefined);
-  const [volEsp, setVolEsp] = useState("");
-  const [volMarca, setVolMarca] = useState("");
-  const [volNum, setVolNum] = useState("");
-  const [pesoL, setPesoL] = useState("");
-  const [pesoB, setPesoB] = useState("");
+  const [volumes, setVolumes] = useState<VolumeLinha[]>([]);
   const [reboques, setReboques] = useState<ReboqueLinha[]>([]);
   const [veiculos, setVeiculos] = useState<VeiculoDto[]>([]);
 
@@ -322,13 +409,12 @@ export function NfeEmissaoWorkspace() {
     setPlacaUf("");
     setRntc("");
     setValorFrete(undefined);
-    setVolQtd(undefined);
-    setVolEsp("");
-    setVolMarca("");
-    setVolNum("");
-    setPesoL("");
-    setPesoB("");
+    setVolumes([]);
     setReboques([]);
+    setDestEnderecos([]);
+    setDestEndKey("");
+    setDestEndereco(null);
+    setAddUnidade("UN");
     setReferencias([]);
     setRefOpt(null);
     setRefSug([]);
@@ -400,16 +486,18 @@ export function NfeEmissaoWorkspace() {
 
   const buscarDest = async (event: AutoCompleteCompleteEvent) => {
     const q = event.query?.trim() ?? "";
-    if (q.length < 2) {
-      setDestSug([]);
-      return;
-    }
     try {
       const pessoas = await fiscalApi.buscaPessoas(q);
-      setDestSug(pessoas.map(pessoaParaOpt));
+      setDestSug(pessoas.slice(0, 50).map(pessoaParaOpt));
     } catch {
       setDestSug([]);
     }
+  };
+
+  const aplicarDestEndereco = (opt: DestEnderecoOpt | null) => {
+    setDestEndereco(opt);
+    setDestEndKey(opt?.key ?? "");
+    setDestIe(opt?.inscricaoEstadual ?? "");
   };
 
   const selecionarDest = async (opt: AcOption) => {
@@ -421,13 +509,27 @@ export function NfeEmissaoWorkspace() {
     };
     setDestinatario(p);
     setDestSug([]);
+    setDestEnderecos([]);
+    aplicarDestEndereco(null);
     try {
-      const full = await fiscalApi.get<{ email?: string; inscricaoEstadual?: string }>(
-        "/api/pessoas",
-        p.id,
-      );
+      const full = await fiscalApi.get<PessoaDto>("/api/pessoas", p.id);
       setDestEmail(full.email ?? "");
-      setDestIe(full.inscricaoEstadual ?? "");
+      if (full.email?.trim()) {
+        setEmailDanfe(full.email.trim());
+      }
+      if (full.cpfCnpj) {
+        setDestinatario({ id: p.id, nome: full.nome || p.nome, cpfCnpj: full.cpfCnpj });
+      }
+      const ends = enderecosDoCliente(full);
+      setDestEnderecos(ends);
+      if (ends.length === 1) {
+        aplicarDestEndereco(ends[0]);
+      } else if (ends.length > 1) {
+        const principal = ends.find((e) => e.key === "principal") ?? ends[0];
+        aplicarDestEndereco(principal);
+      } else {
+        setDestIe(full.inscricaoEstadual ?? "");
+      }
     } catch {
       /* opcional */
     }
@@ -435,13 +537,9 @@ export function NfeEmissaoWorkspace() {
 
   const buscarProd = async (event: AutoCompleteCompleteEvent) => {
     const q = event.query?.trim() ?? "";
-    if (q.length < 2) {
-      setProdSug([]);
-      return;
-    }
     try {
       const produtos = await fiscalApi.buscaProdutos(q);
-      setProdSug(produtos.map(produtoParaOpt));
+      setProdSug(produtos.slice(0, 50).map(produtoParaOpt));
     } catch {
       setProdSug([]);
     }
@@ -456,11 +554,15 @@ export function NfeEmissaoWorkspace() {
     };
     setProdSel(p);
     setProdSug([]);
+    setAddUnidade(p.unidade || "UN");
     setAddValor(p.valorUnitario && p.valorUnitario > 0 ? p.valorUnitario : undefined);
     try {
-      const full = await fiscalApi.get<{ valorUnitario?: number }>("/api/produto", p.id);
+      const full = await fiscalApi.get<{ valorUnitario?: number; unidade?: string }>("/api/produto", p.id);
       if (full.valorUnitario && full.valorUnitario > 0) {
         setAddValor(full.valorUnitario);
+      }
+      if (full.unidade) {
+        setAddUnidade(full.unidade);
       }
     } catch {
       /* usa valor da busca */
@@ -530,7 +632,7 @@ export function NfeEmissaoWorkspace() {
           descricao: p.nome,
           ncm: p.codigoNcm || "00000000",
           cfop: cfopPadrao,
-          unidade: p.unidade || prodSel.unidade || "UN",
+          unidade: addUnidade || p.unidade || prodSel.unidade || "UN",
           quantidade: qtd,
           valorUnitario: vlr,
           valorDesconto: desc,
@@ -550,13 +652,9 @@ export function NfeEmissaoWorkspace() {
 
   const buscarTransportadora = async (event: AutoCompleteCompleteEvent) => {
     const q = event.query?.trim() ?? "";
-    if (q.length < 2) {
-      setTranspSug([]);
-      return;
-    }
     try {
       const pessoas = await fiscalApi.buscaPessoas(q);
-      setTranspSug(pessoas.map(pessoaParaOpt));
+      setTranspSug(pessoas.slice(0, 50).map(pessoaParaOpt));
     } catch {
       setTranspSug([]);
     }
@@ -614,7 +712,7 @@ export function NfeEmissaoWorkspace() {
       ]);
       return;
     }
-    if (!token || q.length < 2) {
+    if (!token) {
       setRefSug([]);
       return;
     }
@@ -735,7 +833,7 @@ export function NfeEmissaoWorkspace() {
   const abrirDanfe = async (chave: string) => {
     if (!token || !chave) return;
     try {
-      const res = await fetch(`${apiBaseUrl()}/api/nfe/notas/${chave}/danfe`, {
+      const res = await fetch(`${apiBaseUrl()}/api/nfe/notas/${encodeURIComponent(chave)}/danfe`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Falha ao abrir DANFE");
@@ -746,10 +844,39 @@ export function NfeEmissaoWorkspace() {
     }
   };
 
+  const imprimirDanfe = async (chave: string) => {
+    if (!token || !chave) return;
+    try {
+      await api.nfeImprimirDanfe(token, chave);
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Erro ao imprimir DANFE");
+    }
+  };
+
+  const enviarDanfeEmail = async () => {
+    const chave = resultado?.chaveAcesso ? String(resultado.chaveAcesso) : "";
+    if (!token || !chave || !emailDanfe.trim()) return;
+    setEnviandoEmail(true);
+    setEmailMsg("");
+    setEmailErro("");
+    try {
+      await api.nfeEnviarDanfeEmail(token, chave, emailDanfe.trim());
+      setEmailMsg(`DANFE enviado para ${emailDanfe.trim()}`);
+    } catch (e) {
+      setEmailErro(e instanceof ApiError ? e.message : "Falha ao enviar e-mail");
+    } finally {
+      setEnviandoEmail(false);
+    }
+  };
+
+  const chaveAutorizada =
+    resultado?.chaveAcesso != null &&
+    String(resultado.statusProtocolo ?? resultado.status ?? "").startsWith("100");
+
   const transmitir = async () => {
     if (!token) return;
     if (!destinatario) {
-      setErro("Selecione o destinatário (produtor, cerealista, cooperativa…).");
+      setErro("Selecione o destinatário.");
       return;
     }
     if (operacaoFiscalId === "") {
@@ -760,8 +887,8 @@ export function NfeEmissaoWorkspace() {
       setErro("Inclua ao menos um item (grão, animal, insumo…).");
       return;
     }
-    if ((finalidade === "2" || finalidade === "4") && referencias.length === 0) {
-      setErro("Devolução e complementar exigem ao menos um documento referenciado (chave NF-e ou NF de produtor rural).");
+    if ((finalidade === "4") && referencias.length === 0) {
+      setErro("Devolução exige ao menos um documento referenciado (chave NF-e ou NF de produtor rural).");
       return;
     }
     setLoading(true);
@@ -790,6 +917,14 @@ export function NfeEmissaoWorkspace() {
           documento: destinatario.cpfCnpj || undefined,
           email: destEmail || undefined,
           inscricaoEstadual: destIe || undefined,
+          logradouro: destEndereco?.logradouro || undefined,
+          numero: destEndereco?.numero || undefined,
+          complemento: destEndereco?.complemento || undefined,
+          bairro: destEndereco?.bairro || undefined,
+          municipio: destEndereco?.municipio || undefined,
+          uf: destEndereco?.uf || undefined,
+          cep: destEndereco?.cep || undefined,
+          codigoMunicipioIbge: destEndereco?.codigoMunicipioIbge || undefined,
         },
         itens: bodyItens,
         finalidade,
@@ -810,16 +945,28 @@ export function NfeEmissaoWorkspace() {
           placa: placa.replace(/[^A-Za-z0-9]/g, "") || undefined,
           placaUf: placaUf || undefined,
           rntc: rntc.trim() || undefined,
-          volumeQuantidade: volQtd && volQtd > 0 ? volQtd : undefined,
-          volumeEspecie: volEsp.trim() || undefined,
-          volumeMarca: volMarca.trim() || undefined,
-          volumeNumeracao: volNum.trim() || undefined,
-          pesoLiquido: parseDecimal(pesoL) || undefined,
-          pesoBruto: parseDecimal(pesoB) || undefined,
           valorFrete: valorFrete && valorFrete > 0 ? valorFrete : undefined,
           reboques: reboques
             .filter((r) => r.placa.trim())
             .map((r) => ({ placa: r.placa, uf: r.uf || undefined, rntc: r.rntc || undefined })),
+          volumes: volumes
+            .map((v) => ({
+              quantidade: v.quantidade && v.quantidade > 0 ? v.quantidade : undefined,
+              especie: v.especie.trim() || undefined,
+              marca: v.marca.trim() || undefined,
+              numeracao: v.numeracao.trim() || undefined,
+              pesoLiquido: parseDecimal(v.pesoLiquido) || undefined,
+              pesoBruto: parseDecimal(v.pesoBruto) || undefined,
+            }))
+            .filter(
+              (v) =>
+                v.quantidade ||
+                v.especie ||
+                v.marca ||
+                v.numeracao ||
+                v.pesoLiquido ||
+                v.pesoBruto,
+            ),
         },
         referencias: referencias.map((r) => ({
           tipo: r.tipo,
@@ -835,6 +982,12 @@ export function NfeEmissaoWorkspace() {
         })),
       });
       setResultado(res as unknown as Record<string, unknown>);
+      setEmailDanfe(destEmail.trim());
+      setEmailMsg("");
+      setEmailErro("");
+      requestAnimationFrame(() => {
+        document.getElementById("nfe-sucesso")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
       await carregarContexto();
     } catch (e) {
       setErro(mapEmissaoError(e instanceof ApiError ? e.message : "Falha na emissão"));
@@ -847,7 +1000,29 @@ export function NfeEmissaoWorkspace() {
 
   return (
     <div className="nfe-emissao-page">
-      <EmitenteEmissaoBar dica="Troque o emitente para emitir pela fazenda, cerealista ou matriz certa — numeração e cadastros recarregam sozinhos." />
+      <EmitenteEmissaoBar dica="Troque o emitente para emitir com a numeração e os cadastros corretos — tudo recarrega sozinho.">
+        <div className="grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-[auto_1fr] sm:items-end">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-[var(--primary-700)]">
+            Local / IE do emitente
+            <select
+              className="fiscal-input mt-1 min-w-[16rem]"
+              value={enderecoId}
+              onChange={(e) => setEnderecoId(e.target.value ? Number(e.target.value) : "")}
+            >
+              <option value="">Principal</option>
+              {ctx?.enderecos?.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.apelido} — IE {e.inscricaoEstadual ?? "—"}
+                  {e.municipio ? ` · ${e.municipio}/${e.uf}` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="text-xs text-agro-muted sm:pb-2">
+            Endereço e IE usados na NF-e deste emitente (não do cliente).
+          </p>
+        </div>
+      </EmitenteEmissaoBar>
       <AssinaturaBanner compact />
 
       {!ambienteProd && (
@@ -922,10 +1097,10 @@ export function NfeEmissaoWorkspace() {
         </div>
         <div className="nfe-panel__body">
           <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-12 md:col-span-6">
+            <div className="col-span-12 md:col-span-5">
               <AutoCompleteField
                 id="nfe-dest"
-                label="Cliente / produtor / cerealista"
+                label="Destinatário"
                 placeholder="Nome ou CPF/CNPJ…"
                 value={destOpt}
                 suggestions={destSug}
@@ -939,40 +1114,58 @@ export function NfeEmissaoWorkspace() {
                   }
                   setDestOpt(opt);
                   setDestinatario(null);
+                  setDestEnderecos([]);
+                  aplicarDestEndereco(null);
                 }}
               />
             </div>
-            <div className="col-span-12 md:col-span-3">
+            <div className="col-span-12 md:col-span-5">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                IE-Endereço
+              </label>
+              <select
+                className="fiscal-input"
+                value={destEndKey}
+                disabled={!destinatario}
+                onChange={(e) => {
+                  const opt = destEnderecos.find((x) => x.key === e.target.value) ?? null;
+                  aplicarDestEndereco(opt);
+                }}
+              >
+                <option value="">
+                  {destinatario
+                    ? destEnderecos.length
+                      ? "Selecione"
+                      : "Sem endereços cadastrados"
+                    : "Selecione o destinatário"}
+                </option>
+                {destEnderecos.map((e) => (
+                  <option key={e.key} value={e.key}>
+                    {e.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-12 md:col-span-2">
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                 E-mail DANFE
               </label>
               <input className="fiscal-input" value={destEmail} onChange={(e) => setDestEmail(e.target.value)} />
             </div>
-            <div className="col-span-12 md:col-span-3">
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Inscrição estadual
-              </label>
-              <input className="fiscal-input" value={destIe} onChange={(e) => setDestIe(e.target.value)} />
-            </div>
-            <div className="col-span-12 md:col-span-6">
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Local / IE do emitente
-              </label>
-              <select
-                className="fiscal-input"
-                value={enderecoId}
-                onChange={(e) => setEnderecoId(e.target.value ? Number(e.target.value) : "")}
-              >
-                <option value="">Principal</option>
-                {ctx?.enderecos?.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.apelido} — IE {e.inscricaoEstadual ?? "—"}
-                    {e.municipio ? ` · ${e.municipio}/${e.uf}` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
+          {destEndereco && (
+            <p className="mt-2 text-xs text-slate-500">
+              Endereço da NF-e:{" "}
+              <span className="font-medium text-slate-700">
+                {[destEndereco.logradouro, destEndereco.numero].filter(Boolean).join(", ")}
+                {destEndereco.bairro ? ` — ${destEndereco.bairro}` : ""}
+                {destEndereco.municipio
+                  ? ` · ${destEndereco.municipio}${destEndereco.uf ? `/${destEndereco.uf}` : ""}`
+                  : ""}
+                {destIe ? ` · IE ${destIe}` : ""}
+              </span>
+            </p>
+          )}
           {destinatario && (
             <div className="nfe-dest-card">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
@@ -1040,6 +1233,11 @@ export function NfeEmissaoWorkspace() {
                 onChange={(e) => {
                   const v = e.target.value;
                   setFinalidade(v);
+                  if (v !== "4") {
+                    setReferencias([]);
+                    setRefOpt(null);
+                    setRefSug([]);
+                  }
                   if (v === "4" || !geraFinanceiro(operacaoSel)) {
                     setMeioPagamento("90");
                     setIndicadorPagamento("0");
@@ -1145,7 +1343,7 @@ export function NfeEmissaoWorkspace() {
               <AutoCompleteField
                 id="nfe-produto"
                 label="Produto / mercadoria"
-                placeholder="Soja, milho, suíno, código…"
+                placeholder="Nome ou código…"
                 value={prodOpt}
                 suggestions={prodSug}
                 completeMethod={(e) => void buscarProd(e)}
@@ -1161,6 +1359,23 @@ export function NfeEmissaoWorkspace() {
                 }}
               />
             </div>
+            <label className="text-sm">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Un.</span>
+              <select
+                className="fiscal-input"
+                value={addUnidade}
+                onChange={(e) => setAddUnidade(e.target.value)}
+              >
+                {UNIDADES_PRODUTO.map((u) => (
+                  <option key={u.sigla} value={u.sigla}>
+                    {u.sigla}
+                  </option>
+                ))}
+                {addUnidade && !UNIDADES_PRODUTO.some((u) => u.sigla === addUnidade) ? (
+                  <option value={addUnidade}>{addUnidade}</option>
+                ) : null}
+              </select>
+            </label>
             <label className="text-sm">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Qtd</span>
               <QtyInput value={addQtd} onChange={setAddQtd} />
@@ -1396,41 +1611,128 @@ export function NfeEmissaoWorkspace() {
                   <MoedaInput value={valorFrete} onChange={setValorFrete} placeholder="0,00" />
                 </label>
               </div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Volume</p>
-              <div className="nfe-config-grid">
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Qtd</span>
-                  <QtyInput value={volQtd} onChange={setVolQtd} />
-                </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Espécie
-                  </span>
-                  <input className="fiscal-input" value={volEsp} onChange={(e) => setVolEsp(e.target.value)} />
-                </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Marca</span>
-                  <input className="fiscal-input" value={volMarca} onChange={(e) => setVolMarca(e.target.value)} />
-                </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Numeração
-                  </span>
-                  <input className="fiscal-input" value={volNum} onChange={(e) => setVolNum(e.target.value)} />
-                </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Peso líquido
-                  </span>
-                  <input className="fiscal-input" value={pesoL} onChange={(e) => setPesoL(e.target.value)} />
-                </label>
-                <label className="text-sm">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Peso bruto
-                  </span>
-                  <input className="fiscal-input" value={pesoB} onChange={(e) => setPesoB(e.target.value)} />
-                </label>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Volumes</p>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--primary-700)]"
+                  onClick={() =>
+                    setVolumes((prev) => [
+                      ...prev,
+                      {
+                        key: String(Date.now()),
+                        quantidade: 1,
+                        especie: "",
+                        marca: "",
+                        numeracao: "",
+                        pesoLiquido: "",
+                        pesoBruto: "",
+                      },
+                    ])
+                  }
+                >
+                  <Plus className="h-3.5 w-3.5" /> Incluir volume
+                </button>
               </div>
+              {volumes.length === 0 ? (
+                <p className="text-xs text-slate-400">Nenhum volume. Inclua qtd, espécie, marca, numeração e pesos.</p>
+              ) : (
+                volumes.map((v) => (
+                  <div key={v.key} className="nfe-config-grid">
+                    <label className="text-sm">
+                      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Qtd
+                      </span>
+                      <QtyInput
+                        value={v.quantidade}
+                        onChange={(n) =>
+                          setVolumes((prev) =>
+                            prev.map((x) => (x.key === v.key ? { ...x, quantidade: n } : x)),
+                          )
+                        }
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Espécie
+                      </span>
+                      <input
+                        className="fiscal-input"
+                        value={v.especie}
+                        onChange={(e) =>
+                          setVolumes((prev) =>
+                            prev.map((x) => (x.key === v.key ? { ...x, especie: e.target.value } : x)),
+                          )
+                        }
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Marca
+                      </span>
+                      <input
+                        className="fiscal-input"
+                        value={v.marca}
+                        onChange={(e) =>
+                          setVolumes((prev) =>
+                            prev.map((x) => (x.key === v.key ? { ...x, marca: e.target.value } : x)),
+                          )
+                        }
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Numeração
+                      </span>
+                      <input
+                        className="fiscal-input"
+                        value={v.numeracao}
+                        onChange={(e) =>
+                          setVolumes((prev) =>
+                            prev.map((x) => (x.key === v.key ? { ...x, numeracao: e.target.value } : x)),
+                          )
+                        }
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Peso líquido
+                      </span>
+                      <input
+                        className="fiscal-input"
+                        value={v.pesoLiquido}
+                        onChange={(e) =>
+                          setVolumes((prev) =>
+                            prev.map((x) => (x.key === v.key ? { ...x, pesoLiquido: e.target.value } : x)),
+                          )
+                        }
+                      />
+                    </label>
+                    <label className="text-sm">
+                      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Peso bruto
+                      </span>
+                      <input
+                        className="fiscal-input"
+                        value={v.pesoBruto}
+                        onChange={(e) =>
+                          setVolumes((prev) =>
+                            prev.map((x) => (x.key === v.key ? { ...x, pesoBruto: e.target.value } : x)),
+                          )
+                        }
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="fiscal-btn-icon danger self-end"
+                      aria-label="Remover volume"
+                      onClick={() => setVolumes((prev) => prev.filter((x) => x.key !== v.key))}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Reboques</p>
                 <button
@@ -1495,14 +1797,13 @@ export function NfeEmissaoWorkspace() {
         </div>
       </section>
 
+      {finalidade === "4" && (
       <section className="nfe-panel">
         <div className="nfe-panel__head">
           <h2>
             <FileStack className="h-4 w-4" /> Documentos referenciados
           </h2>
-          {(finalidade === "2" || finalidade === "4") && (
-            <span className="text-xs font-medium text-amber-700">Obrigatório nesta finalidade</span>
-          )}
+          <span className="text-xs font-medium text-amber-700">Obrigatório na devolução</span>
         </div>
         <div className="nfe-panel__body space-y-3">
           <div className="flex flex-wrap gap-2">
@@ -1608,7 +1909,7 @@ export function NfeEmissaoWorkspace() {
           </button>
           {referencias.length === 0 ? (
             <p className="text-sm text-slate-500">
-              Nenhuma nota referenciada. Use na devolução, complementar ou quando precisar apontar a NF original.
+              Nenhuma nota referenciada. Informe a NF-e ou NF de produtor rural original da devolução.
             </p>
           ) : (
             <ul className="space-y-2">
@@ -1632,6 +1933,7 @@ export function NfeEmissaoWorkspace() {
           )}
         </div>
       </section>
+      )}
 
       <section className="nfe-panel">
         <div className="nfe-panel__head">
@@ -1640,7 +1942,7 @@ export function NfeEmissaoWorkspace() {
         <div className="nfe-panel__body">
           <textarea
             className="fiscal-input min-h-[5.5rem]"
-            placeholder="Texto que vai no XML (infCpl) e no DANFE — observação da operação, dados do produtor, etc."
+            placeholder="Observações que vão no XML (infCpl) e no DANFE."
             value={informacoesAdicionais}
             onChange={(e) => setInformacoesAdicionais(e.target.value)}
             maxLength={5000}
@@ -1649,8 +1951,8 @@ export function NfeEmissaoWorkspace() {
       </section>
 
       {resultado && (
-        <div className="nfe-panel border-[var(--primary-200)] bg-[var(--primary-50)]">
-          <div className="nfe-panel__body space-y-2 text-sm">
+        <div id="nfe-sucesso" className="nfe-panel border-[var(--primary-200)] bg-[var(--primary-50)]">
+          <div className="nfe-panel__body space-y-3 text-sm">
             <p className="flex items-center gap-2 text-base font-semibold text-[var(--primary-800)]">
               <CheckCircle className="h-5 w-5" /> NF-e transmitida
             </p>
@@ -1667,14 +1969,52 @@ export function NfeEmissaoWorkspace() {
             {resultado.motivoProtocolo != null || resultado.motivo != null ? (
               <p className="text-slate-600">{String(resultado.motivoProtocolo ?? resultado.motivo)}</p>
             ) : null}
-            {resultado.chaveAcesso != null && (
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--primary-300)] bg-white px-3 py-2 text-sm font-medium text-[var(--primary-800)] hover:bg-white"
-                onClick={() => void abrirDanfe(String(resultado.chaveAcesso))}
-              >
-                <FileDown className="h-4 w-4" /> Abrir DANFE (PDF)
-              </button>
+            {chaveAutorizada && resultado.chaveAcesso != null && (
+              <>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary-700)] px-3 py-2 text-sm font-medium text-white hover:bg-[var(--primary-800)]"
+                    onClick={() => void imprimirDanfe(String(resultado.chaveAcesso))}
+                  >
+                    <Printer className="h-4 w-4" /> Imprimir DANFE
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--primary-300)] bg-white px-3 py-2 text-sm font-medium text-[var(--primary-800)] hover:bg-white"
+                    onClick={() => void abrirDanfe(String(resultado.chaveAcesso))}
+                  >
+                    <FileDown className="h-4 w-4" /> Abrir PDF
+                  </button>
+                </div>
+                <div className="rounded-xl border border-[var(--primary-200)] bg-white p-3">
+                  <p className="mb-2 text-sm font-medium text-slate-800">Enviar DANFE por e-mail</p>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="email"
+                      className="fiscal-input flex-1"
+                      placeholder="destinatario@empresa.com.br"
+                      value={emailDanfe}
+                      onChange={(e) => setEmailDanfe(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--primary-700)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary-800)] disabled:opacity-50"
+                      disabled={enviandoEmail || !emailDanfe.trim()}
+                      onClick={() => void enviarDanfeEmail()}
+                    >
+                      {enviandoEmail ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Mail className="h-4 w-4" />
+                      )}
+                      Enviar
+                    </button>
+                  </div>
+                  {emailMsg ? <p className="mt-2 text-sm text-green-700">{emailMsg}</p> : null}
+                  {emailErro ? <p className="mt-2 text-sm text-red-600">{emailErro}</p> : null}
+                </div>
+              </>
             )}
           </div>
         </div>

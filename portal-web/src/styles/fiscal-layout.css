@@ -120,13 +120,16 @@
 .layout-container.layout-static-inactive .layout-sidebar:hover .layout-menuitem-text,
 .layout-container.layout-static-inactive .layout-sidebar:hover .sidebar-brand__text,
 .layout-container.layout-static-inactive .layout-sidebar:hover .sidebar-brand__sub,
-.layout-container.layout-static-inactive .layout-sidebar:hover .sidebar-role-badge,
-.layout-container.layout-static-inactive .layout-sidebar:hover .layout-menuitem-chevron {
+.layout-container.layout-static-inactive .layout-sidebar:hover .sidebar-role-badge {
   display: initial;
 }
 
-.layout-container.layout-static-inactive .layout-sidebar:hover .submenu {
+.layout-container.layout-static-inactive .layout-sidebar:hover .layout-menuitem-chevron {
   display: block;
+}
+
+.layout-container.layout-static-inactive .layout-sidebar:hover .layout-root-menuitem.is-open > .submenu {
+  display: flex;
 }
 
 .layout-container.layout-static-inactive .layout-menuitem-link,
@@ -894,7 +897,7 @@
 
 .nfe-add-grid {
   display: grid;
-  grid-template-columns: minmax(14rem, 2fr) 6.5rem 8.5rem 8.5rem auto;
+  grid-template-columns: minmax(12rem, 2fr) 5.5rem 6.5rem 8.5rem 8.5rem auto;
   gap: 0.65rem;
   align-items: end;
 }

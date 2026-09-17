@@ -8,6 +8,7 @@ import { ClassificacaoFiscalServico } from "@/components/nfse/ClassificacaoFisca
 import { CST_PIS_COFINS, RESPONSAVEL_RETENCAO_ISS } from "@/lib/catalogos-fiscais";
 import { cn } from "@/lib/utils";
 import { fieldClass } from "../ui";
+import { useReformaCatalogo } from "@/hooks/useReformaCatalogo";
 
 type Patch = <K extends keyof EmissaoFormState>(
   section: K,
@@ -38,6 +39,7 @@ export function TributacaoClassificacaoFiscal({
   onRecalc: () => void;
   ctx?: import("@/lib/api").EmissaoContexto | null;
 }) {
+  const { csts, classTribs } = useReformaCatalogo(form.ibsCbs.cst);
   const [open, setOpen] = useState(false);
 
   const patchR = <K extends keyof EmissaoFormState>(
@@ -227,18 +229,42 @@ export function TributacaoClassificacaoFiscal({
             {form.ibsCbs.habilitar && (
               <FormGrid cols={4}>
                 <Field label="CST IBS/CBS">
-                  <CompactInput value={form.ibsCbs.cst} onChange={(e) => patchR("ibsCbs", "cst", e.target.value)} />
+                  <CompactSelect
+                    value={form.ibsCbs.cst}
+                    onChange={(e) => {
+                      const cst = e.target.value;
+                      patchR("ibsCbs", "cst", cst);
+                      if (!form.ibsCbs.classificacaoTributaria.startsWith(cst)) {
+                        patchR("ibsCbs", "classificacaoTributaria", `${cst}001`.slice(0, 6));
+                      }
+                    }}
+                  >
+                    <option value="">— Selecione —</option>
+                    {csts.map((o) => (
+                      <option key={o.codigo} value={o.codigo}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </CompactSelect>
                 </Field>
                 <Field label="Class. tributária">
-                  <CompactInput
+                  <CompactSelect
                     value={form.ibsCbs.classificacaoTributaria}
                     onChange={(e) => patchR("ibsCbs", "classificacaoTributaria", e.target.value)}
-                  />
+                  >
+                    <option value="">— Selecione —</option>
+                    {classTribs.map((o) => (
+                      <option key={o.codigo} value={o.codigo}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </CompactSelect>
                 </Field>
-                <Field label="Class. operação">
+                <Field label="cIndOp (Anexo VII)">
                   <CompactInput
                     value={form.ibsCbs.classificacaoOperacao}
                     onChange={(e) => patchR("ibsCbs", "classificacaoOperacao", e.target.value)}
+                    placeholder="100301"
                   />
                 </Field>
                 <Field label="Base cálculo">

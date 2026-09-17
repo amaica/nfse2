@@ -27,6 +27,7 @@ public class CadastroFiscalService {
     private final CfopRepository cfopRepo;
     private final NcmRepository ncmRepo;
     private final PessoaRepository pessoaRepo;
+    private final PessoaEnderecoRepository pessoaEnderecoRepo;
     private final ProdutoRepository produtoRepo;
     private final VeiculoRepository veiculoRepo;
     private final UsuarioRepository usuarioRepo;
@@ -38,6 +39,7 @@ public class CadastroFiscalService {
             CfopRepository cfopRepo,
             NcmRepository ncmRepo,
             PessoaRepository pessoaRepo,
+            PessoaEnderecoRepository pessoaEnderecoRepo,
             ProdutoRepository produtoRepo,
             VeiculoRepository veiculoRepo,
             UsuarioRepository usuarioRepo,
@@ -47,6 +49,7 @@ public class CadastroFiscalService {
         this.cfopRepo = cfopRepo;
         this.ncmRepo = ncmRepo;
         this.pessoaRepo = pessoaRepo;
+        this.pessoaEnderecoRepo = pessoaEnderecoRepo;
         this.produtoRepo = produtoRepo;
         this.veiculoRepo = veiculoRepo;
         this.usuarioRepo = usuarioRepo;
@@ -116,21 +119,30 @@ public class CadastroFiscalService {
     }
 
     public Pessoa obterPessoa(Long empresaId, Long id) {
-        return pessoaRepo.findByIdAndEmpresaId(id, empresaId)
+        var p = pessoaRepo.findByIdAndEmpresaId(id, empresaId)
                 .orElseThrow(() -> new NoSuchElementException("Pessoa nao encontrada"));
+        carregarEnderecos(p);
+        return p;
     }
 
     @Transactional
     public Pessoa salvarPessoa(Long empresaId, Pessoa body) {
         body.setEmpresaId(empresaId);
-        return pessoaRepo.save(body);
+        var salva = pessoaRepo.save(body);
+        sincronizarEnderecos(empresaId, salva.getId(), body.getEnderecos());
+        carregarEnderecos(salva);
+        return salva;
     }
 
     @Transactional
     public Pessoa atualizarPessoa(Long empresaId, Long id, Pessoa body) {
         var atual = obterPessoa(empresaId, id);
+        var enderecosReq = body.getEnderecos();
         copiarPessoa(body, atual);
-        return pessoaRepo.save(atual);
+        var salva = pessoaRepo.save(atual);
+        sincronizarEnderecos(empresaId, salva.getId(), enderecosReq);
+        carregarEnderecos(salva);
+        return salva;
     }
 
     @Transactional
@@ -138,6 +150,35 @@ public class CadastroFiscalService {
         var p = obterPessoa(empresaId, id);
         p.setAtivo(false);
         pessoaRepo.save(p);
+    }
+
+    private void carregarEnderecos(Pessoa p) {
+        p.setEnderecos(pessoaEnderecoRepo.findByPessoaIdAndAtivoTrueOrderByPrincipalDescIdAsc(p.getId()));
+    }
+
+    private void sincronizarEnderecos(Long empresaId, Long pessoaId, List<PessoaEndereco> lista) {
+        pessoaEnderecoRepo.deleteByPessoaId(pessoaId);
+        if (lista == null || lista.isEmpty()) {
+            return;
+        }
+        for (var src : lista) {
+            if (src == null) continue;
+            var e = new PessoaEndereco();
+            e.setPessoaId(pessoaId);
+            e.setEmpresaId(empresaId);
+            e.setInscricaoEstadual(blankToNull(src.getInscricaoEstadual()));
+            e.setLogradouro(blankToNull(src.getLogradouro()));
+            e.setNumero(blankToNull(src.getNumero()));
+            e.setComplemento(blankToNull(src.getComplemento()));
+            e.setBairro(blankToNull(src.getBairro()));
+            e.setMunicipio(blankToNull(src.getMunicipio()));
+            e.setUf(blankToNull(src.getUf()));
+            e.setCep(blankToNull(src.getCep() != null ? src.getCep().replaceAll("\\D", "") : null));
+            e.setCodigoMunicipioIbge(blankToNull(src.getCodigoMunicipioIbge()));
+            e.setPrincipal(src.isPrincipal());
+            e.setAtivo(true);
+            pessoaEnderecoRepo.save(e);
+        }
     }
 
     public List<Produto> listarProdutos(Long empresaId) {

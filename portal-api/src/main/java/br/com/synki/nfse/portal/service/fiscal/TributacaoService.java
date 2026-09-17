@@ -237,5 +237,9 @@ public class TributacaoService {
         dst.setAliquotaIbsMun(src.getAliquotaIbsMun());
         dst.setAliquotaCbs(src.getAliquotaCbs());
         dst.setHabilitarIbsCbs(src.isHabilitarIbsCbs());
+        dst.setHabilitarIs(src.isHabilitarIs());
+        dst.setIsCst(src.getIsCst());
+        dst.setIsClassTrib(src.getIsClassTrib());
+        dst.setAliquotaIs(src.getAliquotaIs());
     }
 }

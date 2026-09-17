@@ -225,6 +225,9 @@ export function ClassificacaoFiscalServico({
     if (cad.aliquotaIbs != null) patch("ibsCbs", "aliquotaIbs", String(cad.aliquotaIbs));
     if (cad.aliquotaCbs != null) patch("ibsCbs", "aliquotaCbs", String(cad.aliquotaCbs));
     if (cad.habilitarIbsCbs != null) patch("ibsCbs", "habilitar", cad.habilitarIbsCbs);
+    if (cad.habilitarIbsCbs !== false) {
+      patch("ibsCbs", "classificacaoOperacao", "100301");
+    }
   }
 
   function escolherServico(opt: AcOption) {

@@ -91,9 +91,9 @@ export function criarFormularioInicial(ctx: EmissaoContexto | null): EmissaoForm
       habilitarRetencoes: false,
     },
     ibsCbs: {
-      cst: "",
-      classificacaoTributaria: "",
-      classificacaoOperacao: "",
+      cst: "000",
+      classificacaoTributaria: "000001",
+      classificacaoOperacao: "100301",
       baseCalculo: "",
       aliquotaIbs: "0",
       aliquotaCbs: "0",
@@ -102,7 +102,7 @@ export function criarFormularioInicial(ctx: EmissaoContexto | null): EmissaoForm
       valorIbs: "0",
       valorCbs: "0",
       valorTotal: "0",
-      habilitar: false,
+      habilitar: true,
     },
     retencoesFederais: {
       pis: "0",

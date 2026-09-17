@@ -8,10 +8,12 @@ import { EmpresaSwitcher } from "@/components/shell/EmpresaSwitcher";
 type Props = {
   /** Texto curto abaixo da barra (opcional). */
   dica?: string;
+  /** Conteúdo extra do emitente (ex.: Local / IE na emissão NF-e). */
+  children?: React.ReactNode;
 };
 
 /** Barra de emitente nas telas de emissão — troca na hora sem sair do fluxo. */
-export function EmitenteEmissaoBar({ dica }: Props) {
+export function EmitenteEmissaoBar({ dica, children }: Props) {
   const { empresaNome, empresaCnpj } = useEmpresaScope();
 
   return (
@@ -38,6 +40,7 @@ export function EmitenteEmissaoBar({ dica }: Props) {
           <EmpresaSwitcher labelTrocar />
         </div>
       </div>
+      {children ? <div className="mt-3 border-t border-[var(--primary-100)] pt-3">{children}</div> : null}
       <p className="mt-2 flex items-center gap-1.5 text-xs text-agro-muted">
         <RefreshCw className="h-3 w-3 shrink-0" />
         {dica ??

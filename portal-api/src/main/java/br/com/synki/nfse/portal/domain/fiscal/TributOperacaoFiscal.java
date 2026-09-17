@@ -82,6 +82,18 @@ public class TributOperacaoFiscal {
     @Column(name = "habilitar_ibs_cbs", nullable = false)
     private boolean habilitarIbsCbs = true;
 
+    @Column(name = "habilitar_is", nullable = false)
+    private boolean habilitarIs = false;
+
+    @Column(name = "is_cst", length = 3)
+    private String isCst;
+
+    @Column(name = "is_class_trib", length = 6)
+    private String isClassTrib;
+
+    @Column(name = "aliquota_is", precision = 7, scale = 4)
+    private BigDecimal aliquotaIs;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -110,6 +122,10 @@ public class TributOperacaoFiscal {
     public BigDecimal getAliquotaIbsMun() { return aliquotaIbsMun; }
     public BigDecimal getAliquotaCbs() { return aliquotaCbs; }
     public boolean isHabilitarIbsCbs() { return habilitarIbsCbs; }
+    public boolean isHabilitarIs() { return habilitarIs; }
+    public String getIsCst() { return isCst; }
+    public String getIsClassTrib() { return isClassTrib; }
+    public BigDecimal getAliquotaIs() { return aliquotaIs; }
 
     public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
@@ -135,4 +151,8 @@ public class TributOperacaoFiscal {
     public void setAliquotaIbsMun(BigDecimal aliquotaIbsMun) { this.aliquotaIbsMun = aliquotaIbsMun; }
     public void setAliquotaCbs(BigDecimal aliquotaCbs) { this.aliquotaCbs = aliquotaCbs; }
     public void setHabilitarIbsCbs(boolean habilitarIbsCbs) { this.habilitarIbsCbs = habilitarIbsCbs; }
+    public void setHabilitarIs(boolean habilitarIs) { this.habilitarIs = habilitarIs; }
+    public void setIsCst(String isCst) { this.isCst = isCst; }
+    public void setIsClassTrib(String isClassTrib) { this.isClassTrib = isClassTrib; }
+    public void setAliquotaIs(BigDecimal aliquotaIs) { this.aliquotaIs = aliquotaIs; }
 }

@@ -8,6 +8,7 @@ import { fmtCfop } from "@/lib/cfop";
 import { useEmpresaScope } from "@/hooks/useEmpresaScope";
 import { FiscalDetailToolbar } from "@/components/fiscal/FiscalDetailToolbar";
 import { FiscalField, FiscalRow, FiscalSection } from "@/components/fiscal/FiscalFormUi";
+import { useReformaCatalogo } from "@/hooks/useReformaCatalogo";
 
 const PAGE_SIZE = 20;
 const ENDPOINT = "/api/tribut-operacao-fiscal";
@@ -30,6 +31,10 @@ const emptyOperacao = (): OperacaoFiscalDto => ({
   aliquotaIbsMun: 0.001,
   aliquotaCbs: 0.01,
   habilitarIbsCbs: true,
+  habilitarIs: false,
+  isCst: "",
+  isClassTrib: "",
+  aliquotaIs: undefined,
 });
 
 function blank(v?: string | null): string | undefined {
@@ -55,6 +60,7 @@ export function CadastroOperacaoFiscalWorkspace() {
   const [tab, setTab] = useState<TabId>("geral");
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const { csts, classTribs, cstsIs } = useReformaCatalogo(form.ibsCbsCst);
 
   const carregarLista = useCallback(async () => {
     setLoadingList(true);
@@ -309,22 +315,39 @@ export function CadastroOperacaoFiscalWorkspace() {
             </label>
             <FiscalRow>
               <FiscalField label="CST IBS/CBS">
-                <input
+                <select
                   className="fiscal-input fiscal-input--mono"
-                  maxLength={3}
                   value={form.ibsCbsCst ?? ""}
-                  onChange={(e) => setForm((f) => ({ ...f, ibsCbsCst: e.target.value.replace(/\D/g, "").slice(0, 3) }))}
-                />
+                  onChange={(e) => {
+                    const cst = e.target.value;
+                    setForm((f) => ({
+                      ...f,
+                      ibsCbsCst: cst,
+                      ibsCbsClassTrib: f.ibsCbsClassTrib?.startsWith(cst) ? f.ibsCbsClassTrib : `${cst}001`.slice(0, 6),
+                    }));
+                  }}
+                >
+                  <option value="">— Selecione —</option>
+                  {csts.map((o) => (
+                    <option key={o.codigo} value={o.codigo}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </FiscalField>
               <FiscalField label="Classificação tributária (cClassTrib)">
-                <input
+                <select
                   className="fiscal-input fiscal-input--mono"
-                  maxLength={6}
                   value={form.ibsCbsClassTrib ?? ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, ibsCbsClassTrib: e.target.value.replace(/\D/g, "").slice(0, 6) }))
-                  }
-                />
+                  onChange={(e) => setForm((f) => ({ ...f, ibsCbsClassTrib: e.target.value }))}
+                >
+                  <option value="">— Selecione —</option>
+                  {classTribs.map((o) => (
+                    <option key={o.codigo} value={o.codigo}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </FiscalField>
               <FiscalField label="Intermediador">
                 <select
@@ -402,6 +425,58 @@ export function CadastroOperacaoFiscalWorkspace() {
                 </select>
               </FiscalField>
             </FiscalRow>
+
+            <hr className="my-4 border-[var(--border)]" />
+            <label className="erp-switch" style={{ marginBottom: "0.75rem" }}>
+              <input
+                type="checkbox"
+                checked={!!form.habilitarIs}
+                onChange={(e) => setForm((f) => ({ ...f, habilitarIs: e.target.checked }))}
+              />
+              <span>Incluir Imposto Seletivo (IS) nesta operação</span>
+            </label>
+            {form.habilitarIs ? (
+              <FiscalRow>
+                <FiscalField label="CST IS">
+                  <select
+                    className="fiscal-input"
+                    value={form.isCst ?? ""}
+                    onChange={(e) => setForm((f) => ({ ...f, isCst: e.target.value }))}
+                  >
+                    <option value="">— Selecione —</option>
+                    {cstsIs.map((o) => (
+                      <option key={o.codigo} value={o.codigo}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </FiscalField>
+                <FiscalField label="cClassTrib IS">
+                  <input
+                    className="fiscal-input fiscal-input--mono"
+                    maxLength={6}
+                    value={form.isClassTrib ?? ""}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, isClassTrib: e.target.value.replace(/\D/g, "").slice(0, 6) }))
+                    }
+                  />
+                </FiscalField>
+                <FiscalField label="Alíquota IS (%)">
+                  <input
+                    className="fiscal-input"
+                    type="number"
+                    step="0.0001"
+                    value={form.aliquotaIs ?? ""}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        aliquotaIs: e.target.value === "" ? undefined : Number(e.target.value),
+                      }))
+                    }
+                  />
+                </FiscalField>
+              </FiscalRow>
+            ) : null}
           </FiscalSection>
         )}
       </div>

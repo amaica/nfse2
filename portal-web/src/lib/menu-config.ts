@@ -93,6 +93,11 @@ export const ADMIN_MENU: MenuItem[] = [
     ],
   },
   {
+    label: "Simulado IR",
+    icon: "calculator",
+    href: "/simulado-ir",
+  },
+  {
     label: "Conta",
     icon: "settings",
     items: [

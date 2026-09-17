@@ -12,7 +12,8 @@ public record NfeItemRequest(
         BigDecimal quantidade,
         BigDecimal valorUnitario,
         BigDecimal valorDesconto,
-        NfeIbsCbsItemRequest ibsCbs
+        NfeIbsCbsItemRequest ibsCbs,
+        NfeIsItemRequest impostoSeletivo
 ) {
     public NfeItemRequest(
             String codigo,
@@ -22,6 +23,6 @@ public record NfeItemRequest(
             String unidade,
             BigDecimal quantidade,
             BigDecimal valorUnitario) {
-        this(null, codigo, descricao, ncm, cfop, unidade, quantidade, valorUnitario, null, null);
+        this(null, codigo, descricao, ncm, cfop, unidade, quantidade, valorUnitario, null, null, null);
     }
 }

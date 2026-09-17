@@ -2,7 +2,11 @@ package br.com.synki.nfse.portal.service;
 
 import br.com.synki.nfse.portal.domain.fiscal.TributOperacaoFiscal;
 import br.com.synki.nfse.portal.web.dto.nfe.NfeIbsCbsItemRequest;
+import br.com.synki.nfse.portal.web.dto.nfe.NfeIsItemRequest;
+import com.fincatto.documentofiscal.nfe400.classes.NFCredito;
+import com.fincatto.documentofiscal.nfe400.classes.NFDebito;
 import com.fincatto.documentofiscal.nfe400.classes.NFNotaInfoImpostoTributacaoIBSCBS;
+import com.fincatto.documentofiscal.nfe400.classes.NFNotaInfoImpostoTributacaoIS;
 import com.fincatto.documentofiscal.nfe400.classes.nota.*;
 
 import java.math.BigDecimal;
@@ -14,17 +18,20 @@ import java.util.List;
 /**
  * Montagem IBS/CBS — Reforma Tributária (NT 2023.001+).
  * A partir de 03/08/2026 a SEFAZ exige preenchimento correto dos campos IBS e CBS.
- * Alíquota teste padrão: 1% (IBS 0,9% UF + 0,1% Mun; CBS 1%).
+ * Alíquotas no XML são percentuais (como ICMS): 0,90 = 0,90% → v = BC × p / 100.
+ * Padrão de teste: IBS 0,9% UF + 0,1% Mun; CBS 1%.
  */
 public final class NfeReformaMontador {
 
     public static final LocalDate OBRIGATORIEDADE_IBS_CBS = LocalDate.of(2026, 8, 3);
 
-    private static final BigDecimal ALIQ_IBS_UF_TESTE = new BigDecimal("0.0090");
-    private static final BigDecimal ALIQ_IBS_MUN_TESTE = new BigDecimal("0.0010");
-    private static final BigDecimal ALIQ_CBS_TESTE = new BigDecimal("0.0100");
+    /** Percentual vigente 2026 (LC 214/25): IBS UF 0,10%; IBS Mun 0%; CBS 0,90%. */
+    private static final BigDecimal ALIQ_IBS_UF_TESTE = new BigDecimal("0.10");
+    private static final BigDecimal ALIQ_IBS_MUN_TESTE = new BigDecimal("0.00");
+    private static final BigDecimal ALIQ_CBS_TESTE = new BigDecimal("0.90");
     private static final String CST_PADRAO = "000";
     private static final String CLASS_TRIB_PADRAO = "000001";
+    private static final BigDecimal CEM = new BigDecimal("100");
 
     private NfeReformaMontador() {}
 
@@ -47,6 +54,72 @@ public final class NfeReformaMontador {
         if ("1".equals(operacao.getIndIntermed())) {
             id.setIndIntermed(NFIndicadorIntermediador.OPERACAO_COM_INTERMEDIADOR);
         }
+        if (operacao.getTpNFDebito() != null && !operacao.getTpNFDebito().isBlank()) {
+            var deb = NFDebito.valueOfCodigo(operacao.getTpNFDebito().trim());
+            if (deb != null) {
+                id.setTpNFDebito(deb);
+            }
+        }
+        if (operacao.getTpNFCredito() != null && !operacao.getTpNFCredito().isBlank()) {
+            var cred = NFCredito.valueOfCodigo(operacao.getTpNFCredito().trim());
+            if (cred != null) {
+                id.setTpNFCredito(cred);
+            }
+        }
+    }
+
+    public static NFNotaInfoItemImpostoIS montarIsItem(
+            BigDecimal baseCalculo,
+            NfeIsItemRequest req,
+            TributOperacaoFiscal operacao) {
+        boolean habilitar = req != null && Boolean.TRUE.equals(req.habilitar())
+                || (operacao != null && operacao.isHabilitarIs());
+        if (!habilitar) {
+            return null;
+        }
+        var cstCod = primeiroNaoVazio(
+                req != null ? req.cst() : null,
+                operacao != null ? operacao.getIsCst() : null,
+                "01");
+        var classTrib = primeiroNaoVazio(
+                req != null ? req.classificacaoTributaria() : null,
+                operacao != null ? operacao.getIsClassTrib() : null,
+                "000001");
+        var pIs = aliquota(req != null ? req.aliquota() : null,
+                operacao != null ? operacao.getAliquotaIs() : null,
+                BigDecimal.ZERO);
+        pIs = normalizarAliquotaPercentual(pIs);
+        var bc = moeda(baseCalculo);
+        var vIs = moeda(bc.multiply(pIs).divide(CEM, 8, RoundingMode.HALF_UP));
+
+        var is = new NFNotaInfoItemImpostoIS();
+        var cst = NFNotaInfoImpostoTributacaoIS.valueOfCodigo(cstCod);
+        if (cst == null) {
+            cst = NFNotaInfoImpostoTributacaoIS.TRIBUTACAO_INTEGRAL;
+        }
+        is.setCstIS(cst);
+        is.setCClassTribIS(classTrib);
+        is.setVBCIS(bc);
+        is.setPIS(pIs);
+        is.setVIS(vIs);
+        return is;
+    }
+
+    public static BigDecimal acumularIs(BigDecimal acc, NFNotaInfoItemImpostoIS is) {
+        if (is == null || is.getVIS() == null || is.getVIS().isBlank()) {
+            return acc != null ? acc : BigDecimal.ZERO;
+        }
+        var v = new BigDecimal(is.getVIS());
+        return (acc != null ? acc : BigDecimal.ZERO).add(v);
+    }
+
+    public static void aplicarTotaisIs(NFNotaInfoTotal total, BigDecimal vIs) {
+        if (vIs == null || vIs.signum() <= 0) {
+            return;
+        }
+        var isTot = new NFNotaInfoISTot();
+        isTot.setVIS(vIs.setScale(2, RoundingMode.HALF_UP));
+        total.setIsTot(isTot);
     }
 
     public static NFNotaInfoItemImpostoIBSCBS montarIbsCbsItem(
@@ -69,17 +142,14 @@ public final class NfeReformaMontador {
                 operacao != null ? operacao.getIbsCbsClassTrib() : null,
                 CLASS_TRIB_PADRAO);
 
-        var pIbsUf = aliquota(req != null ? req.aliquotaIbsUf() : null,
-                operacao != null ? operacao.getAliquotaIbsUf() : null, ALIQ_IBS_UF_TESTE);
-        var pIbsMun = aliquota(req != null ? req.aliquotaIbsMun() : null,
-                operacao != null ? operacao.getAliquotaIbsMun() : null, ALIQ_IBS_MUN_TESTE);
-        var pCbs = aliquota(req != null ? req.aliquotaCbs() : null,
-                operacao != null ? operacao.getAliquotaCbs() : null, ALIQ_CBS_TESTE);
+        var pIbsUf = aliquotaIbsUf(req != null ? req.aliquotaIbsUf() : null, operacao);
+        var pIbsMun = aliquotaIbsMun(req != null ? req.aliquotaIbsMun() : null, operacao);
+        var pCbs = aliquotaCbs(req != null ? req.aliquotaCbs() : null, operacao);
 
         var bc = moeda(baseCalculo);
-        var vIbsUf = moeda(bc.multiply(pIbsUf));
-        var vIbsMun = moeda(bc.multiply(pIbsMun));
-        var vCbs = moeda(bc.multiply(pCbs));
+        var vIbsUf = moeda(bc.multiply(pIbsUf).divide(CEM, 8, RoundingMode.HALF_UP));
+        var vIbsMun = moeda(bc.multiply(pIbsMun).divide(CEM, 8, RoundingMode.HALF_UP));
+        var vCbs = moeda(bc.multiply(pCbs).divide(CEM, 8, RoundingMode.HALF_UP));
         var vIbs = moeda(vIbsUf.add(vIbsMun));
 
         var ibsCbs = new NFNotaInfoItemImpostoIBSCBS();
@@ -141,6 +211,7 @@ public final class NfeReformaMontador {
 
         var gIbs = new NFNotaInfoIBSCBSTot.GIBS();
         gIbs.setVCredPres(BigDecimal.ZERO);
+        gIbs.setVCredPresCondSus(BigDecimal.ZERO);
         var gIbsUf = new NFNotaInfoIBSCBSTot.GIBS.GIBSUF();
         gIbsUf.setVDif(BigDecimal.ZERO);
         gIbsUf.setVDevTrib(BigDecimal.ZERO);
@@ -159,15 +230,14 @@ public final class NfeReformaMontador {
         gCbs.setVDif(BigDecimal.ZERO);
         gCbs.setVDevTrib(BigDecimal.ZERO);
         gCbs.setVCBS(totais.vCbs());
+        gCbs.setVCredPres(BigDecimal.ZERO);
+        gCbs.setVCredPresCondSus(BigDecimal.ZERO);
         ibsCbsTot.setGCBS(gCbs);
 
         total.setIbscbsTot(ibsCbsTot);
 
-        var nfeTotal = total.getIcmsTotal().getValorTotalNFe();
-        if (nfeTotal != null) {
-            var novoTotal = parse(nfeTotal).add(totais.vIbs()).add(totais.vCbs());
-            total.getIcmsTotal().setValorTotalNFe(moeda(novoTotal));
-        }
+        // vNF continua pelo somatório clássico (produtos + frete + IPI…);
+        // IBS/CBS ficam só em IBSCBSTot — somá-los em vNF causa rejeição 610.
     }
 
     public static List<NFNotaInfoItem> extrairItensComIbs(List<NFNotaInfoItem> itens) {
@@ -189,6 +259,49 @@ public final class NfeReformaMontador {
         if (req != null) return req;
         if (operacao != null) return operacao;
         return padrao;
+    }
+
+    /**
+     * Cadastros legados gravaram fração (0,0090). XML exige percentual (0,90).
+     * Em 2026 a legislação fixa pIBSMun=0 e pIBSUF=0,10 / pCBS=0,90 — se o cadastro
+     * ainda tiver o pacote de teste antigo (0,90/0,10/1,00 ou frações), sobrescreve.
+     */
+    private static BigDecimal normalizarAliquotaPercentual(BigDecimal p) {
+        if (p == null) {
+            return BigDecimal.ZERO;
+        }
+        if (p.compareTo(new BigDecimal("0.1")) < 0 && p.signum() > 0) {
+            return p.multiply(CEM).setScale(4, RoundingMode.HALF_UP);
+        }
+        return p;
+    }
+
+    private static BigDecimal aliquotaIbsUf(BigDecimal req, TributOperacaoFiscal operacao) {
+        var raw = aliquota(req, operacao != null ? operacao.getAliquotaIbsUf() : null, ALIQ_IBS_UF_TESTE);
+        var p = normalizarAliquotaPercentual(raw);
+        // 2026: única alíquota UF válida = 0,10%
+        if (LocalDate.now().getYear() <= 2026) {
+            return ALIQ_IBS_UF_TESTE;
+        }
+        return p;
+    }
+
+    private static BigDecimal aliquotaIbsMun(BigDecimal req, TributOperacaoFiscal operacao) {
+        // 2026: IBS municipal obrigatoriamente 0%
+        if (LocalDate.now().getYear() <= 2026) {
+            return ALIQ_IBS_MUN_TESTE;
+        }
+        var raw = aliquota(req, operacao != null ? operacao.getAliquotaIbsMun() : null, ALIQ_IBS_MUN_TESTE);
+        return normalizarAliquotaPercentual(raw);
+    }
+
+    private static BigDecimal aliquotaCbs(BigDecimal req, TributOperacaoFiscal operacao) {
+        var raw = aliquota(req, operacao != null ? operacao.getAliquotaCbs() : null, ALIQ_CBS_TESTE);
+        var p = normalizarAliquotaPercentual(raw);
+        if (LocalDate.now().getYear() <= 2026) {
+            return ALIQ_CBS_TESTE;
+        }
+        return p;
     }
 
     private static String primeiroNaoVazio(String... vals) {

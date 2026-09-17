@@ -6,16 +6,31 @@ import { ApiError, formatarCnpjCpf } from "@/lib/api";
 import { apenasNumeros, cnpjValido, cpfValido } from "@/lib/cpf-cnpj";
 import { isValidLat, isValidLng, normalizarCoord } from "@/lib/coordenadas-geo";
 import { consultarCep, consultarCnpjPessoa } from "@/lib/consulta-externa";
-import { fiscalApi, type PessoaDto } from "@/lib/fiscal-api";
+import { fiscalApi, type PessoaDto, type PessoaEnderecoDto } from "@/lib/fiscal-api";
 import { useEmpresaScope } from "@/hooks/useEmpresaScope";
 import { FiscalDetailToolbar } from "@/components/fiscal/FiscalDetailToolbar";
 import { FiscalField, FiscalRow, FiscalSection } from "@/components/fiscal/FiscalFormUi";
 import { AddressMap } from "@/components/map/AddressMap";
+import { UFS_IBGE } from "@/lib/nfe-emissao-opcoes";
 
 const PAGE_SIZE = 10;
 const ENDPOINT = "/api/pessoas";
 const MAP_CENTER_BR: [number, number] = [-14.235, -51.925];
 const MAP_ZOOM = 14;
+
+const emptyEndereco = (): PessoaEnderecoDto => ({
+  inscricaoEstadual: "",
+  logradouro: "",
+  numero: "",
+  complemento: "",
+  bairro: "",
+  municipio: "",
+  uf: "",
+  cep: "",
+  codigoMunicipioIbge: "",
+  principal: false,
+  ativo: true,
+});
 
 const emptyPessoa = (): PessoaDto => ({
   nome: "",
@@ -38,6 +53,7 @@ const emptyPessoa = (): PessoaDto => ({
   longitude: "",
   observacoes: "",
   ativo: true,
+  enderecos: [],
 });
 
 export function CadastroPessoasWorkspace() {
@@ -49,10 +65,13 @@ export function CadastroPessoasWorkspace() {
   const [page, setPage] = useState(0);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<PessoaDto>(emptyPessoa());
+  const [endDraft, setEndDraft] = useState<PessoaEnderecoDto>(emptyEndereco());
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [loadingCnpj, setLoadingCnpj] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [loadingCepExtra, setLoadingCepExtra] = useState(false);
+  const [erroExtra, setErroExtra] = useState("");
   const [mapView, setMapView] = useState<"mapa" | "satelite">("satelite");
 
   const carregarLista = useCallback(async () => {
@@ -108,6 +127,8 @@ export function CadastroPessoasWorkspace() {
   const novo = () => {
     setEditId(null);
     setForm(emptyPessoa());
+    setEndDraft(emptyEndereco());
+    setErroExtra("");
     setViewMode("form");
   };
 
@@ -117,7 +138,8 @@ export function CadastroPessoasWorkspace() {
     try {
       const full = await fiscalApi.get<PessoaDto>(ENDPOINT, row.id);
       setEditId(row.id);
-      setForm({ ...emptyPessoa(), ...full });
+      setForm({ ...emptyPessoa(), ...full, enderecos: full.enderecos ?? [] });
+      setEndDraft(emptyEndereco());
       setViewMode("form");
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : "Erro ao abrir cadastro");
@@ -257,6 +279,57 @@ export function CadastroPessoasWorkspace() {
     }
     await preencherCep(digits);
   }, [form.cep, preencherCep]);
+
+  const preencherCepExtra = useCallback(async (cepRaw: string) => {
+    const digits = cepRaw.replace(/\D/g, "");
+    if (digits.length !== 8) {
+      if (digits.length > 0) setErroExtra("CEP do endereço extra deve ter 8 dígitos.");
+      return;
+    }
+    setLoadingCepExtra(true);
+    setErroExtra("");
+    try {
+      const c = await consultarCep(digits);
+      setEndDraft((d) => ({
+        ...d,
+        cep: digits,
+        logradouro: c.logradouro || d.logradouro || "",
+        bairro: c.bairro || d.bairro || "",
+        municipio: c.localidade || d.municipio || "",
+        uf: c.uf || d.uf || "",
+        codigoMunicipioIbge: c.ibge || d.codigoMunicipioIbge || "",
+      }));
+    } catch (e) {
+      setErroExtra(e instanceof Error ? e.message : "Falha ao consultar CEP");
+    } finally {
+      setLoadingCepExtra(false);
+    }
+  }, []);
+
+  const incluirEnderecoExtra = () => {
+    const draft = {
+      ...endDraft,
+      cep: (endDraft.cep ?? "").replace(/\D/g, ""),
+      inscricaoEstadual: (endDraft.inscricaoEstadual ?? "").trim(),
+      logradouro: (endDraft.logradouro ?? "").trim(),
+      numero: (endDraft.numero ?? "").trim(),
+      bairro: (endDraft.bairro ?? "").trim(),
+      municipio: (endDraft.municipio ?? "").trim(),
+      uf: (endDraft.uf ?? "").trim().toUpperCase(),
+      codigoMunicipioIbge: (endDraft.codigoMunicipioIbge ?? "").replace(/\D/g, ""),
+    };
+    if (!draft.cep && !draft.logradouro && !draft.inscricaoEstadual && !draft.municipio) {
+      setErroExtra("Informe o CEP (busca automática) ou preencha IE / logradouro / município.");
+      return;
+    }
+    setForm((f) => ({
+      ...f,
+      enderecos: [...(f.enderecos ?? []), draft],
+    }));
+    setEndDraft(emptyEndereco());
+    setErroExtra("");
+    setErro("");
+  };
 
   const handleLatBlur = useCallback(() => {
     const v = normalizarCoord(form.latitude ?? "");
@@ -537,6 +610,165 @@ export function CadastroPessoasWorkspace() {
                 onChange={(e) => set("observacoes", e.target.value)}
                 placeholder="Anotações sobre o cadastro"
               />
+            </FiscalSection>
+
+            <FiscalSection title="Endereços adicionais (IE-Endereço)">
+              <p className="mb-3 text-xs text-slate-500">
+                Usados na emissão da NF-e no campo <strong>IE-Endereço</strong>, além do endereço principal acima.
+              </p>
+              <div className="mb-3 overflow-x-auto rounded-lg border border-slate-200">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                    <tr>
+                      <th className="px-2 py-1.5">IE</th>
+                      <th className="px-2 py-1.5">Cidade</th>
+                      <th className="px-2 py-1.5">Logradouro</th>
+                      <th className="px-2 py-1.5">Bairro</th>
+                      <th className="px-2 py-1.5">CEP</th>
+                      <th className="px-2 py-1.5" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(form.enderecos ?? []).length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-2 py-3 text-slate-400">
+                          Nenhum endereço adicional.
+                        </td>
+                      </tr>
+                    ) : (
+                      (form.enderecos ?? []).map((e, idx) => (
+                        <tr key={idx} className="border-t border-slate-100">
+                          <td className="px-2 py-1.5 font-mono text-xs">{e.inscricaoEstadual || "—"}</td>
+                          <td className="px-2 py-1.5">
+                            {e.municipio || "—"}
+                            {e.uf ? `/${e.uf}` : ""}
+                          </td>
+                          <td className="px-2 py-1.5">
+                            {e.logradouro || "—"}
+                            {e.numero ? `, ${e.numero}` : ""}
+                          </td>
+                          <td className="px-2 py-1.5">{e.bairro || "—"}</td>
+                          <td className="px-2 py-1.5 font-mono text-xs">{e.cep || "—"}</td>
+                          <td className="px-2 py-1.5 text-right">
+                            <button
+                              type="button"
+                              className="fiscal-btn-icon danger"
+                              aria-label="Remover endereço"
+                              onClick={() =>
+                                setForm((f) => ({
+                                  ...f,
+                                  enderecos: (f.enderecos ?? []).filter((_, i) => i !== idx),
+                                }))
+                              }
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50/60 p-3">
+                <FiscalRow>
+                  <FiscalField label="CEP">
+                    <input
+                      className="fiscal-input"
+                      value={endDraft.cep ?? ""}
+                      placeholder="00000-000 — saia do campo para buscar"
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        setEndDraft((d) => ({ ...d, cep: raw }));
+                        setErroExtra("");
+                        const digits = raw.replace(/\D/g, "");
+                        if (digits.length === 8) {
+                          void preencherCepExtra(digits);
+                        }
+                      }}
+                      onBlur={() => void preencherCepExtra(endDraft.cep ?? "")}
+                    />
+                  </FiscalField>
+                  <FiscalField label="IE">
+                    <input
+                      className="fiscal-input"
+                      value={endDraft.inscricaoEstadual ?? ""}
+                      onChange={(e) => setEndDraft((d) => ({ ...d, inscricaoEstadual: e.target.value }))}
+                    />
+                  </FiscalField>
+                </FiscalRow>
+                {loadingCepExtra && (
+                  <p className="mb-2 flex items-center gap-2 text-xs text-[var(--primary-700)]">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Buscando endereço pelo CEP…
+                  </p>
+                )}
+                <FiscalField label="Logradouro">
+                  <input
+                    className="fiscal-input"
+                    value={endDraft.logradouro ?? ""}
+                    onChange={(e) => setEndDraft((d) => ({ ...d, logradouro: e.target.value }))}
+                  />
+                </FiscalField>
+                <FiscalRow>
+                  <FiscalField label="Número">
+                    <input
+                      className="fiscal-input"
+                      value={endDraft.numero ?? ""}
+                      onChange={(e) => setEndDraft((d) => ({ ...d, numero: e.target.value }))}
+                    />
+                  </FiscalField>
+                  <FiscalField label="Bairro">
+                    <input
+                      className="fiscal-input"
+                      value={endDraft.bairro ?? ""}
+                      onChange={(e) => setEndDraft((d) => ({ ...d, bairro: e.target.value }))}
+                    />
+                  </FiscalField>
+                </FiscalRow>
+                <FiscalRow>
+                  <FiscalField label="Município">
+                    <input
+                      className="fiscal-input"
+                      value={endDraft.municipio ?? ""}
+                      onChange={(e) => setEndDraft((d) => ({ ...d, municipio: e.target.value }))}
+                    />
+                  </FiscalField>
+                  <FiscalField label="UF">
+                    <select
+                      className="fiscal-input"
+                      value={endDraft.uf ?? ""}
+                      onChange={(e) => setEndDraft((d) => ({ ...d, uf: e.target.value }))}
+                    >
+                      <option value="">—</option>
+                      {UFS_IBGE.map((u) => (
+                        <option key={u.sigla} value={u.sigla}>
+                          {u.sigla}
+                        </option>
+                      ))}
+                    </select>
+                  </FiscalField>
+                  <FiscalField label="Cód. IBGE">
+                    <input
+                      className="fiscal-input"
+                      value={endDraft.codigoMunicipioIbge ?? ""}
+                      onChange={(e) => setEndDraft((d) => ({ ...d, codigoMunicipioIbge: e.target.value }))}
+                    />
+                  </FiscalField>
+                </FiscalRow>
+                {erroExtra && <p className="mt-2 text-sm text-red-600">{erroExtra}</p>}
+                <button
+                  type="button"
+                  className="fiscal-btn-primary mt-2"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    incluirEnderecoExtra();
+                  }}
+                >
+                  <Plus className="h-4 w-4" /> Incluir endereço
+                </button>
+              </div>
             </FiscalSection>
           </div>
         </div>

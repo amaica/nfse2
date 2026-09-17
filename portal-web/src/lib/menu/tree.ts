@@ -56,6 +56,7 @@ export const FALLBACK_MENU: MenuNode[] = [
       { id: "fb-emp-op", label: "Dados do emitente", icon: "settings", outcome: "/cadastros/empresa", children: [] },
     ],
   },
+  { id: "fb-ir", label: "Simulado IR", icon: "calculator", outcome: "/simulado-ir", children: [] },
   {
     id: "fb-conta",
     label: "Conta",

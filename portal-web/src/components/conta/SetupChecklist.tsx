@@ -62,9 +62,9 @@ export function SetupChecklist() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-4 text-sm text-agro-muted">
+      <div className="home-card home-card__pad home-setup flex items-center gap-2 text-sm text-agro-muted">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Carregando checklist…
+        Verificando cadastros e passos pendentes…
       </div>
     );
   }
@@ -75,33 +75,28 @@ export function SetupChecklist() {
 
   const concluidosVisiveis = passosVisiveis.filter((p) => p.concluido).length;
   const percentualVisivel = Math.round((concluidosVisiveis / passosVisiveis.length) * 100);
+  const pendentes = passosVisiveis.filter((p) => !p.concluido);
 
   return (
-    <section className="mb-10">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+    <section className="home-card home-card__pad home-setup" aria-label="Passos pendentes">
+      <div className="home-card__head !mb-0">
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-agro-muted">
-            Configure em minutos
-          </h2>
-          <p className="mt-1 text-sm text-agro-muted">
+          <h2 className="home-card__title">Configure em minutos</h2>
+          <p className="home-card__meta">
             {concluidosVisiveis} de {passosVisiveis.length} concluídos
+            {pendentes.length > 0 ? ` · ${pendentes.length} pendente${pendentes.length > 1 ? "s" : ""}` : ""}
           </p>
         </div>
-        <div className="h-2 w-32 overflow-hidden rounded-full bg-gray-200">
-          <div
-            className="h-full rounded-full bg-[var(--primary-600)] transition-all"
-            style={{ width: `${percentualVisivel}%` }}
-          />
+        <div className="home-setup__bar" title={`${percentualVisivel}%`}>
+          <span style={{ width: `${percentualVisivel}%` }} />
         </div>
       </div>
-      <div className="grid gap-2">
+      <div className="home-setup__list">
         {passosVisiveis.map((passo) => (
           <Link
             key={passo.id}
             href={passo.href}
-            className={`saas-dashboard-card flex items-center gap-3 !py-3 transition ${
-              passo.concluido ? "opacity-70" : "hover:border-[var(--primary-400)]"
-            }`}
+            className={`home-setup__item ${passo.concluido ? "home-setup__item--done" : ""}`}
           >
             {passo.concluido ? (
               <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />

@@ -10,6 +10,7 @@ import {
   Box,
   Briefcase,
   Building2,
+  Calculator,
   Calendar,
   Car,
   ChevronDown,
@@ -75,6 +76,7 @@ const ICONS: Record<string, LucideIcon> = {
   plug: Plug,
   mail: Mail,
   book: BookOpen,
+  calculator: Calculator,
   calendar: Calendar,
 };
 

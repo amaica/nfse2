@@ -110,6 +110,7 @@ public class LivroCaixaService {
         m.put("documento", l.contraparteDoc());
         m.put("valor", l.valor());
         m.put("movimento", l.tipoMovimento().name());
+        m.put("tipoNota", l.tipoNota() != null ? l.tipoNota() : "");
         return m;
     }
 
