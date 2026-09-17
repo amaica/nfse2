@@ -6,6 +6,7 @@ import br.com.synki.nfse.portal.repository.CertificadoRepository;
 import br.com.synki.nfse.portal.repository.ConfiguracaoNfseRepository;
 import io.github.t3wv.nfse.NFSeConfig;
 import io.github.t3wv.nfse.nacional.WSFacade;
+import io.github.t3wv.nfse.nacional.danfse.DANFSeJasper;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,12 +22,15 @@ public class NfseLibService {
 
     private final CertificadoRepository certificadoRepository;
     private final ConfiguracaoNfseRepository configuracaoRepository;
+    private final EmpresaLogoService empresaLogoService;
 
     public NfseLibService(
             CertificadoRepository certificadoRepository,
-            ConfiguracaoNfseRepository configuracaoRepository) {
+            ConfiguracaoNfseRepository configuracaoRepository,
+            EmpresaLogoService empresaLogoService) {
         this.certificadoRepository = certificadoRepository;
         this.configuracaoRepository = configuracaoRepository;
+        this.empresaLogoService = empresaLogoService;
     }
 
     public WSFacade facadeForEmpresa(Long empresaId) throws Exception {
@@ -52,9 +56,12 @@ public class NfseLibService {
 
     /**
      * Gera DANFSe via lib (Jasper + XML) — NT 008/2026.
+     * Inclui logo da empresa; se ausente, usa AgrowSync.
      */
     public byte[] downloadPdf(Long empresaId, String chave) throws Exception {
-        return facadeForEmpresa(empresaId).downloadNotaPdf(chave);
+        String xml = downloadXml(empresaId, chave);
+        var logo = empresaLogoService.abrirImagemComFallback(empresaId).orElse(null);
+        return DANFSeJasper.gerarPdfDeXml(xml, logo);
     }
 
     public String downloadXml(Long empresaId, String chave) throws Exception {

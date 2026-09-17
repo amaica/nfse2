@@ -1,8 +1,11 @@
 package br.com.synki.nfse.portal.service;
 
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +19,8 @@ import java.util.Set;
 public class EmpresaLogoService {
 
     private static final Set<String> EXTENSOES = Set.of("png", "jpg", "jpeg", "gif");
+    /** Fallback AgrowSync quando a empresa nao tem logo cadastrada. */
+    private static final String DEFAULT_LOGO_CP = "danfse/agrow-logo.png";
     private final Path baseDir = Path.of("data", "logos");
 
     public void salvar(Long empresaId, MultipartFile arquivo) throws IOException {
@@ -37,6 +42,35 @@ public class EmpresaLogoService {
             return Optional.empty();
         }
         return Optional.of(new ByteArrayInputStream(Files.readAllBytes(arquivo)));
+    }
+
+    /**
+     * Logo da empresa; se nao houver, usa AgrowSync (classpath).
+     */
+    public Optional<BufferedImage> abrirImagemComFallback(Long empresaId) {
+        try {
+            var arquivo = localizar(empresaId);
+            if (arquivo != null) {
+                try (InputStream in = Files.newInputStream(arquivo)) {
+                    BufferedImage img = ImageIO.read(in);
+                    if (img != null) {
+                        return Optional.of(img);
+                    }
+                }
+            }
+            var res = new ClassPathResource(DEFAULT_LOGO_CP);
+            if (res.exists()) {
+                try (InputStream in = res.getInputStream()) {
+                    BufferedImage img = ImageIO.read(in);
+                    if (img != null) {
+                        return Optional.of(img);
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // fallback silencioso
+        }
+        return Optional.empty();
     }
 
     public boolean existe(Long empresaId) {

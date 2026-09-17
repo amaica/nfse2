@@ -95,6 +95,7 @@
 	<parameter name="IBS_V_LIQ_COM_IBSCBS" class="java.lang.String"/>
 	<parameter name="X_INF_COMP" class="java.lang.String"/>
 	<parameter name="RODAPE" class="java.lang.String"/>
+	<parameter name="LOGO" class="java.awt.Image" isForPrompting="false"/>
 
 	<title>
 		<band height="814" splitType="Stretch">
@@ -111,8 +112,14 @@
 					<pen lineWidth="0.5" lineColor="#000000"/>
 				</graphicElement>
 			</rectangle>
+			<image scaleImage="RetainShape" onErrorType="Blank">
+				<reportElement x="8" y="8" width="56" height="56" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567890">
+					<printWhenExpression><![CDATA[$P{LOGO} != null]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA[$P{LOGO}]]></imageExpression>
+			</image>
 			<staticText>
-				<reportElement x="8" y="4" width="400" height="14" uuid="7952fab9-febb-44c0-ade3-6def315826dd">
+				<reportElement x="70" y="4" width="360" height="14" uuid="7952fab9-febb-44c0-ade3-6def315826dd">
 				</reportElement>
 				<textElement>
 					<font fontName="DejaVu Sans" size="11" isBold="true"/>
@@ -120,7 +127,7 @@
 				<text><![CDATA[DANFSe v2.0]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="18" width="400" height="12" uuid="4a31d62b-d0d6-4452-9a1d-366eaa77dcac">
+				<reportElement x="70" y="18" width="360" height="12" uuid="4a31d62b-d0d6-4452-9a1d-366eaa77dcac">
 				</reportElement>
 				<textElement>
 					<font fontName="DejaVu Sans" size="9" isBold="true"/>
@@ -128,7 +135,7 @@
 				<text><![CDATA[Documento Auxiliar da NFS-e]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="32" width="400" height="12" forecolor="#FF0000" uuid="a2d49687-1e2c-4683-9b01-d3fab71af71b">
+				<reportElement x="70" y="32" width="360" height="12" forecolor="#FF0000" uuid="a2d49687-1e2c-4683-9b01-d3fab71af71b">
 					<printWhenExpression><![CDATA["2".equals($P{TP_AMB})]]></printWhenExpression>
 				</reportElement>
 				<textElement>
@@ -137,7 +144,7 @@
 				<text><![CDATA[NFS-e SEM VALIDADE JURIDICA]]></text>
 			</staticText>
 			<textField isBlankWhenNull="true">
-				<reportElement x="8" y="46" width="400" height="10" uuid="8b1c72c3-81d4-4e16-b1c9-0e50e0ef869b">
+				<reportElement x="70" y="46" width="360" height="10" uuid="8b1c72c3-81d4-4e16-b1c9-0e50e0ef869b">
 				</reportElement>
 				<textElement>
 					<font fontName="DejaVu Sans" size="8"/>
@@ -145,7 +152,7 @@
 				<textFieldExpression><![CDATA[$P{X_LOC_EMI}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement x="8" y="56" width="400" height="10" uuid="9df68e87-1799-4411-8dc9-c3f8cad5b5eb">
+				<reportElement x="70" y="56" width="360" height="10" uuid="9df68e87-1799-4411-8dc9-c3f8cad5b5eb">
 				</reportElement>
 				<textElement>
 					<font fontName="DejaVu Sans" size="6"/>

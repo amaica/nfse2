@@ -35,10 +35,21 @@ public final class DANFSeJasper {
      * Gera o PDF a partir do XML autorizado da NFS-e nacional.
      */
     public static byte[] gerarPdfDeXml(final String xmlNfse) throws Exception {
+        return gerarPdfDeXml(xmlNfse, null);
+    }
+
+    /**
+     * Gera o PDF com logo opcional (empresa ou fallback AgrowSync).
+     */
+    public static byte[] gerarPdfDeXml(final String xmlNfse, final java.awt.Image logo) throws Exception {
         if (xmlNfse == null || xmlNfse.isBlank()) {
             throw new IllegalArgumentException("XML da NFS-e e obrigatorio para gerar DANFSe");
         }
-        return gerarPdf(DANFSeXmlMapper.fromXml(xmlNfse));
+        final Map<String, Object> params = DANFSeXmlMapper.fromXml(xmlNfse);
+        if (logo != null) {
+            params.put("LOGO", logo);
+        }
+        return gerarPdf(params);
     }
 
     /**
