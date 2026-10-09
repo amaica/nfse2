@@ -19,6 +19,8 @@ import { useMenus } from "@/lib/menu/useMenus";
 import { useAppSession } from "@/hooks/useAppSession";
 import { AssinaturaBanner } from "@/components/conta/AssinaturaBanner";
 import { SetupChecklist } from "@/components/conta/SetupChecklist";
+import { EmitenteEmissaoBar } from "@/components/fiscal/EmitenteEmissaoBar";
+import { EmpresaSwitcher } from "@/components/shell/EmpresaSwitcher";
 
 type MesPonto = { mes: number; receitas: number; despesas: number };
 
@@ -53,6 +55,11 @@ type HomeData = {
   ultimasNotas: NotaResumo[];
   monitorFiscal: MonitorItem[];
   monitorTotal: number;
+  nfeAutorizadasQtd?: number;
+  nfeAutorizadasValor?: number;
+  nfeRecebidasQtd?: number;
+  nfeRecebidasValor?: number;
+  emitentesNoEscopo?: number;
 };
 
 const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -160,7 +167,8 @@ export function HomeDashboard() {
   const podeNfe = menuAllowsHref(menuTree, "/nfe/emissao");
   const podeNfse = menuAllowsHref(menuTree, "/nfse/emissao");
   const podeIr = menuAllowsHref(menuTree, "/simulado-ir");
-  const podeEntradas = menuAllowsHref(menuTree, "/nfe/notas-entrada");
+  const podeEntradas =
+    menuAllowsHref(menuTree, "/nfe/recebidas") || menuAllowsHref(menuTree, "/nfe/notas-entrada");
   const podeEmitidas = menuAllowsHref(menuTree, "/nfe/notas-emitidas");
 
   const carregar = useCallback(async () => {
@@ -239,6 +247,8 @@ export function HomeDashboard() {
 
       <SetupChecklist />
 
+      <EmitenteEmissaoBar dica="Os números do painel são só deste emitente. Troque aqui para ver outro CNPJ." />
+
       {acoes.length > 0 ? (
         <section className="home-actions" aria-label="Ações rápidas">
           {acoes.map((a) => (
@@ -260,9 +270,19 @@ export function HomeDashboard() {
           <div className="home-card__head">
             <div>
               <h2 className="home-card__title">Resumo do ano</h2>
-              <p className="home-card__meta">Receitas e despesas a partir das notas do emitente</p>
+              <p className="home-card__meta">
+                {empresaNome ? (
+                  <>
+                    Emitente: <strong>{empresaNome}</strong>
+                    {empresaCnpj ? ` · ${formatarCnpjCpf(empresaCnpj)}` : ""}
+                  </>
+                ) : (
+                  "Selecione um emitente para ver os totais"
+                )}
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <EmpresaSwitcher labelTrocar />
               <select
                 className="home-select"
                 value={ano}
@@ -296,17 +316,30 @@ export function HomeDashboard() {
               <div className="home-resumo__body">
                 <div className="home-kpi">
                   <div className="home-kpi__item">
-                    <span className="home-kpi__label">Receitas no Livro Caixa</span>
+                    <span className="home-kpi__label">
+                      NF-e emitidas por este CPF/CNPJ (autorizadas)
+                      {data?.nfeAutorizadasQtd != null ? ` · ${data.nfeAutorizadasQtd}` : ""}
+                    </span>
                     <span className="home-kpi__value home-kpi__value--in">{moeda(data?.receitas)}</span>
                   </div>
                   <div className="home-kpi__item">
-                    <span className="home-kpi__label">Despesas no Livro Caixa</span>
+                    <span className="home-kpi__label">
+                      NF-e recebidas neste CPF/CNPJ (DF-e)
+                      {data?.nfeRecebidasQtd != null ? ` · ${data.nfeRecebidasQtd}` : ""}
+                    </span>
                     <span className="home-kpi__value home-kpi__value--out">{moeda(data?.despesas)}</span>
                   </div>
                   <div className="home-kpi__item">
-                    <span className="home-kpi__label">Resultado Livro Caixa</span>
+                    <span className="home-kpi__label">Resultado</span>
                     <span className="home-kpi__value home-kpi__value--net">{moeda(data?.resultado)}</span>
                   </div>
+                  {data && Number(data.nfeAutorizadasQtd ?? 0) === 0 ? (
+                    <p className="home-card__meta" style={{ marginTop: 8 }}>
+                      Zero emitidas neste emitente no SyncNota. Nota com este nome como{" "}
+                      <strong>cliente</strong> foi emitida por outro CNPJ — troque o emitente
+                      (ex.: Betania / Celso) para ver a soma correta.
+                    </p>
+                  ) : null}
                 </div>
                 <AreaChart mensal={data?.mensal ?? Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, receitas: 0, despesas: 0 }))} />
               </div>
@@ -355,8 +388,8 @@ export function HomeDashboard() {
           )}
           {podeEntradas ? (
             <div className="home-monitor__footer">
-              <Link href="/nfe/notas-entrada">
-                Gerenciar Monitor Fiscal
+              <Link href="/nfe/recebidas">
+                Ver NF-e recebidas
                 <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             </div>

@@ -1,6 +1,8 @@
 package br.com.synki.nfse.portal.repository;
 
 import br.com.synki.nfse.portal.domain.NfeEntrada;
+import br.com.synki.nfse.portal.service.NfeEntradaListaItem;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -60,6 +62,53 @@ public interface NfeEntradaRepository extends JpaRepository<NfeEntrada, Long> {
             @Param("q") String q);
 
     List<NfeEntrada> findByEmpresaIdAndIdIn(Long empresaId, Collection<Long> ids);
+
+    List<NfeEntrada> findByEmpresaIdInAndIdIn(Collection<Long> empresaIds, Collection<Long> ids);
+
+    @Query("""
+            SELECT new br.com.synki.nfse.portal.service.NfeEntradaListaItem(
+                e.id, e.empresaId, e.chave, e.nsu, e.numero, e.serie,
+                e.nomeEmitente, e.cnpjEmitente, e.dataEmissao, e.natureza, e.valor,
+                e.xml is not null)
+            FROM NfeEntrada e
+            WHERE e.empresaId IN :empresaIds
+              AND (:de IS NULL OR e.dataEmissao >= :de)
+              AND (:ate IS NULL OR e.dataEmissao <= :ate)
+              AND (
+                :q IS NULL OR :q = '' OR
+                e.chave LIKE CONCAT('%', :q, '%') OR
+                e.numero LIKE CONCAT('%', :q, '%') OR
+                LOWER(COALESCE(e.nomeEmitente, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                e.cnpjEmitente LIKE CONCAT('%', :q, '%')
+              )
+            """)
+    Page<NfeEntradaListaItem> findLista(
+            @Param("empresaIds") Collection<Long> empresaIds,
+            @Param("de") LocalDate de,
+            @Param("ate") LocalDate ate,
+            @Param("q") String q,
+            Pageable pageable);
+
+    @Query("""
+            SELECT e FROM NfeEntrada e
+            WHERE e.empresaId IN :empresaIds
+              AND (:de IS NULL OR e.dataEmissao >= :de)
+              AND (:ate IS NULL OR e.dataEmissao <= :ate)
+              AND (
+                :q IS NULL OR :q = '' OR
+                e.chave LIKE CONCAT('%', :q, '%') OR
+                e.numero LIKE CONCAT('%', :q, '%') OR
+                LOWER(COALESCE(e.nomeEmitente, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                e.cnpjEmitente LIKE CONCAT('%', :q, '%')
+              )
+            ORDER BY e.dataEmissao DESC, e.id DESC
+            """)
+    List<NfeEntrada> filtrarEm(
+            @Param("empresaIds") Collection<Long> empresaIds,
+            @Param("de") LocalDate de,
+            @Param("ate") LocalDate ate,
+            @Param("q") String q,
+            Pageable pageable);
 
     @Query("""
             SELECT e FROM NfeEntrada e

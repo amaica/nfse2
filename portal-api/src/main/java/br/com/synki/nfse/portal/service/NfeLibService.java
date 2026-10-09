@@ -9,6 +9,7 @@ import br.com.synki.nfse.portal.repository.ConfiguracaoNfseRepository;
 import br.com.synki.nfse.portal.repository.EmpresaEnderecoRepository;
 import br.com.synki.nfse.portal.repository.EmpresaRepository;
 import com.fincatto.documentofiscal.DFAmbiente;
+import com.fincatto.documentofiscal.DFConfig;
 import com.fincatto.documentofiscal.DFModelo;
 import com.fincatto.documentofiscal.DFUnidadeFederativa;
 import com.fincatto.documentofiscal.nfe.NFeConfig;
@@ -21,11 +22,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.util.TimeZone;
 
 @Service
 public class NfeLibService {
 
     private final CertificadoRepository certificadoRepository;
+    private final CertificadoLeituraService certificadoLeituraService;
     private final ConfiguracaoNfseRepository configuracaoRepository;
     private final ConfiguracaoDocumentoRepository documentoRepository;
     private final EmpresaRepository empresaRepository;
@@ -33,11 +36,13 @@ public class NfeLibService {
 
     public NfeLibService(
             CertificadoRepository certificadoRepository,
+            CertificadoLeituraService certificadoLeituraService,
             ConfiguracaoNfseRepository configuracaoRepository,
             ConfiguracaoDocumentoRepository documentoRepository,
             EmpresaRepository empresaRepository,
             EmpresaEnderecoRepository enderecoRepository) {
         this.certificadoRepository = certificadoRepository;
+        this.certificadoLeituraService = certificadoLeituraService;
         this.configuracaoRepository = configuracaoRepository;
         this.documentoRepository = documentoRepository;
         this.empresaRepository = empresaRepository;
@@ -94,6 +99,7 @@ public class NfeLibService {
     }
 
     private NFeConfig configForEmpresa(Long empresaId, DFModelo modelo) throws Exception {
+        certificadoLeituraService.exigirValido(empresaId);
         var cert = certificadoRepository.findFirstByEmpresaIdOrderByCreatedAtDesc(empresaId)
                 .orElseThrow(() -> new IllegalStateException("Certificado A1 nao cadastrado"));
         var ambiente = ambiente(empresaId);
@@ -128,6 +134,11 @@ public class NfeLibService {
             @Override
             public DFModelo getModelo() {
                 return modelo;
+            }
+
+            @Override
+            public TimeZone getTimeZone() {
+                return DFConfig.TIMEZONE_SP;
             }
 
             @Override

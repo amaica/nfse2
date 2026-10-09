@@ -191,6 +191,15 @@ export function QtyInput({
   );
 }
 
+/** Quantidade pt-BR: milhar com ponto e até 4 decimais (2.209,1663). O padrão do navegador corta na 3ª casa. */
+export function fmtQtd(v?: number | null): string {
+  if (v == null || Number.isNaN(v)) return "—";
+  return v.toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  });
+}
+
 export function fmtMoeda(v?: number | null): string {
   if (v == null || Number.isNaN(v)) return "—";
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

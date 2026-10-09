@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { AutoCompleteCompleteEvent } from "primereact/autocomplete";
 import {
   CheckCircle,
@@ -19,7 +20,7 @@ import {
   UserRound,
   Wheat,
 } from "lucide-react";
-import { api, ApiError, formatarCnpjCpf, type NfeContexto, type NfeItemBody } from "@/lib/api";
+import { api, ApiError, formatarCnpjCpf, type NfeClone, type NfeContexto, type NfeItemBody } from "@/lib/api";
 import { fiscalApi, type PessoaDto, type PessoaEnderecoDto, type VeiculoDto } from "@/lib/fiscal-api";
 import { apiBaseUrl } from "@/lib/api-base";
 import { getAppToken } from "@/lib/app-session";
@@ -29,7 +30,7 @@ import { AssinaturaBanner } from "@/components/conta/AssinaturaBanner";
 import { mapEmissaoError } from "@/lib/assinatura";
 import { fmtCfop } from "@/lib/cfop";
 import { UNIDADES_PRODUTO } from "@/lib/produto-unidades";
-import { MoedaInput, QtyInput, fmtMoeda } from "@/components/fiscal/MoedaInput";
+import { MoedaInput, QtyInput, fmtMoeda, fmtQtd } from "@/components/fiscal/MoedaInput";
 import { AutoCompleteField, type AcOption } from "@/components/ui/AutoCompleteField";
 import {
   CONSUMIDOR_FINAL,
@@ -244,13 +245,22 @@ function fmtDataHora() {
   });
 }
 
+function rotuloReferencia(tipo: string, chave?: string, numero?: string) {
+  if (tipo === "NFP") return numero ? `NF produtor ${numero}` : "NF produtor rural";
+  if (tipo === "CTE") return chave ? `CT-e ${chave}` : "CT-e";
+  return chave || "NF-e referenciada";
+}
+
 export function NfeEmissaoWorkspace() {
   const token = getAppToken();
+  const params = useSearchParams();
+  const clonarChave = params.get("clonar")?.replace(/^NFe/i, "") ?? "";
   const { empresaId } = useEmpresaScope();
   const [ctx, setCtx] = useState<NfeContexto | null>(null);
   const [operacoes, setOperacoes] = useState<Operacao[]>([]);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
+  const [cloneAviso, setCloneAviso] = useState("");
   const [resultado, setResultado] = useState<Record<string, unknown> | null>(null);
   const [emailDanfe, setEmailDanfe] = useState("");
   const [enviandoEmail, setEnviandoEmail] = useState(false);
@@ -260,6 +270,10 @@ export function NfeEmissaoWorkspace() {
   const [enderecoId, setEnderecoId] = useState<number | "">("");
   const [operacaoFiscalId, setOperacaoFiscalId] = useState<number | "">("");
   const [naturezaOperacao, setNaturezaOperacao] = useState("");
+  const [serieEdit, setSerieEdit] = useState("");
+  const [proximoEdit, setProximoEdit] = useState("");
+  const [salvandoNum, setSalvandoNum] = useState(false);
+  const [msgNum, setMsgNum] = useState("");
 
   const [destOpt, setDestOpt] = useState<AcOption | null>(null);
   const [destSug, setDestSug] = useState<AcOption[]>([]);
@@ -325,11 +339,13 @@ export function NfeEmissaoWorkspace() {
     try {
       const c = await api.nfeContexto(token);
       setCtx(c);
-      if (c.enderecos?.length === 1) {
-        setEnderecoId(c.enderecos[0].id);
-      } else if (c.enderecos?.length) {
-        const principal = c.enderecos.find((e) => e.principal) ?? c.enderecos[0];
-        setEnderecoId(principal.id);
+      if (!clonarChave) {
+        if (c.enderecos?.length === 1) {
+          setEnderecoId(c.enderecos[0].id);
+        } else if (c.enderecos?.length) {
+          const principal = c.enderecos.find((e) => e.principal) ?? c.enderecos[0];
+          setEnderecoId(principal.id);
+        }
       }
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : "Erro ao carregar contexto NF-e";
@@ -342,7 +358,7 @@ export function NfeEmissaoWorkspace() {
       }
       setCtx(null);
     }
-  }, [token]);
+  }, [token, clonarChave]);
 
   const aplicarOperacao = useCallback((op: Operacao | undefined) => {
     if (!op) {
@@ -375,6 +391,7 @@ export function NfeEmissaoWorkspace() {
   useEffect(() => {
     if (!token || !empresaId) return;
     setResultado(null);
+    setCloneAviso("");
     setItens([]);
     setDestinatario(null);
     setDestOpt(null);
@@ -418,24 +435,182 @@ export function NfeEmissaoWorkspace() {
     setReferencias([]);
     setRefOpt(null);
     setRefSug([]);
-    carregarContexto();
-    fiscalApi
-      .operacoesSimples()
-      .then((ops) => {
-        setOperacoes(ops);
-        const padrao =
-          ops.find((o) => o.principal === "S") ??
-          ops.find((o) => o.descricao.toLowerCase() === "venda") ??
-          ops.find((o) => isSaida(o.tipoOperacao)) ??
-          ops[0];
-        if (padrao) aplicarOperacao(padrao);
-      })
-      .catch(() => {});
-    fiscalApi
-      .listVeiculos()
-      .then((vs) => setVeiculos(vs.filter((v) => v.ativo !== false)))
-      .catch(() => setVeiculos([]));
-  }, [token, empresaId, carregarContexto, aplicarOperacao]);
+    let cancelado = false;
+    void (async () => {
+      await carregarContexto();
+      if (cancelado) return;
+      let ops: Operacao[] = [];
+      try {
+        ops = await fiscalApi.operacoesSimples();
+      } catch {
+        ops = [];
+      }
+      if (cancelado) return;
+      setOperacoes(ops);
+      try {
+        const vs = await fiscalApi.listVeiculos();
+        if (!cancelado) setVeiculos(vs.filter((v) => v.ativo !== false));
+      } catch {
+        if (!cancelado) setVeiculos([]);
+      }
+      if (cancelado) return;
+      if (clonarChave) {
+        try {
+          const clone = await api.nfeClonar(token, clonarChave);
+          if (cancelado) return;
+          aplicarCloneNaTela(clone, ops);
+        } catch (e) {
+          if (!cancelado) {
+            setErro(e instanceof ApiError ? e.message : "Não foi possível clonar a nota");
+          }
+        }
+        return;
+      }
+      const padrao =
+        ops.find((o) => o.principal === "S") ??
+        ops.find((o) => o.descricao.toLowerCase() === "venda") ??
+        ops.find((o) => isSaida(o.tipoOperacao)) ??
+        ops[0];
+      if (padrao) aplicarOperacao(padrao);
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [token, empresaId, clonarChave, carregarContexto, aplicarOperacao]);
+
+  const aplicarCloneNaTela = (clone: NfeClone, ops: Operacao[] = operacoes) => {
+    setResultado(null);
+    setErro("");
+    const serie = clone.origemSerie ? ` série ${clone.origemSerie}` : "";
+    const numero = clone.origemNumero != null ? ` nº ${clone.origemNumero}` : "";
+    setCloneAviso(
+      `Clone da NF-e${numero}${serie}. Confira os dados e transmita — a SEFAZ recebe um número novo.`,
+    );
+    if (clone.enderecoId) setEnderecoId(clone.enderecoId);
+    if (clone.naturezaOperacao) {
+      setNaturezaOperacao(clone.naturezaOperacao);
+      const nat = clone.naturezaOperacao.trim().toLowerCase();
+      const op = ops.find((o) => naturezaDaOperacao(o).trim().toLowerCase() === nat);
+      if (op) {
+        setOperacaoFiscalId(op.id);
+        setNatOpt({
+          label: labelNatureza(op),
+          value: String(op.id),
+          meta: clone.naturezaOperacao,
+          raw: op,
+        });
+      }
+    }
+    if (clone.finalidade) setFinalidade(clone.finalidade);
+    if (clone.consumidorFinal) setConsumidorFinal(clone.consumidorFinal);
+    if (clone.indicadorPresenca) setIndicadorPresenca(clone.indicadorPresenca);
+    setInformacoesAdicionais(clone.informacoesAdicionais ?? "");
+    if (clone.pagamento?.meioPagamento) setMeioPagamento(clone.pagamento.meioPagamento);
+    if (clone.pagamento?.indicadorPagamento) setIndicadorPagamento(clone.pagamento.indicadorPagamento);
+
+    const dest = clone.destinatario;
+    if (dest?.documento || dest?.nome) {
+      const nome = dest.nome || "Destinatário";
+      const doc = dest.documento || "";
+      setDestinatario({ id: dest.pessoaId ?? 0, nome, cpfCnpj: doc });
+      setDestOpt({
+        label: doc ? `${nome} — ${formatarCnpjCpf(doc)}` : nome,
+        value: dest.pessoaId ? String(dest.pessoaId) : doc,
+      });
+      setDestEmail(dest.email ?? "");
+      setDestIe(dest.inscricaoEstadual ?? "");
+      const opt: DestEnderecoOpt = {
+        key: "clone",
+        label: rotuloIeEndereco(
+          dest.inscricaoEstadual ?? "",
+          dest.logradouro ?? "",
+          dest.municipio ?? "",
+          dest.uf ?? "",
+        ),
+        inscricaoEstadual: dest.inscricaoEstadual ?? "",
+        logradouro: dest.logradouro ?? "",
+        numero: dest.numero ?? "",
+        complemento: dest.complemento ?? "",
+        bairro: dest.bairro ?? "",
+        municipio: dest.municipio ?? "",
+        uf: dest.uf ?? "",
+        cep: dest.cep ?? "",
+        codigoMunicipioIbge: dest.codigoMunicipioIbge ?? "",
+      };
+      setDestEnderecos([opt]);
+      setDestEndKey("clone");
+      setDestEndereco(opt);
+    }
+
+    setItens(
+      (clone.itens ?? []).map((item, idx) => ({
+        key: `clone-${idx}-${item.codigo ?? idx}`,
+        produtoId: item.produtoId,
+        codigo: item.codigo ?? "",
+        descricao: item.descricao ?? "",
+        ncm: item.ncm ?? "",
+        cfop: item.cfop ?? "",
+        unidade: item.unidade ?? "UN",
+        quantidade: Number(item.quantidade ?? 0),
+        valorUnitario: Number(item.valorUnitario ?? 0),
+        valorDesconto: Number(item.valorDesconto ?? 0),
+      })),
+    );
+
+    const tr = clone.transporte;
+    if (tr) {
+      if (tr.modalidadeFrete) setModFrete(tr.modalidadeFrete);
+      setTranspNome(tr.transportadorNome ?? "");
+      setTranspDoc(tr.transportadorDocumento ?? "");
+      setTranspIe(tr.transportadorIe ?? "");
+      setTranspMun(tr.transportadorMunicipio ?? "");
+      setTranspUf(tr.transportadorUf ?? "");
+      if (tr.transportadorNome) {
+        setTranspOpt({ label: tr.transportadorNome, value: tr.transportadorDocumento ?? tr.transportadorNome });
+      }
+      setPlaca(tr.placa ?? "");
+      setPlacaUf(tr.placaUf ?? "");
+      setRntc(tr.rntc ?? "");
+      if (tr.placa) setPlacaOpt({ label: tr.placa, value: tr.placa });
+      setValorFrete(tr.valorFrete && tr.valorFrete > 0 ? Number(tr.valorFrete) : undefined);
+      setReboques(
+        (tr.reboques ?? []).map((r, idx) => ({
+          key: `clone-reb-${idx}`,
+          placa: r.placa ?? "",
+          uf: r.uf ?? "",
+          rntc: r.rntc ?? "",
+        })),
+      );
+      setVolumes(
+        (tr.volumes ?? []).map((v, idx) => ({
+          key: `clone-vol-${idx}`,
+          quantidade: v.quantidade,
+          especie: v.especie ?? "",
+          marca: v.marca ?? "",
+          numeracao: v.numeracao ?? "",
+          pesoLiquido: v.pesoLiquido != null ? String(v.pesoLiquido).replace(".", ",") : "",
+          pesoBruto: v.pesoBruto != null ? String(v.pesoBruto).replace(".", ",") : "",
+        })),
+      );
+    }
+
+    setReferencias(
+      (clone.referencias ?? []).map((r, idx) => ({
+        key: `clone-ref-${idx}`,
+        tipo: r.tipo === "NFP" || r.tipo === "CTE" ? r.tipo : "NFE",
+        chave: r.chave,
+        codigoUf: r.codigoUf,
+        anoMes: r.anoMes,
+        cnpj: r.cnpj,
+        cpf: r.cpf,
+        inscricaoEstadual: r.inscricaoEstadual,
+        modelo: r.modelo,
+        serie: r.serie,
+        numero: r.numero,
+        rotulo: rotuloReferencia(r.tipo ?? "NFE", r.chave, r.numero),
+      })),
+    );
+  };
 
   const operacaoSel = operacoes.find((o) => o.id === operacaoFiscalId);
   const cfopPadrao = fmtCfop(operacaoSel?.cfop) || "";
@@ -454,6 +629,37 @@ export function NfeEmissaoWorkspace() {
   const ambiente = ctx?.ambiente ?? "2";
   const ambienteProd = isAmbienteProducao(ambiente);
   const ufEmitente = (enderecoAtivo?.uf || ctx?.ufEmitente || "").toUpperCase();
+
+  useEffect(() => {
+    setSerieEdit(String(serieDisplay === "—" ? "" : serieDisplay));
+    setProximoEdit(String(numeroDisplay === "—" ? "" : numeroDisplay));
+  }, [serieDisplay, numeroDisplay, enderecoId]);
+
+  const salvarNumeracao = async () => {
+    if (!token) return;
+    const serie = serieEdit.trim();
+    const proximo = Number(proximoEdit.replace(/\D/g, ""));
+    if (!serie || !Number.isFinite(proximo) || proximo < 1) {
+      setMsgNum("Informe a série e o próximo número (maior que zero).");
+      return;
+    }
+    setSalvandoNum(true);
+    setMsgNum("");
+    setErro("");
+    try {
+      const res = await api.nfeAjustarNumeracao(token, {
+        enderecoId: typeof enderecoId === "number" ? enderecoId : undefined,
+        serie,
+        proximoNumero: proximo,
+      });
+      setMsgNum(res.mensagem);
+      await carregarContexto();
+    } catch (e) {
+      setMsgNum(e instanceof ApiError ? e.message : "Erro ao salvar numeração");
+    } finally {
+      setSalvandoNum(false);
+    }
+  };
 
   useEffect(() => {
     if (!ufEmitente) return;
@@ -1049,39 +1255,102 @@ export function NfeEmissaoWorkspace() {
           </div>
           <div className="nfe-hero__meta">
             <div className="nfe-hero__stat">
-              <span>Série</span>
-              <strong>{serieDisplay}</strong>
-            </div>
-            <div className="nfe-hero__stat">
-              <span>Próxima NF-e</span>
-              <strong>{numeroDisplay}</strong>
-            </div>
-            <div className="nfe-hero__stat">
               <span>Emissão</span>
               <strong style={{ fontSize: "0.95rem" }}>{fmtDataHora()}</strong>
             </div>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className={`nfe-tag ${ambienteProd ? "ghost" : "warn"}`}>
-            {ambienteProd ? "Produção" : "Homologação"}
-          </span>
-          {ultimoDisplay != null && (
-            <span className="nfe-tag ghost">Última emitida: {ultimoDisplay}</span>
-          )}
-          <button
-            type="button"
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium hover:bg-white/20"
-            onClick={() => void carregarContexto()}
-          >
-            <RefreshCw className="h-3.5 w-3.5" /> Atualizar numeração
-          </button>
+        <div className="mt-3 rounded-xl border border-white/25 bg-white p-3 text-stone-900 shadow-sm">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700">
+              {ambienteProd ? "Produção" : "Homologação"}
+            </span>
+            {ultimoDisplay != null && (
+              <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs text-stone-600">
+                Última já usada: {ultimoDisplay}
+              </span>
+            )}
+            <button
+              type="button"
+              title="Só recarrega a série e o número do servidor. Não transmite a nota."
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100"
+              onClick={() => void carregarContexto()}
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Recarregar números
+            </button>
+          </div>
+          <p className="mb-2 text-xs text-stone-600">
+            O número já vem preenchido. Use <strong>−</strong> / <strong>+</strong> para voltar ou avançar, ou
+            digite. Depois clique em <strong>Salvar numeração</strong>. Recarregar só lê o cadastro de novo —
+            não envia nota.
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="block text-xs">
+              <span className="mb-1 block font-medium text-stone-600">Série</span>
+              <input
+                className="w-24 rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm font-semibold text-stone-900"
+                value={serieEdit}
+                onChange={(e) => setSerieEdit(e.target.value.replace(/\D/g, "").slice(0, 3))}
+              />
+            </label>
+            <div className="block text-xs">
+              <span className="mb-1 block font-medium text-stone-600">Próxima NF-e</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  className="h-9 w-9 rounded-lg border border-stone-300 bg-stone-50 text-lg font-bold text-stone-800 hover:bg-stone-100"
+                  title="Voltar um número"
+                  onClick={() =>
+                    setProximoEdit((atual) => {
+                      const n = Number(String(atual).replace(/\D/g, "") || "1");
+                      return String(Math.max(1, n - 1));
+                    })
+                  }
+                >
+                  −
+                </button>
+                <input
+                  className="w-28 rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-center text-sm font-semibold text-stone-900"
+                  value={proximoEdit}
+                  onChange={(e) => setProximoEdit(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                />
+                <button
+                  type="button"
+                  className="h-9 w-9 rounded-lg border border-stone-300 bg-stone-50 text-lg font-bold text-stone-800 hover:bg-stone-100"
+                  title="Avançar um número"
+                  onClick={() =>
+                    setProximoEdit((atual) => {
+                      const n = Number(String(atual).replace(/\D/g, "") || "0");
+                      return String(Math.min(999999999, n + 1));
+                    })
+                  }
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="rounded-lg bg-stone-900 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+              disabled={salvandoNum}
+              onClick={() => void salvarNumeracao()}
+            >
+              {salvandoNum ? "Salvando…" : "Salvar numeração"}
+            </button>
+          </div>
+          {msgNum && <p className="mt-2 text-xs font-medium text-emerald-800">{msgNum}</p>}
         </div>
       </header>
 
       {ctx && !ctx.podeEmitir && (
         <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
           {ctx.aviso ?? "Emissão bloqueada — verifique certificado e configuração."}
+        </p>
+      )}
+
+      {cloneAviso && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {cloneAviso}
         </p>
       )}
 
@@ -1430,13 +1699,14 @@ export function NfeEmissaoWorkspace() {
                       <td>{i.cfop || "—"}</td>
                       <td>{i.unidade}</td>
                       <td className="num">
-                        <input
+                        <QtyInput
                           className="cell-input"
-                          defaultValue={String(i.quantidade).replace(".", ",")}
-                          onBlur={(e) => {
-                            const n = parseDecimal(e.target.value);
-                            atualizarItem(i.key, { quantidade: n > 0 ? n : i.quantidade });
-                          }}
+                          value={i.quantidade}
+                          onChange={(n) =>
+                            atualizarItem(i.key, {
+                              quantidade: n != null && n > 0 ? Math.round(n * 10000) / 10000 : i.quantidade,
+                            })
+                          }
                         />
                       </td>
                       <td className="num">
@@ -1444,6 +1714,7 @@ export function NfeEmissaoWorkspace() {
                           className="cell-input"
                           defaultValue={i.valorUnitario.toLocaleString("pt-BR", {
                             minimumFractionDigits: 2,
+                            maximumFractionDigits: 10,
                           })}
                           onBlur={(e) => {
                             const n = parseDecimal(e.target.value);
@@ -1480,7 +1751,7 @@ export function NfeEmissaoWorkspace() {
                 <tfoot>
                   <tr>
                     <td colSpan={6}>Somatório</td>
-                    <td className="num">{totais.qtd.toLocaleString("pt-BR")}</td>
+                    <td className="num">{fmtQtd(totais.qtd)}</td>
                     <td className="num">{fmtMoeda(totais.produtos)}</td>
                     <td className="num">{fmtMoeda(totais.descontos)}</td>
                     <td className="num total-nota">{fmtMoeda(totais.nota)}</td>
@@ -1951,11 +2222,30 @@ export function NfeEmissaoWorkspace() {
       </section>
 
       {resultado && (
-        <div id="nfe-sucesso" className="nfe-panel border-[var(--primary-200)] bg-[var(--primary-50)]">
+        <div
+          id="nfe-sucesso"
+          className={
+            chaveAutorizada
+              ? "nfe-panel border-[var(--primary-200)] bg-[var(--primary-50)]"
+              : "nfe-panel border-red-200 bg-red-50"
+          }
+        >
           <div className="nfe-panel__body space-y-3 text-sm">
-            <p className="flex items-center gap-2 text-base font-semibold text-[var(--primary-800)]">
-              <CheckCircle className="h-5 w-5" /> NF-e transmitida
+            <p
+              className={
+                chaveAutorizada
+                  ? "flex items-center gap-2 text-base font-semibold text-[var(--primary-800)]"
+                  : "flex items-center gap-2 text-base font-semibold text-red-800"
+              }
+            >
+              <CheckCircle className="h-5 w-5" />{" "}
+              {chaveAutorizada ? "NF-e autorizada" : "SEFAZ rejeitou a NF-e"}
             </p>
+            {resultado.mensagem != null && (
+              <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 font-medium text-amber-950">
+                {String(resultado.mensagem)}
+              </p>
+            )}
             <p>
               <strong>Status:</strong> {String(resultado.statusProtocolo ?? resultado.status)}
             </p>

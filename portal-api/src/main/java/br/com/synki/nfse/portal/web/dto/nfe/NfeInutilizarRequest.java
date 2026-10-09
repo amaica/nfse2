@@ -5,5 +5,6 @@ public record NfeInutilizarRequest(
         String serie,
         String numeroInicial,
         String numeroFinal,
-        String justificativa
+        String justificativa,
+        Long emitente
 ) {}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Download,
   FileArchive,
@@ -9,12 +9,9 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { ApiError, formatarCnpjCpf } from "@/lib/api";
+import { ApiError, empresaPortalApi, formatarCnpjCpf } from "@/lib/api";
 import { apiBaseUrl } from "@/lib/api-base";
 import { getAppToken } from "@/lib/app-session";
-import { useEmpresaScope } from "@/hooks/useEmpresaScope";
-import { EmitenteEmissaoBar } from "@/components/fiscal/EmitenteEmissaoBar";
-import { PORTAL_EMPRESA_EVENT } from "@/lib/portal-empresa";
 
 type NotaEntrada = {
   id: number;
@@ -29,21 +26,17 @@ type NotaEntrada = {
   valor?: number;
   temXml?: boolean;
   createdAt?: string;
+  empresaId?: number;
+  destinatarioNome?: string;
+  destinatarioDocumento?: string;
 };
 
-type Filtros = { de: string; ate: string; q: string };
+type EmitenteOpt = { id: number; nome: string; documento?: string };
 
-const PAGE_SIZE = 50;
-const FILTROS_VAZIOS: Filtros = { de: "", ate: "", q: "" };
+type Filtros = { de: string; ate: string; q: string; emitente: string };
 
-function hojeIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function inicioAnoIso(): string {
-  return `${new Date().getFullYear()}-01-01`;
-}
+const PAGE_SIZE = 20;
+const FILTROS_VAZIOS: Filtros = { de: "", ate: "", q: "", emitente: "" };
 
 function formatarData(iso?: string): string {
   if (!iso) return "—";
@@ -59,87 +52,186 @@ function formatarValor(v?: number): string {
 
 export function NfeNotasEntrada() {
   const token = getAppToken();
-  const { empresaId, empresaNome, empresaCnpj } = useEmpresaScope();
+  const fimLista = useRef<HTMLDivElement | null>(null);
+  const carregandoMais = useRef(false);
   const [itens, setItens] = useState<NotaEntrada[]>([]);
-  const [filtros, setFiltros] = useState<Filtros>({ ...FILTROS_VAZIOS, de: inicioAnoIso(), ate: hojeIso() });
-  const [filtrosAplicados, setFiltrosAplicados] = useState<Filtros>(filtros);
+  const [emitentes, setEmitentes] = useState<EmitenteOpt[]>([]);
+  const [filtros, setFiltros] = useState<Filtros>({ ...FILTROS_VAZIOS });
+  const [filtrosAplicados, setFiltrosAplicados] = useState<Filtros>({ ...FILTROS_VAZIOS });
+  /** Só true depois de Filtrar — não carrega tudo ao abrir. */
+  const [consultaFeita, setConsultaFeita] = useState(false);
   const [pagina, setPagina] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [baixando, setBaixando] = useState(false);
   const [sincronizando, setSincronizando] = useState(false);
   const [baixarXmlAtivo, setBaixarXmlAtivo] = useState(false);
   const [ultimoNsu, setUltimoNsu] = useState<string | null>(null);
 
-  const query = useMemo(() => {
+  const montarParams = useCallback((page: number, f: Filtros) => {
     const p = new URLSearchParams();
-    p.set("page", String(pagina));
+    p.set("page", String(page));
     p.set("size", String(PAGE_SIZE));
-    if (filtrosAplicados.de) p.set("de", filtrosAplicados.de);
-    if (filtrosAplicados.ate) p.set("ate", filtrosAplicados.ate);
-    if (filtrosAplicados.q.trim()) p.set("q", filtrosAplicados.q.trim());
-    return p.toString();
-  }, [filtrosAplicados, pagina]);
+    if (f.de) p.set("de", f.de);
+    if (f.ate) p.set("ate", f.ate);
+    if (f.q.trim()) p.set("q", f.q.trim());
+    if (f.emitente) p.set("emitente", f.emitente);
+    return p;
+  }, []);
 
-  const carregar = useCallback(async () => {
-    if (!token || !empresaId) return;
-    setLoading(true);
-    setErro("");
-    try {
-      const res = await fetch(`${apiBaseUrl()}/api/nfe/entradas?${query}`, {
+  const buscarPagina = useCallback(
+    async (page: number, f: Filtros) => {
+      if (!token) return null;
+      const res = await fetch(`${apiBaseUrl()}/api/nfe/entradas?${montarParams(page, f)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new ApiError((body as { erro?: string }).erro ?? res.statusText, res.status);
       }
-      const data = body as {
+      return body as {
         itens?: NotaEntrada[];
         totalElements?: number;
         hasMore?: boolean;
         baixarXml?: boolean;
         ultimoNsu?: string | null;
+        emitentes?: EmitenteOpt[];
       };
-      setItens(Array.isArray(data.itens) ? data.itens : []);
-      setTotalElements(data.totalElements ?? 0);
-      setHasMore(!!data.hasMore);
-      setBaixarXmlAtivo(!!data.baixarXml);
-      setUltimoNsu(data.ultimoNsu ?? null);
+    },
+    [token, montarParams],
+  );
+
+  const carregarMetaEmitente = useCallback(
+    async (emitenteId: string) => {
+      if (!token || !emitenteId) {
+        setBaixarXmlAtivo(false);
+        setUltimoNsu(null);
+        return;
+      }
+      try {
+        const emp = await empresaPortalApi.obterEmpresa(token, Number(emitenteId));
+        setBaixarXmlAtivo(!!emp.baixarXml);
+        setUltimoNsu(emp.ultimoNsu ?? null);
+      } catch {
+        setBaixarXmlAtivo(false);
+        setUltimoNsu(null);
+      }
+    },
+    [token],
+  );
+
+  const carregar = useCallback(
+    async (f: Filtros = filtrosAplicados) => {
+      if (!token) {
+        setItens([]);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setErro("");
       setSelecionados(new Set());
+      try {
+        const data = await buscarPagina(0, f);
+        setItens(data?.itens ?? []);
+        setTotalElements(data?.totalElements ?? 0);
+        setHasMore(!!data?.hasMore);
+        if (f.emitente) {
+          setBaixarXmlAtivo(!!data?.baixarXml);
+          setUltimoNsu(data?.ultimoNsu ?? null);
+        }
+        if (data?.emitentes?.length) setEmitentes(data.emitentes);
+        setPagina(0);
+        setConsultaFeita(true);
+      } catch (e) {
+        setErro(e instanceof ApiError ? e.message : "Erro ao carregar NF-e recebidas");
+        setItens([]);
+        setHasMore(false);
+        setTotalElements(0);
+        setConsultaFeita(true);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [buscarPagina, token, filtrosAplicados],
+  );
+
+  const carregarMais = useCallback(async () => {
+    if (!consultaFeita || carregandoMais.current || !hasMore) return;
+    carregandoMais.current = true;
+    setLoadingMore(true);
+    try {
+      const proxima = pagina + 1;
+      const data = await buscarPagina(proxima, filtrosAplicados);
+      setItens((atual) => [...atual, ...(data?.itens ?? [])]);
+      setHasMore(!!data?.hasMore);
+      setPagina(proxima);
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : "Erro ao carregar notas de entrada");
-      setItens([]);
+      setErro(e instanceof ApiError ? e.message : "Erro ao carregar mais notas");
     } finally {
-      setLoading(false);
+      carregandoMais.current = false;
+      setLoadingMore(false);
     }
-  }, [token, empresaId, query]);
+  }, [buscarPagina, pagina, filtrosAplicados, consultaFeita, hasMore]);
 
   useEffect(() => {
-    void carregar();
-  }, [carregar]);
-
-  useEffect(() => {
-    const onEmp = () => {
-      setPagina(0);
-      void carregar();
+    if (!token) return;
+    let cancelado = false;
+    void (async () => {
+      try {
+        const data = await empresaPortalApi.listarEmpresas(token);
+        if (cancelado) return;
+        setEmitentes(
+          (data.itens ?? []).map((e) => ({
+            id: e.id,
+            nome: e.nome,
+            documento: e.cnpj,
+          })),
+        );
+      } catch {
+        /* select vazio até a 1ª consulta */
+      }
+    })();
+    return () => {
+      cancelado = true;
     };
-    window.addEventListener(PORTAL_EMPRESA_EVENT, onEmp);
-    return () => window.removeEventListener(PORTAL_EMPRESA_EVENT, onEmp);
-  }, [carregar]);
+  }, [token]);
+
+  useEffect(() => {
+    const alvo = fimLista.current;
+    if (!alvo || !consultaFeita || !hasMore) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) void carregarMais();
+      },
+      { rootMargin: "240px" },
+    );
+    obs.observe(alvo);
+    return () => obs.disconnect();
+  }, [hasMore, carregarMais, itens.length, consultaFeita]);
 
   const aplicarFiltros = () => {
     setFiltrosAplicados({ ...filtros });
-    setPagina(0);
+    void carregar(filtros);
   };
 
   const limparFiltros = () => {
-    const next = { ...FILTROS_VAZIOS, de: inicioAnoIso(), ate: hojeIso() };
+    const next = { ...FILTROS_VAZIOS };
     setFiltros(next);
     setFiltrosAplicados(next);
+    setItens([]);
+    setHasMore(false);
+    setTotalElements(0);
+    setSelecionados(new Set());
+    setConsultaFeita(false);
+    setErro("");
+    setOk("");
+    setBaixarXmlAtivo(false);
+    setUltimoNsu(null);
     setPagina(0);
   };
 
@@ -163,7 +255,9 @@ export function NfeNotasEntrada() {
     setErro("");
     setOk("");
     try {
-      const res = await fetch(`${apiBaseUrl()}/api/nfe/distribuicao/baixar`, {
+      const emitenteSync = filtros.emitente || filtrosAplicados.emitente;
+      const qs = emitenteSync ? `?emitente=${encodeURIComponent(emitenteSync)}` : "";
+      const res = await fetch(`${apiBaseUrl()}/api/nfe/distribuicao/baixar${qs}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -177,7 +271,8 @@ export function NfeNotasEntrada() {
           ? `${novas} nova(s) NF-e gravada(s) da SEFAZ (DF-e).`
           : "Nenhuma nota nova. NSU atualizado.",
       );
-      await carregar();
+      if (consultaFeita) await carregar();
+      else await carregarMetaEmitente(filtrosAplicados.emitente);
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : "Falha ao sincronizar DF-e");
     } finally {
@@ -197,6 +292,7 @@ export function NfeNotasEntrada() {
         if (filtrosAplicados.de) p.set("de", filtrosAplicados.de);
         if (filtrosAplicados.ate) p.set("ate", filtrosAplicados.ate);
         if (filtrosAplicados.q.trim()) p.set("q", filtrosAplicados.q.trim());
+        if (filtrosAplicados.emitente) p.set("emitente", filtrosAplicados.emitente);
       }
       const res = await fetch(`${apiBaseUrl()}/api/nfe/entradas/export.zip?${p}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -209,7 +305,7 @@ export function NfeNotasEntrada() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `nfe-entrada-${empresaCnpj || empresaId}.zip`;
+      a.download = "nfe-recebidas.zip";
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -233,7 +329,7 @@ export function NfeNotasEntrada() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${chave || `nfe-entrada-${id}`}.xml`;
+      a.download = `${chave || `nfe-recebida-${id}`}.xml`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -245,23 +341,34 @@ export function NfeNotasEntrada() {
     <div className="animate-in space-y-4">
       <header>
         <p className="page-header__eyebrow">NF-e</p>
-        <h1 className="page-header__title">Notas disponíveis para entrada</h1>
+        <h1 className="page-header__title">NF-e recebidas</h1>
         <p className="page-header__subtitle">
-          XMLs das NF-e emitidas contra o CNPJ do emitente (distribuição DF-e / SEFAZ)
-          {empresaNome ? (
-            <>
-              {" "}
-              · <strong>{empresaNome}</strong>
-              {empresaCnpj ? ` · ${formatarCnpjCpf(empresaCnpj)}` : ""}
-            </>
-          ) : null}
+          Notas emitidas por terceiros contra o CNPJ/CPF (DF-e). A lista só carrega depois de
+          Filtrar — nada é buscado ao abrir a tela.
         </p>
       </header>
 
-      <EmitenteEmissaoBar dica="O download automático exige «Baixar notas DF-e» no cadastro do emitente." />
-
       <div className="fiscal-card space-y-4 p-4">
         <div className="flex flex-wrap items-end gap-3">
+          <label className="block min-w-[16rem] flex-1 text-sm">
+            <span className="mb-1 block text-agro-muted">Emitente</span>
+            <select
+              className="fiscal-input w-full"
+              value={filtros.emitente}
+              onChange={(e) => {
+                const id = e.target.value;
+                setFiltros((f) => ({ ...f, emitente: id }));
+                void carregarMetaEmitente(id);
+              }}
+            >
+              <option value="">Todos os emitentes</option>
+              {emitentes.map((em) => (
+                <option key={em.id} value={String(em.id)}>
+                  {em.nome}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="block text-sm">
             <span className="mb-1 block text-agro-muted">De</span>
             <input
@@ -310,11 +417,13 @@ export function NfeNotasEntrada() {
             type="button"
             className="fiscal-btn-primary inline-flex items-center gap-2"
             onClick={() => void sincronizarSefaz()}
-            disabled={sincronizando || !baixarXmlAtivo}
+            disabled={sincronizando || !filtros.emitente || !baixarXmlAtivo}
             title={
-              baixarXmlAtivo
-                ? "Consulta distribuição DF-e na SEFAZ"
-                : "Ative «Baixar notas DF-e» no cadastro do emitente"
+              !filtros.emitente
+                ? "Selecione um emitente no filtro para baixar da SEFAZ"
+                : baixarXmlAtivo
+                  ? "Consulta distribuição DF-e na SEFAZ"
+                  : "Ative «Baixar notas DF-e» no cadastro do emitente"
             }
           >
             {sincronizando ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -324,13 +433,15 @@ export function NfeNotasEntrada() {
             type="button"
             className="btn-ghost inline-flex items-center gap-2 border border-[var(--border)]"
             onClick={() => void exportarZip()}
-            disabled={baixando || (itens.length === 0 && selecionados.size === 0)}
+            disabled={baixando || !consultaFeita || (itens.length === 0 && selecionados.size === 0)}
           >
             {baixando ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileArchive className="h-4 w-4" />}
             Exportar ZIP{selecionados.size > 0 ? ` (${selecionados.size})` : ""}
           </button>
           <span className="text-xs text-agro-muted">
-            {baixarXmlAtivo ? (
+            {!filtros.emitente ? (
+              "Escolha um emitente no filtro para atualizar a SEFAZ"
+            ) : baixarXmlAtivo ? (
               <>
                 DF-e ativo{ultimoNsu ? ` · NSU ${ultimoNsu}` : ""} · cron horário baixa automaticamente
               </>
@@ -362,6 +473,7 @@ export function NfeNotasEntrada() {
                   aria-label="Selecionar todos"
                 />
               </th>
+              <th>Destinatário</th>
               <th>Nº</th>
               <th>Série</th>
               <th>Emitente</th>
@@ -375,15 +487,21 @@ export function NfeNotasEntrada() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="py-8 text-center text-agro-muted">
+                <td colSpan={10} className="py-8 text-center text-agro-muted">
                   <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
                   Carregando…
                 </td>
               </tr>
+            ) : !consultaFeita ? (
+              <tr>
+                <td colSpan={10} className="py-8 text-center text-agro-muted">
+                  Escolha os filtros e clique em <strong>Filtrar</strong> para carregar a lista.
+                </td>
+              </tr>
             ) : itens.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-8 text-center text-agro-muted">
-                  Nenhuma NF-e encontrada para os filtros. Use «Atualizar da SEFAZ» se o DF-e estiver ativo.
+                <td colSpan={10} className="py-8 text-center text-agro-muted">
+                  Nenhuma NF-e encontrada para estes filtros.
                 </td>
               </tr>
             ) : (
@@ -396,6 +514,9 @@ export function NfeNotasEntrada() {
                       onChange={() => toggle(n.id)}
                       aria-label={`Selecionar ${n.numero}`}
                     />
+                  </td>
+                  <td className="max-w-[14rem] truncate" title={n.destinatarioNome}>
+                    {n.destinatarioNome || "—"}
                   </td>
                   <td>{n.numero || "—"}</td>
                   <td>{n.serie || "—"}</td>
@@ -426,31 +547,23 @@ export function NfeNotasEntrada() {
         </table>
       </div>
 
-      <div className="fiscal-pagination">
-        <span>
-          {totalElements === 0
-            ? "0 registros"
-            : `${pagina * PAGE_SIZE + 1}–${Math.min((pagina + 1) * PAGE_SIZE, totalElements)} de ${totalElements}`}
-        </span>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            className="rounded border border-slate-300 px-2 py-1 disabled:opacity-40"
-            disabled={pagina === 0}
-            onClick={() => setPagina((p) => p - 1)}
-          >
-            Anterior
-          </button>
-          <button
-            type="button"
-            className="rounded border border-slate-300 px-2 py-1 disabled:opacity-40"
-            disabled={!hasMore}
-            onClick={() => setPagina((p) => p + 1)}
-          >
-            Próxima
-          </button>
+      {consultaFeita ? (
+        <div className="fiscal-pagination">
+          <span>
+            {totalElements === 0
+              ? "0 registros"
+              : `${itens.length} de ${totalElements}`}
+            {loadingMore
+              ? " · carregando…"
+              : hasMore
+                ? " · role para carregar mais (lazy load)"
+                : itens.length > 0
+                  ? " · fim da lista"
+                  : ""}
+          </span>
         </div>
-      </div>
+      ) : null}
+      <div ref={fimLista} className="h-8" />
     </div>
   );
 }

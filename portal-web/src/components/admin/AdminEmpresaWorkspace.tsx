@@ -84,13 +84,6 @@ export function AdminEmpresaWorkspace() {
   const [logoNome, setLogoNome] = useState<string | undefined>();
   const [certNome, setCertNome] = useState<string | undefined>();
   const [baixandoXmls, setBaixandoXmls] = useState(false);
-  const [embedInfo, setEmbedInfo] = useState<{
-    cnpj?: string;
-    emailIntegracao?: string;
-    embedUrlCnpj?: string;
-    embedUrlCnpjComSenha?: string;
-    embedUrlEmail?: string;
-  } | null>(null);
 
   useEffect(() => {
     const token = getAppToken();
@@ -154,13 +147,6 @@ export function AdminEmpresaWorkspace() {
           ? await adminApi.obterEmpresa(adminKey, id)
           : await empresaPortalApi.obterEmpresa(appToken, id);
       setForm(detalheParaForm(det));
-      setEmbedInfo({
-        cnpj: det.cnpj,
-        emailIntegracao: det.emailIntegracao,
-        embedUrlCnpj: det.embedUrlCnpj,
-        embedUrlCnpjComSenha: det.embedUrlCnpjComSenha,
-        embedUrlEmail: det.embedUrlEmail,
-      });
       setEmpresaId(id);
       setCertNome(det.certificadoCadastrado ? "certificado cadastrado" : undefined);
       setLogoNome(det.logoCadastrado ? "logo cadastrado" : undefined);
@@ -183,7 +169,6 @@ export function AdminEmpresaWorkspace() {
     setCertArquivo(null);
     setCertSenha("");
     setLogoArquivo(null);
-    setEmbedInfo(null);
     setMensagem(null);
     setTela("formulario");
   }
@@ -191,7 +176,6 @@ export function AdminEmpresaWorkspace() {
   function voltarLista() {
     setTela("lista");
     setEmpresaId(null);
-    setEmbedInfo(null);
     setMensagem(null);
     setBaixandoXmls(false);
   }
@@ -280,19 +264,6 @@ export function AdminEmpresaWorkspace() {
       }
 
       setMensagem({ tipo: "ok", texto: "Empresa salva com sucesso." });
-      if (id != null) {
-        const det =
-          modo === "admin"
-            ? await adminApi.obterEmpresa(adminKey, id)
-            : await empresaPortalApi.obterEmpresa(appToken, id);
-        setEmbedInfo({
-          cnpj: det.cnpj,
-          emailIntegracao: det.emailIntegracao,
-          embedUrlCnpj: det.embedUrlCnpj,
-          embedUrlCnpjComSenha: det.embedUrlCnpjComSenha,
-          embedUrlEmail: det.embedUrlEmail,
-        });
-      }
       await carregar();
       if (empresaId == null && id != null) {
         setEmpresaId(id);
@@ -376,7 +347,6 @@ export function AdminEmpresaWorkspace() {
           certNome={certNome}
           logoNome={logoNome}
           mensagem={mensagem}
-          embedInfo={embedInfo}
           onChange={setForm}
           onSalvar={() => void salvar()}
           onVoltar={voltarLista}

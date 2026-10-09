@@ -1,14 +1,12 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Building2, Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { type EmpresaDetalhe } from "@/lib/api";
 import { consultarCep, consultarCnpjPessoa } from "@/lib/consulta-externa";
-import { AMBIENTE_OPCOES, CRT_OPCOES, MODELO_DFE_OPCOES } from "@/lib/empresa-opcoes";
-import { FiscalDetailToolbar } from "@/components/fiscal/FiscalDetailToolbar";
+import { CRT_OPCOES, MODELO_DFE_OPCOES } from "@/lib/empresa-opcoes";
 import { FiscalField, FiscalRow, FiscalSection } from "@/components/fiscal/FiscalFormUi";
-import { IntegracaoErpPanel } from "@/components/conta/IntegracaoErpPanel";
-import { CODIGO_UF_IBGE, codigoUfIbge } from "./uf-ibge";
+import { CODIGO_UF_IBGE } from "./uf-ibge";
 
 export type EnderecoLinha = {
   id?: number;
@@ -42,14 +40,6 @@ export type EmpresaFormData = {
   serieRps: string;
   ultimoNumeroNfse: string;
   enderecos: EnderecoLinha[];
-};
-
-export type EmbedInfo = {
-  cnpj?: string;
-  emailIntegracao?: string;
-  embedUrlCnpj?: string;
-  embedUrlCnpjComSenha?: string;
-  embedUrlEmail?: string;
 };
 
 export function serieNfePadrao(cpfCnpj: string): string {
@@ -148,8 +138,6 @@ export function formInicialVazio(): EmpresaFormData {
   };
 }
 
-type TabId = "ident" | "endereco" | "docs" | "nfse" | "erp";
-
 type Props = {
   titulo: string;
   form: EmpresaFormData;
@@ -158,7 +146,6 @@ type Props = {
   certNome?: string;
   logoNome?: string;
   mensagem?: { tipo: "ok" | "erro"; texto: string } | null;
-  embedInfo?: EmbedInfo | null;
   onChange: (form: EmpresaFormData) => void;
   onSalvar: () => void;
   onVoltar: () => void;
@@ -179,17 +166,14 @@ export function EmpresaFormulario({
   certNome,
   logoNome,
   mensagem,
-  embedInfo,
   onChange,
   onSalvar,
   onVoltar,
-  onNovo,
   onCertificado,
   onLogo,
   onBaixarXmls,
   baixandoXmls,
 }: Props) {
-  const [tab, setTab] = useState<TabId>("ident");
   const [certArquivo, setCertArquivo] = useState<File | null>(null);
   const [certSenha, setCertSenha] = useState("");
   const [endAtivo, setEndAtivo] = useState(0);
@@ -216,7 +200,6 @@ export function EmpresaFormulario({
     });
     onChange({ ...form, enderecos: [...form.enderecos, novo] });
     setEndAtivo(form.enderecos.length);
-    setTab("endereco");
   }
 
   function removerEndereco(idx: number) {
@@ -303,15 +286,23 @@ export function EmpresaFormulario({
 
   return (
     <div className="fiscal-card">
-      <FiscalDetailToolbar
-        title={titulo}
-        icon={<Building2 className="h-5 w-5 text-slate-500" />}
-        onVoltar={onVoltar}
-        onNovo={onNovo}
-        onCancelar={onVoltar}
-        onSalvar={onSalvar}
-        saveDisabled={carregando}
-      />
+      <div className="mb-8 flex items-center justify-between">
+        <button type="button" className="text-sm text-stone-500 hover:text-stone-800" onClick={onVoltar}>
+          Voltar
+        </button>
+        <button
+          type="button"
+          className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white disabled:opacity-40"
+          disabled={carregando}
+          onClick={onSalvar}
+        >
+          Salvar
+        </button>
+      </div>
+      <h1 className="mb-1 text-2xl font-semibold tracking-tight text-stone-900">
+        {empresaId == null ? "Novo emitente" : form.nome || titulo}
+      </h1>
+      <p className="mb-8 text-sm text-stone-500">Nome, documento e endereço. O restante fica em ajustes.</p>
 
       {mensagem && (
         <p className={`erp-alert ${mensagem.tipo === "ok" ? "erp-alert--ok" : "erp-alert--error"}`}>
@@ -320,14 +311,15 @@ export function EmpresaFormulario({
       )}
       {hint && <p className="erp-alert erp-alert--error">{hint}</p>}
       {(loadingCnpj || loadingCep) && (
-        <p className="mb-3 flex items-center gap-2 text-sm text-[var(--primary-700)]">
+        <p className="mb-3 flex items-center gap-2 text-sm text-stone-500">
           <Loader2 className="h-4 w-4 animate-spin" />
           {loadingCnpj ? "Buscando dados do CNPJ na Receita Federal…" : "Buscando endereço pelo CEP…"}
         </p>
       )}
 
-      <div className="erp-master">
-        <FiscalField label="Razão social *" className="erp-span-2">
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="block md:col-span-2">
+          <span className="mb-1 block text-sm text-stone-500">Nome</span>
           <input
             className="fiscal-input"
             maxLength={255}
@@ -335,60 +327,147 @@ export function EmpresaFormulario({
             autoFocus={empresaId == null}
             onChange={(e) => onChange({ ...form, nome: e.target.value })}
           />
-        </FiscalField>
-        <FiscalField label="CPF / CNPJ *">
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm text-stone-500">CPF ou CNPJ</span>
+          <div className="flex gap-2">
+            <input
+              className="fiscal-input"
+              value={form.cpfCnpj}
+              readOnly={empresaId != null}
+              placeholder="00.000.000/0000-00"
+              onChange={(e) => {
+                const doc = e.target.value.replace(/\D/g, "").slice(0, 14);
+                const cpfCnpj =
+                  doc.length <= 11
+                    ? doc
+                        .replace(/(\d{3})(\d)/, "$1.$2")
+                        .replace(/(\d{3})(\d)/, "$1.$2")
+                        .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+                    : doc
+                        .replace(/^(\d{2})(\d)/, "$1.$2")
+                        .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+                        .replace(/\.(\d{3})(\d)/, ".$1/$2")
+                        .replace(/(\d{4})(\d)/, "$1-$2");
+                const seriePf = doc.length === 11 ? "921" : null;
+                onChange({
+                  ...form,
+                  cpfCnpj,
+                  enderecos: seriePf
+                    ? form.enderecos.map((row) =>
+                        row.serieNfe === "1" || !row.serieNfe ? { ...row, serieNfe: seriePf } : row,
+                      )
+                    : form.enderecos,
+                });
+              }}
+              onBlur={() => void handleCnpjBlur()}
+            />
+            {empresaId == null && form.cpfCnpj.replace(/\D/g, "").length === 14 && (
+              <button type="button" className="shrink-0 text-sm text-stone-500 underline" onClick={() => void handleCnpjBlur()}>
+                Buscar
+              </button>
+            )}
+          </div>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm text-stone-500">E-mail</span>
           <input
-            className="fiscal-input fiscal-input--mono"
-            value={form.cpfCnpj}
-            readOnly={empresaId != null}
-            placeholder="11 ou 14 dígitos"
-            onChange={(e) => {
-              const cpfCnpj = e.target.value;
-              const doc = cpfCnpj.replace(/\D/g, "");
-              const seriePf = doc.length === 11 ? "921" : null;
-              onChange({
-                ...form,
-                cpfCnpj,
-                enderecos: seriePf
-                  ? form.enderecos.map((row) =>
-                      row.serieNfe === "1" || !row.serieNfe ? { ...row, serieNfe: seriePf } : row,
-                    )
-                  : form.enderecos,
-              });
-            }}
-            onBlur={() => void handleCnpjBlur()}
+            className="fiscal-input"
+            type="email"
+            placeholder="contato@empresa.com.br"
+            value={form.email}
+            onChange={(e) => onChange({ ...form, email: e.target.value })}
           />
-        </FiscalField>
+        </label>
+        <label className="block max-w-xs">
+          <span className="mb-1 block text-sm text-stone-500">Ambiente</span>
+          <select
+            className="fiscal-input"
+            value={form.ambiente}
+            onChange={(e) => onChange({ ...form, ambiente: e.target.value })}
+          >
+            <option value="homologacao">Homologação</option>
+            <option value="producao">Produção</option>
+          </select>
+        </label>
       </div>
 
-      <div className="erp-tabs" role="tablist">
-        <button type="button" className={`erp-tab ${tab === "ident" ? "active" : ""}`} onClick={() => setTab("ident")}>
-          Identificação
-        </button>
-        <button
-          type="button"
-          className={`erp-tab ${tab === "endereco" ? "active" : ""}`}
-          onClick={() => setTab("endereco")}
-        >
-          Endereços
-        </button>
-        <button type="button" className={`erp-tab ${tab === "docs" ? "active" : ""}`} onClick={() => setTab("docs")}>
-          Certificado e logo
-        </button>
-        <button type="button" className={`erp-tab ${tab === "nfse" ? "active" : ""}`} onClick={() => setTab("nfse")}>
-          Numeração
-        </button>
-        {empresaId != null && embedInfo && (
-          <button type="button" className={`erp-tab ${tab === "erp" ? "active" : ""}`} onClick={() => setTab("erp")}>
-            Integração ERP
-          </button>
-        )}
-      </div>
+      {end && (
+        <div className="mt-10 space-y-4">
+          <p className="text-sm text-stone-500">Endereço</p>
+          <div className="grid grid-cols-3 gap-4">
+            <label className="block">
+              <span className="mb-1 block text-sm text-stone-500">CEP</span>
+              <input
+                className="fiscal-input"
+                inputMode="numeric"
+                maxLength={9}
+                value={end.cep}
+                onChange={(e) => atualizarEndereco(idxEnd, { cep: e.target.value.replace(/\D/g, "").slice(0, 8) })}
+                onBlur={() => void preencherCep(idxEnd, end.cep.replace(/\D/g, ""))}
+              />
+            </label>
+            <label className="col-span-2 block">
+              <span className="mb-1 block text-sm text-stone-500">Rua</span>
+              <input
+                className="fiscal-input"
+                value={end.logradouro}
+                onChange={(e) => atualizarEndereco(idxEnd, { logradouro: e.target.value })}
+              />
+            </label>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <label className="block">
+              <span className="mb-1 block text-sm text-stone-500">Número</span>
+              <input
+                className="fiscal-input"
+                value={end.numero}
+                onChange={(e) => atualizarEndereco(idxEnd, { numero: e.target.value })}
+              />
+            </label>
+            <label className="col-span-2 block">
+              <span className="mb-1 block text-sm text-stone-500">Bairro</span>
+              <input
+                className="fiscal-input"
+                value={end.bairro}
+                onChange={(e) => atualizarEndereco(idxEnd, { bairro: e.target.value })}
+              />
+            </label>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <label className="col-span-2 block">
+              <span className="mb-1 block text-sm text-stone-500">Cidade</span>
+              <input
+                className="fiscal-input"
+                value={end.municipio}
+                onChange={(e) => atualizarEndereco(idxEnd, { municipio: e.target.value })}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-sm text-stone-500">UF</span>
+              <select
+                className="fiscal-input"
+                value={end.uf}
+                onChange={(e) => atualizarEndereco(idxEnd, { uf: e.target.value })}
+              >
+                {UFS.map((uf) => (
+                  <option key={uf} value={uf}>
+                    {uf}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+      )}
 
-      {tab === "ident" && (
-        <FiscalSection title="Dados do emitente">
+      <details className="mt-10">
+        <summary className="cursor-pointer text-sm text-stone-400">Ajustes da nota</summary>
+      <div className="mt-4 space-y-4">
+      {(
+        <FiscalSection title="Ajustes">
           <FiscalRow>
-            <FiscalField label="CRT — regime tributário">
+            <FiscalField label="Regime">
               <select
                 className="fiscal-input"
                 value={form.crt}
@@ -401,20 +480,7 @@ export function EmpresaFormulario({
                 ))}
               </select>
             </FiscalField>
-            <FiscalField label="Ambiente SEFAZ">
-              <select
-                className="fiscal-input"
-                value={form.ambiente}
-                onChange={(e) => onChange({ ...form, ambiente: e.target.value })}
-              >
-                {AMBIENTE_OPCOES.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </FiscalField>
-            <FiscalField label="Modelo padrão">
+            <FiscalField label="Modelo">
               <select
                 className="fiscal-input"
                 value={form.modelo}
@@ -429,16 +495,8 @@ export function EmpresaFormulario({
             </FiscalField>
           </FiscalRow>
           <FiscalRow>
-            <FiscalField label="E-mail">
-              <input
-                className="fiscal-input"
-                type="email"
-                value={form.email}
-                onChange={(e) => onChange({ ...form, email: e.target.value })}
-              />
-            </FiscalField>
             {empresaId == null && (
-              <FiscalField label="Senha de acesso ao portal">
+              <FiscalField label="Senha do primeiro acesso">
                 <input
                   className="fiscal-input"
                   type="password"
@@ -446,14 +504,15 @@ export function EmpresaFormulario({
                   onChange={(e) => onChange({ ...form, senhaIntegracao: e.target.value })}
                   autoComplete="new-password"
                 />
+                <span className="erp-hint">Quem for entrar no portal usa o e-mail acima e esta senha.</span>
               </FiscalField>
             )}
           </FiscalRow>
         </FiscalSection>
       )}
 
-      {tab === "endereco" && end && (
-        <FiscalSection title="Estabelecimentos">
+      {end && (
+        <FiscalSection title="Numeração e inscrição">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {form.enderecos.map((item, i) => (
               <button
@@ -478,84 +537,27 @@ export function EmpresaFormulario({
                 onChange={(e) => atualizarEndereco(idxEnd, { apelido: e.target.value })}
               />
             </FiscalField>
-            <FiscalField label="Endereço principal">
-              <select
-                className="fiscal-input"
-                value={end.principal ? "S" : "N"}
-                onChange={(e) => atualizarEndereco(idxEnd, { principal: e.target.value === "S" })}
-              >
-                <option value="N">Não</option>
-                <option value="S">Sim</option>
-              </select>
-            </FiscalField>
-            <FiscalField label="Situação">
-              <select
-                className="fiscal-input"
-                value={end.ativo ? "S" : "N"}
-                onChange={(e) => atualizarEndereco(idxEnd, { ativo: e.target.value === "S" })}
-              >
-                <option value="S">Ativo</option>
-                <option value="N">Inativo</option>
-              </select>
+            <FiscalField label="Uso deste endereço">
+              <label className="flex items-center gap-2 py-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={end.principal}
+                  onChange={(e) => atualizarEndereco(idxEnd, { principal: e.target.checked })}
+                />
+                Usar este endereço nas notas
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={end.ativo}
+                  onChange={(e) => atualizarEndereco(idxEnd, { ativo: e.target.checked })}
+                />
+                Endereço ativo
+              </label>
             </FiscalField>
           </FiscalRow>
           <FiscalRow>
-            <FiscalField label="CEP">
-              <input
-                className="fiscal-input fiscal-input--mono"
-                inputMode="numeric"
-                maxLength={9}
-                value={end.cep}
-                onChange={(e) => atualizarEndereco(idxEnd, { cep: e.target.value.replace(/\D/g, "").slice(0, 8) })}
-                onBlur={() => void preencherCep(idxEnd, end.cep.replace(/\D/g, ""))}
-              />
-            </FiscalField>
-            <FiscalField label="Logradouro" className="erp-span-2">
-              <input
-                className="fiscal-input"
-                value={end.logradouro}
-                onChange={(e) => atualizarEndereco(idxEnd, { logradouro: e.target.value })}
-              />
-            </FiscalField>
-          </FiscalRow>
-          <FiscalRow>
-            <FiscalField label="Número">
-              <input
-                className="fiscal-input"
-                value={end.numero}
-                onChange={(e) => atualizarEndereco(idxEnd, { numero: e.target.value })}
-              />
-            </FiscalField>
-            <FiscalField label="Bairro">
-              <input
-                className="fiscal-input"
-                value={end.bairro}
-                onChange={(e) => atualizarEndereco(idxEnd, { bairro: e.target.value })}
-              />
-            </FiscalField>
-            <FiscalField label="Município">
-              <input
-                className="fiscal-input"
-                value={end.municipio}
-                onChange={(e) => atualizarEndereco(idxEnd, { municipio: e.target.value })}
-              />
-            </FiscalField>
-          </FiscalRow>
-          <FiscalRow>
-            <FiscalField label="UF">
-              <select
-                className="fiscal-input"
-                value={end.uf}
-                onChange={(e) => atualizarEndereco(idxEnd, { uf: e.target.value })}
-              >
-                {UFS.map((uf) => (
-                  <option key={uf} value={uf}>
-                    {uf}
-                  </option>
-                ))}
-              </select>
-            </FiscalField>
-            <FiscalField label="Código IBGE do município">
+            <FiscalField label="Código do município">
               <input
                 className="fiscal-input fiscal-input--mono"
                 inputMode="numeric"
@@ -565,9 +567,7 @@ export function EmpresaFormulario({
                   atualizarEndereco(idxEnd, { codigoMunicipioIbge: e.target.value.replace(/\D/g, "").slice(0, 7) })
                 }
               />
-            </FiscalField>
-            <FiscalField label="Código IBGE da UF">
-              <input className="fiscal-input fiscal-input--mono" value={codigoUfIbge(end.uf)} readOnly />
+              <span className="erp-hint">O CEP preenche sozinho. Só altere se a busca não achar.</span>
             </FiscalField>
           </FiscalRow>
           <FiscalRow>
@@ -578,20 +578,22 @@ export function EmpresaFormulario({
                 onChange={(e) => atualizarEndereco(idxEnd, { inscricaoEstadual: e.target.value })}
               />
             </FiscalField>
-            <FiscalField label="Série NF-e">
+            <FiscalField label="Série da NF-e">
               <input
                 className="fiscal-input fiscal-input--mono"
                 value={end.serieNfe}
                 onChange={(e) => atualizarEndereco(idxEnd, { serieNfe: e.target.value })}
               />
+              <span className="erp-hint">Pessoa física costuma usar 921. Empresa, em geral, 1.</span>
             </FiscalField>
-            <FiscalField label="Último número NF-e">
+            <FiscalField label="Última NF-e já emitida">
               <input
                 className="fiscal-input fiscal-input--mono"
                 inputMode="numeric"
                 value={end.ultimoNumeroNfe}
                 onChange={(e) => atualizarEndereco(idxEnd, { ultimoNumeroNfe: e.target.value.replace(/\D/g, "") })}
               />
+              <span className="erp-hint">A próxima nota sai com o número seguinte.</span>
             </FiscalField>
           </FiscalRow>
           {form.enderecos.length > 1 && (
@@ -602,10 +604,10 @@ export function EmpresaFormulario({
         </FiscalSection>
       )}
 
-      {tab === "docs" && (
-        <FiscalSection title="Arquivos fiscais">
+      {(
+        <FiscalSection title="Certificado">
           <FiscalRow>
-            <FiscalField label="Certificado A1 (.pfx / .p12)">
+            <FiscalField label="Arquivo .pfx">
               <input
                 className="fiscal-input"
                 type="file"
@@ -631,7 +633,7 @@ export function EmpresaFormulario({
               />
             </FiscalField>
           </FiscalRow>
-          <FiscalField label="Logotipo do DANFE (PNG ou JPG)">
+          <FiscalField label="Logo da nota (PNG ou JPG)">
             <input
               className="fiscal-input"
               type="file"
@@ -643,24 +645,27 @@ export function EmpresaFormulario({
         </FiscalSection>
       )}
 
-      {tab === "nfse" && (
-        <FiscalSection title="NFS-e e download de XML">
+      {(
+        <FiscalSection title="Notas de serviço e notas recebidas">
+          <p className="mb-3 text-sm text-slate-600">
+            A série e o último número da NF-e de produto ficam no endereço. Aqui é a nota de serviço e a busca das notas que outros emitiram contra este CNPJ.
+          </p>
           <FiscalRow>
-            <FiscalField label="Prefeitura">
+            <FiscalField label="Prefeitura do serviço">
               <input
                 className="fiscal-input"
                 value={form.prefeitura}
                 onChange={(e) => onChange({ ...form, prefeitura: e.target.value })}
               />
             </FiscalField>
-            <FiscalField label="Série RPS">
+            <FiscalField label="Série da nota de serviço">
               <input
                 className="fiscal-input fiscal-input--mono"
                 value={form.serieRps}
                 onChange={(e) => onChange({ ...form, serieRps: e.target.value })}
               />
             </FiscalField>
-            <FiscalField label="Último número NFS-e">
+            <FiscalField label="Última nota de serviço emitida">
               <input
                 className="fiscal-input fiscal-input--mono"
                 inputMode="numeric"
@@ -669,16 +674,18 @@ export function EmpresaFormulario({
               />
             </FiscalField>
           </FiscalRow>
-          <FiscalField label="Baixar XML de entrada automaticamente">
-            <select
-              className="fiscal-input"
-              value={form.baixarXml ? "S" : "N"}
-              onChange={(e) => onChange({ ...form, baixarXml: e.target.value === "S" })}
-            >
-              <option value="N">Não</option>
-              <option value="S">Sim — notas de entrada (despesas / livro caixa)</option>
-            </select>
-          </FiscalField>
+          <label className="flex items-start gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={form.baixarXml}
+              onChange={(e) => onChange({ ...form, baixarXml: e.target.checked })}
+            />
+            <span>
+              Buscar sozinho as notas que outras empresas emitiram contra este CNPJ.
+              <span className="mt-1 block text-slate-500">Elas aparecem em NF-e recebidas e no livro caixa.</span>
+            </span>
+          </label>
           {empresaId != null && form.baixarXml && onBaixarXmls && (
             <button type="button" className="fiscal-btn-secondary mt-3" disabled={baixandoXmls} onClick={onBaixarXmls}>
               {baixandoXmls ? "Baixando XMLs…" : "Baixar XMLs agora"}
@@ -687,7 +694,8 @@ export function EmpresaFormulario({
         </FiscalSection>
       )}
 
-      {tab === "erp" && embedInfo && <IntegracaoErpPanel {...embedInfo} compact />}
+      </div>
+      </details>
     </div>
   );
 }

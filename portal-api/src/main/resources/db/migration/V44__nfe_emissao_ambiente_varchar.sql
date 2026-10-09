@@ -1,0 +1,2 @@
+ALTER TABLE nfe_emissao
+    MODIFY ambiente VARCHAR(1) NOT NULL DEFAULT '1';

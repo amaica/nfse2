@@ -12,6 +12,7 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class NfseOperacaoMensalService {
 
     private static final DateTimeFormatter DT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+    private static final ZoneId BR = ZoneId.of("America/Sao_Paulo");
 
     private final NfseOperacaoMensalRepository repository;
     private final EmissaoDpsService emissaoDpsService;
@@ -103,7 +105,7 @@ public class NfseOperacaoMensalService {
                         null,
                         op.getSerieRps() != null ? op.getSerieRps() : "1",
                         "1",
-                        LocalDateTime.now().format(DT),
+                        LocalDateTime.now(BR).format(DT),
                         competencia.toString()),
                 new EmissaoCompletaRequest.Regime(
                         op.getTributacaoIssqn(),

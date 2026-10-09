@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Plus, RefreshCw, Search } from "lucide-react";
 import { formatarCnpjCpf, type EmpresaResumo } from "@/lib/api";
 import { labelAmbiente, labelCrt } from "@/lib/empresa-opcoes";
 import { useEmpresaScope } from "@/hooks/useEmpresaScope";
@@ -67,7 +67,6 @@ export function EmpresaListagem({ empresas, carregando, onNovo, onEditar, onExcl
               {empresaCnpj ? ` · ${formatarCnpjCpf(empresaCnpj)}` : ""}
             </p>
           )}
-          <p className="erp-list-head__sub">Cadastro da empresa, certificado A1, endereços e numeração da NF-e / NFS-e.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="fiscal-btn-primary" onClick={onNovo}>
@@ -99,12 +98,12 @@ export function EmpresaListagem({ empresas, carregando, onNovo, onEditar, onExcl
       </div>
 
       <div className="fiscal-table-caption">
-        <span>Filtro na grade</span>
+        <span>Filtro</span>
         <div className="fiscal-table-search relative">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Nome, CPF/CNPJ, município, regime…"
+            placeholder="Nome, CPF/CNPJ, município…"
             value={filtro}
             onChange={(e) => {
               setFiltro(e.target.value);
@@ -114,83 +113,49 @@ export function EmpresaListagem({ empresas, carregando, onNovo, onEditar, onExcl
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="fiscal-table striped fiscal-table--dense">
-          <thead>
-            <tr>
-              <th>Razão social</th>
-              <th>CPF / CNPJ</th>
-              <th>Município</th>
-              <th>Regime</th>
-              <th>Ambiente</th>
-              <th>Certificado</th>
-              <th style={{ width: "6.5rem" }} />
-            </tr>
-          </thead>
-          <tbody>
-            {carregando && empresas.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center text-slate-500">
-                  Carregando…
-                </td>
-              </tr>
-            ) : pagina.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center text-slate-500">
-                  Nenhum registro neste filtro
-                </td>
-              </tr>
-            ) : (
-              pagina.map((row) => (
-                <tr key={row.id} onDoubleClick={() => onEditar(row.id)}>
-                  <td>
-                    <div className="erp-prod-nome">{row.nome}</div>
-                    {row.nomeFantasia && row.nomeFantasia !== row.nome && (
-                      <div className="erp-prod-pdv">{row.nomeFantasia}</div>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap tabular-nums">{formatarCnpjCpf(row.cnpj)}</td>
-                  <td>
-                    {[row.municipio, row.uf].filter(Boolean).join(" / ") || "—"}
-                  </td>
-                  <td>{labelCrt(undefined, row.optanteSimples)}</td>
-                  <td>{labelAmbiente(row.ambiente)}</td>
-                  <td>
-                    <span className={`erp-pill ${row.certificadoCadastrado ? "ok" : "off"}`}>
-                      {row.certificadoCadastrado ? "Cadastrado" : "Pendente"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="fiscal-table-actions">
-                      <button
-                        type="button"
-                        className="fiscal-btn-icon"
-                        title="Editar"
-                        aria-label="Editar"
-                        onClick={() => onEditar(row.id)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        className="fiscal-btn-icon danger"
-                        title="Excluir"
-                        aria-label="Excluir"
-                        onClick={() => {
-                          if (window.confirm(`Excluir o emitente "${row.nome}"? Esta ação não pode ser desfeita.`)) {
-                            onExcluir(row.id, row.nome);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {carregando && empresas.length === 0 ? (
+          <p className="text-sm text-slate-500">Carregando…</p>
+        ) : pagina.length === 0 ? (
+          <p className="text-sm text-slate-500">Nenhum emitente neste filtro.</p>
+        ) : (
+          pagina.map((row) => (
+            <article key={row.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <button type="button" className="w-full text-left" onClick={() => onEditar(row.id)}>
+                <div className="text-lg font-semibold text-slate-800">{row.nome}</div>
+                {row.nomeFantasia && row.nomeFantasia !== row.nome && (
+                  <div className="text-sm text-slate-500">{row.nomeFantasia}</div>
+                )}
+                <div className="mt-1 font-mono text-sm text-slate-600">{formatarCnpjCpf(row.cnpj)}</div>
+                <div className="mt-2 text-sm text-slate-500">
+                  {[row.municipio, row.uf].filter(Boolean).join(" / ") || "Endereço ainda não informado"}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                    {labelCrt(undefined, row.optanteSimples)}
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                    {labelAmbiente(row.ambiente)}
+                  </span>
+                  <span className={`erp-pill ${row.certificadoCadastrado ? "ok" : "off"}`}>
+                    {row.certificadoCadastrado ? "Certificado ok" : "Falta certificado"}
+                  </span>
+                </div>
+              </button>
+              <button
+                type="button"
+                className="mt-3 text-xs text-red-600"
+                onClick={() => {
+                  if (window.confirm(`Excluir o emitente "${row.nome}"? Esta ação não pode ser desfeita.`)) {
+                    onExcluir(row.id, row.nome);
+                  }
+                }}
+              >
+                Excluir
+              </button>
+            </article>
+          ))
+        )}
       </div>
 
       <div className="fiscal-pagination">
@@ -198,23 +163,12 @@ export function EmpresaListagem({ empresas, carregando, onNovo, onEditar, onExcl
           {filtrados.length === 0
             ? "0 registros"
             : `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, filtrados.length)} de ${filtrados.length}`}
-          <span className="ml-2 text-slate-400">duplo clique abre o cadastro</span>
         </span>
         <div className="flex gap-2">
-          <button
-            type="button"
-            className="rounded border border-slate-300 px-2 py-1 disabled:opacity-40"
-            disabled={page === 0}
-            onClick={() => setPage((p) => p - 1)}
-          >
+          <button type="button" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
             Anterior
           </button>
-          <button
-            type="button"
-            className="rounded border border-slate-300 px-2 py-1 disabled:opacity-40"
-            disabled={page >= totalPages - 1}
-            onClick={() => setPage((p) => p + 1)}
-          >
+          <button type="button" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
             Próxima
           </button>
         </div>

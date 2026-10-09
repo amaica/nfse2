@@ -326,8 +326,8 @@ public class NfeMontadorService {
         BigDecimal somaDesc = BigDecimal.ZERO;
         for (var req : fonte) {
             var resolvido = resolverItem(empresaId, req);
-            var qtd = moeda(resolvido.quantidade() != null ? resolvido.quantidade() : BigDecimal.ONE);
-            var vUnit = moeda(resolvido.valorUnitario() != null ? resolvido.valorUnitario() : new BigDecimal("100.00"));
+            var qtd = quantidade(resolvido.quantidade() != null ? resolvido.quantidade() : BigDecimal.ONE);
+            var vUnit = unitario(resolvido.valorUnitario() != null ? resolvido.valorUnitario() : new BigDecimal("100.00"));
             var vProd = moeda(qtd.multiply(vUnit));
             var vDesc = moeda(resolvido.valorDesconto() != null ? resolvido.valorDesconto() : BigDecimal.ZERO);
             if (vDesc.compareTo(vProd) > 0) {
@@ -651,6 +651,30 @@ public class NfeMontadorService {
 
     private static BigDecimal moeda(BigDecimal valor) {
         return valor.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /** qCom aceita até 4 casas. Arredondar para 2 muda o vProd (ex.: 2.209,1663 × 4,75 vira 10.493,56 em vez de 10.493,54). */
+    private static BigDecimal quantidade(BigDecimal valor) {
+        var s = valor.stripTrailingZeros();
+        if (s.scale() < 0) {
+            s = s.setScale(0);
+        }
+        if (s.scale() > 4) {
+            s = s.setScale(4, RoundingMode.HALF_UP);
+        }
+        return s;
+    }
+
+    /** vUnCom aceita até 10 casas. */
+    private static BigDecimal unitario(BigDecimal valor) {
+        var s = valor.stripTrailingZeros();
+        if (s.scale() < 0) {
+            s = s.setScale(0);
+        }
+        if (s.scale() > 10) {
+            s = s.setScale(10, RoundingMode.HALF_UP);
+        }
+        return s;
     }
 
     private static String cfopItem(String cfopReq, TributOperacaoFiscal operacaoFiscal) {

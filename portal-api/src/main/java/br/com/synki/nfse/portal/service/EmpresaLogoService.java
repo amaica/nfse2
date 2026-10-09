@@ -19,8 +19,11 @@ import java.util.Set;
 public class EmpresaLogoService {
 
     private static final Set<String> EXTENSOES = Set.of("png", "jpg", "jpeg", "gif");
-    /** Fallback AgrowSync quando a empresa nao tem logo cadastrada. */
-    private static final String DEFAULT_LOGO_CP = "danfse/agrow-logo.png";
+    /**
+     * Fallback neutro Synki (não usar AgrowSync/AgroNota no DANFSe de emitentes sem logo).
+     * Preferível cadastrar logo por empresa em data/logos/{id}.png.
+     */
+    private static final String DEFAULT_LOGO_CP = "danfse/synki-logo.png";
     private final Path baseDir = Path.of("data", "logos");
 
     public void salvar(Long empresaId, MultipartFile arquivo) throws IOException {
@@ -45,7 +48,7 @@ public class EmpresaLogoService {
     }
 
     /**
-     * Logo da empresa; se nao houver, usa AgrowSync (classpath).
+     * Logo da empresa; se nao houver, usa Synki (classpath) — nunca AgrowSync.
      */
     public Optional<BufferedImage> abrirImagemComFallback(Long empresaId) {
         try {

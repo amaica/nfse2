@@ -81,8 +81,13 @@ public class NfeContextoService {
         body.put("proximoNumero", ultimoDoc + 1);
         body.put("enderecos", enderecos);
         body.put("optanteSimples", empresa.isOptanteSimples());
-        body.put("podeEmitir", certificadoOk && (emitenteDocumento.length() == 11 || emitenteDocumento.length() == 14));
-        if (!certificadoOk) {
+        var avisoCert = certificadoLeituraService.avisoEmissao(empresaId);
+        body.put("podeEmitir", avisoCert.isEmpty()
+                && certificadoOk
+                && (emitenteDocumento.length() == 11 || emitenteDocumento.length() == 14));
+        if (avisoCert.isPresent()) {
+            body.put("aviso", avisoCert.get());
+        } else if (!certificadoOk) {
             body.put("aviso", "Cadastre o certificado A1 (.pfx) antes de emitir.");
         } else if (emitentePf) {
             body.put("aviso", "Emitente CPF: use serie NF-e entre 920 e 969 (ex.: 921 por IE).");

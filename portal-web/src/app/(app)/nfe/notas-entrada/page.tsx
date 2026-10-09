@@ -1,5 +1,6 @@
-import { NfeNotasEntrada } from "@/components/nfe/NfeNotasEntrada";
+import { redirect } from "next/navigation";
 
+/** Rota antiga — redireciona para o nome correto. */
 export default function Page() {
-  return <NfeNotasEntrada />;
+  redirect("/nfe/recebidas");
 }

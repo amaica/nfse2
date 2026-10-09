@@ -11,6 +11,7 @@ public interface PessoaRepository extends JpaRepository<Pessoa, Long> {
     List<Pessoa> findByEmpresaIdAndAtivoTrueOrderByNomeAsc(Long empresaId, Pageable pageable);
     List<Pessoa> findByEmpresaIdAndNomeContainingIgnoreCaseOrderByNomeAsc(Long empresaId, String nome, Pageable pageable);
     Optional<Pessoa> findByIdAndEmpresaId(Long id, Long empresaId);
+    Optional<Pessoa> findFirstByEmpresaIdAndCpfCnpjAndAtivoTrue(Long empresaId, String cpfCnpj);
     long countByEmpresaId(Long empresaId);
     void deleteByEmpresaId(Long empresaId);
 }

@@ -1,6 +1,7 @@
 package br.com.synki.nfse.portal.service;
 
 import br.com.synki.nfse.portal.repository.CertificadoRepository;
+import br.com.synki.nfse.portal.repository.NfeEmissaoRepository;
 import br.com.synki.nfse.portal.repository.UsoMensalRepository;
 import br.com.synki.nfse.portal.repository.fiscal.PessoaRepository;
 import br.com.synki.nfse.portal.repository.fiscal.ProdutoRepository;
@@ -10,7 +11,6 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -23,18 +23,21 @@ public class SetupProgressService {
     private final PessoaRepository pessoaRepository;
     private final ProdutoRepository produtoRepository;
     private final UsoMensalRepository usoMensalRepository;
+    private final NfeEmissaoRepository nfeEmissaoRepository;
 
     public SetupProgressService(
             MembershipService membershipService,
             CertificadoRepository certificadoRepository,
             PessoaRepository pessoaRepository,
             ProdutoRepository produtoRepository,
-            UsoMensalRepository usoMensalRepository) {
+            UsoMensalRepository usoMensalRepository,
+            NfeEmissaoRepository nfeEmissaoRepository) {
         this.membershipService = membershipService;
         this.certificadoRepository = certificadoRepository;
         this.pessoaRepository = pessoaRepository;
         this.produtoRepository = produtoRepository;
         this.usoMensalRepository = usoMensalRepository;
+        this.nfeEmissaoRepository = nfeEmissaoRepository;
     }
 
     public Map<String, Object> progresso(Long usuarioId, Long empresaId) {
@@ -63,6 +66,9 @@ public class SetupProgressService {
     }
 
     private boolean temEmissao(Long empresaId) {
+        if (nfeEmissaoRepository.existsByEmpresaIdAndStatusProtocolo(empresaId, "100")) {
+            return true;
+        }
         var contaId = membershipService.contaIdDaEmpresa(empresaId);
         if (contaId == null) {
             return false;

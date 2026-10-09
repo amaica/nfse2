@@ -276,6 +276,16 @@ export const api = {
   nfeContexto: (token: string) =>
     request<NfeContexto>("/api/nfe/emissao/contexto", token),
 
+  nfeAjustarNumeracao: (
+    token: string,
+    body: { enderecoId?: number; serie: string; ultimoNumero?: number; proximoNumero?: number },
+  ) =>
+    request<{ serie: string; ultimoNumero: number; proximoNumero: number; mensagem: string }>(
+      "/api/nfe/emissao/numeracao",
+      token,
+      { method: "PUT", body: JSON.stringify(body) },
+    ),
+
   nfeStatusServico: (token: string) =>
     request<NfeStatusServico>("/api/nfe/status-servico", token),
 
@@ -284,6 +294,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body ?? {}),
     }),
+
+  nfeClonar: (token: string, chave: string) =>
+    request<NfeClone>(`/api/nfe/notas/${encodeURIComponent(chave)}/clonar`, token),
 
   nfeListarNotas: (token: string, q: string) =>
     request<{
@@ -1005,6 +1018,7 @@ export type NfeCancelarBody = {
   chave: string;
   protocolo: string;
   motivo: string;
+  emitente?: number;
 };
 
 export type NfeInutilizarBody = {
@@ -1013,12 +1027,14 @@ export type NfeInutilizarBody = {
   numeroInicial: string;
   numeroFinal: string;
   justificativa: string;
+  emitente?: number;
 };
 
 export type NfeCartaCorrecaoBody = {
   chave: string;
   texto: string;
   sequencial?: number;
+  emitente?: number;
 };
 
 export type NfeContingenciaEpecBody = {
@@ -1066,6 +1082,78 @@ export type NfeStatusServico = {
   uf: string;
   modelo: string;
   ambiente: string;
+};
+
+export type NfeClone = {
+  origemChave: string;
+  origemSerie?: string;
+  origemNumero?: number;
+  enderecoId?: number;
+  naturezaOperacao?: string;
+  finalidade?: string;
+  consumidorFinal?: string;
+  indicadorPresenca?: string;
+  informacoesAdicionais?: string;
+  destinatario?: {
+    pessoaId?: number;
+    nome?: string;
+    documento?: string;
+    email?: string;
+    inscricaoEstadual?: string;
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    municipio?: string;
+    uf?: string;
+    cep?: string;
+    codigoMunicipioIbge?: string;
+  };
+  itens?: Array<{
+    produtoId?: number;
+    codigo?: string;
+    descricao?: string;
+    ncm?: string;
+    cfop?: string;
+    unidade?: string;
+    quantidade?: number;
+    valorUnitario?: number;
+    valorDesconto?: number;
+  }>;
+  pagamento?: { meioPagamento?: string; indicadorPagamento?: string };
+  transporte?: {
+    modalidadeFrete?: string;
+    transportadorNome?: string;
+    transportadorDocumento?: string;
+    transportadorIe?: string;
+    transportadorMunicipio?: string;
+    transportadorUf?: string;
+    placa?: string;
+    placaUf?: string;
+    rntc?: string;
+    valorFrete?: number;
+    reboques?: Array<{ placa?: string; uf?: string; rntc?: string }>;
+    volumes?: Array<{
+      quantidade?: number;
+      especie?: string;
+      marca?: string;
+      numeracao?: string;
+      pesoLiquido?: number;
+      pesoBruto?: number;
+    }>;
+  };
+  referencias?: Array<{
+    tipo?: string;
+    chave?: string;
+    codigoUf?: string;
+    anoMes?: string;
+    cnpj?: string;
+    cpf?: string;
+    inscricaoEstadual?: string;
+    modelo?: string;
+    serie?: string;
+    numero?: string;
+  }>;
 };
 
 export type NfeEmissaoResultado = {

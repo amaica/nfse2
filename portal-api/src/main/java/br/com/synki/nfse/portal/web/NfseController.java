@@ -212,4 +212,26 @@ public class NfseController {
                 "idDps", sucesso.getIdDps() != null ? sucesso.getIdDps() : "",
                 "processadoEm", sucesso.getDataHoraProcessamento() != null ? sucesso.getDataHoraProcessamento().toString() : "");
     }
+
+    public record CancelarNfseRequest(String chave, String motivo) {}
+
+    @PostMapping("/cancelar")
+    public Object cancelar(
+            @AuthenticationPrincipal EmbedSession session,
+            @RequestBody CancelarNfseRequest body) throws Exception {
+        authz.requireOperador(session);
+        if (body == null || body.chave() == null || body.chave().isBlank()) {
+            throw new IllegalArgumentException("Informe a chave da NFS-e");
+        }
+        var ret = nfseLibService.cancelar(session.empresaId(), body.chave(), body.motivo());
+        auditLogService.log(
+                session.empresaId(),
+                session.usuarioId(),
+                "CANCELAMENTO",
+                "NFSe " + body.chave().replaceAll("\\D", "") + " http=" + ret.getKey());
+        return Map.of(
+                "sucesso", ret.getKey() != null && ret.getKey() >= 200 && ret.getKey() < 300,
+                "httpStatus", ret.getKey(),
+                "retorno", ret.getValue() != null ? ret.getValue() : Map.of());
+    }
 }

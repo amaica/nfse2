@@ -55,6 +55,16 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void transporte403DaSefazViraAvisoDeCertificado() {
+        var sefaz = new RuntimeException("Transport error: 403 Error: Forbidden");
+        var res = handler.generic(new RuntimeException("falha ao enviar lote", sefaz));
+
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(res.getBody()).containsEntry("erro", br.com.synki.nfse.portal.service.CertificadoLeituraService.MENSAGEM_RECUSA_SEFAZ);
+        assertThat(res.getBody().get("erro")).contains("certificado");
+    }
+
+    @Test
     void genericNuncaVazaDetalheInternoAoCliente() {
         var res = handler.generic(new RuntimeException("detalhe sensivel de infraestrutura"));
 

@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
+  Copy,
   Download,
   FileArchive,
   Loader2,
@@ -10,12 +12,10 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { ApiError } from "@/lib/api";
+import { ApiError, empresaPortalApi } from "@/lib/api";
 import { apiBaseUrl } from "@/lib/api-base";
 import { getAppToken } from "@/lib/app-session";
-import { useEmpresaScope } from "@/hooks/useEmpresaScope";
 import { EmitenteEmissaoBar } from "@/components/fiscal/EmitenteEmissaoBar";
-import { PORTAL_EMPRESA_EVENT } from "@/lib/portal-empresa";
 
 type Nota = {
   id: number;
@@ -26,7 +26,19 @@ type Nota = {
   motivoProtocolo?: string;
   createdAt?: string;
   temXml?: boolean;
+  ambiente?: string;
+  empresaId?: number;
+  emitenteNome?: string;
+  emitenteDocumento?: string;
+  valorTotal?: number | string | null;
+  cliente?: string | null;
+  destinatarioNome?: string | null;
+  cfop?: string | null;
+  tipoOperacao?: string | null;
+  produtos?: string[];
 };
+
+type EmitenteOpt = { id: number; nome: string; documento?: string };
 
 type Filtros = {
   de: string;
@@ -34,20 +46,21 @@ type Filtros = {
   q: string;
   serie: string;
   status: string;
+  ambiente: string;
+  emitente: string;
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 
-const FILTROS_VAZIOS: Filtros = { de: "", ate: "", q: "", serie: "", status: "" };
-
-function hojeIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function inicioAnoIso(): string {
-  return `${new Date().getFullYear()}-01-01`;
-}
+const FILTROS_VAZIOS: Filtros = {
+  de: "",
+  ate: "",
+  q: "",
+  serie: "",
+  status: "",
+  ambiente: "todos",
+  emitente: "",
+};
 
 function formatarData(iso?: string): string {
   if (!iso) return "—";
@@ -66,18 +79,37 @@ function statusLabel(status?: string): string {
   return status;
 }
 
+function formatarValor(v?: number | string | null): string {
+  if (v === null || v === undefined || v === "") return "—";
+  const n = typeof v === "number" ? v : Number(String(v).replace(",", "."));
+  if (Number.isNaN(n)) return "—";
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function produtosDaNota(n: Nota): string[] {
+  if (Array.isArray(n.produtos) && n.produtos.length > 0) return n.produtos;
+  return ["—"];
+}
+
 export function NfeNotasEmitidas() {
+  const router = useRouter();
   const token = getAppToken();
-  const { empresaId, empresaNome, empresaCnpj } = useEmpresaScope();
+  const fimLista = useRef<HTMLDivElement | null>(null);
+  const carregandoMais = useRef(false);
   const [itens, setItens] = useState<Nota[]>([]);
-  const [filtros, setFiltros] = useState<Filtros>({ ...FILTROS_VAZIOS, de: inicioAnoIso(), ate: hojeIso() });
-  const [filtrosAplicados, setFiltrosAplicados] = useState<Filtros>(filtros);
+  const [emitentes, setEmitentes] = useState<EmitenteOpt[]>([]);
+  const [totalHomologacao, setTotalHomologacao] = useState(0);
+  const [filtros, setFiltros] = useState<Filtros>({ ...FILTROS_VAZIOS });
+  const [filtrosAplicados, setFiltrosAplicados] = useState<Filtros>({ ...FILTROS_VAZIOS });
+  /** Só true depois de clicar em Filtrar — evita carregar tudo no open da tela. */
+  const [consultaFeita, setConsultaFeita] = useState(false);
   const [pagina, setPagina] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [valorTotalSomado, setValorTotalSomado] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [erro, setErro] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [exportando, setExportando] = useState<string | null>(null);
 
@@ -92,6 +124,8 @@ export function NfeNotasEmitidas() {
       if (f.q.trim()) params.set("q", f.q.trim());
       if (f.serie.trim()) params.set("serie", f.serie.trim());
       if (f.status.trim()) params.set("status", f.status.trim());
+      if (f.emitente) params.set("emitente", f.emitente);
+      params.set("ambiente", f.ambiente || "todos");
       return params;
     },
     [],
@@ -99,7 +133,7 @@ export function NfeNotasEmitidas() {
 
   const buscarPagina = useCallback(
     async (page: number, f: Filtros) => {
-      if (!token || !empresaId) return null;
+      if (!token) return null;
       const res = await fetch(`${apiBaseUrl()}/api/nfe/notas?${montarParams(page, f)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -116,14 +150,17 @@ export function NfeNotasEmitidas() {
         itens: Nota[];
         hasMore: boolean;
         totalElements: number;
+        valorTotalSomado?: number | string;
+        emitentes?: EmitenteOpt[];
+        totalHomologacao?: number;
       };
     },
-    [token, empresaId, montarParams],
+    [token, montarParams],
   );
 
   const carregar = useCallback(
     async (f: Filtros = filtrosAplicados) => {
-      if (!token || !empresaId) {
+      if (!token) {
         setItens([]);
         setLoading(false);
         return;
@@ -136,20 +173,29 @@ export function NfeNotasEmitidas() {
         setItens(data?.itens ?? []);
         setHasMore(data?.hasMore ?? false);
         setTotalElements(data?.totalElements ?? 0);
+        setValorTotalSomado(Number(data?.valorTotalSomado ?? 0) || 0);
+        setTotalHomologacao(data?.totalHomologacao ?? 0);
+        if (data?.emitentes?.length) setEmitentes(data.emitentes);
         setPagina(0);
+        setConsultaFeita(true);
       } catch (e) {
         setErro(e instanceof ApiError ? e.message : "Erro ao listar");
         setItens([]);
         setHasMore(false);
         setTotalElements(0);
+        setValorTotalSomado(0);
+        setTotalHomologacao(0);
+        setConsultaFeita(true);
       } finally {
         setLoading(false);
       }
     },
-    [buscarPagina, token, empresaId, filtrosAplicados],
+    [buscarPagina, token, filtrosAplicados],
   );
 
   const carregarMais = useCallback(async () => {
+    if (!consultaFeita || carregandoMais.current || !hasMore) return;
+    carregandoMais.current = true;
     setLoadingMore(true);
     try {
       const proximaPagina = pagina + 1;
@@ -160,23 +206,46 @@ export function NfeNotasEmitidas() {
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : "Erro ao carregar mais notas");
     } finally {
+      carregandoMais.current = false;
       setLoadingMore(false);
     }
-  }, [buscarPagina, pagina, filtrosAplicados]);
+  }, [buscarPagina, pagina, filtrosAplicados, consultaFeita, hasMore]);
 
   useEffect(() => {
-    void carregar(filtrosAplicados);
-  }, [empresaId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    const onTroca = () => {
-      setFiltrosAplicados({ ...FILTROS_VAZIOS, de: inicioAnoIso(), ate: hojeIso() });
-      setFiltros({ ...FILTROS_VAZIOS, de: inicioAnoIso(), ate: hojeIso() });
-      void carregar({ ...FILTROS_VAZIOS, de: inicioAnoIso(), ate: hojeIso() });
+    if (!token) return;
+    let cancelado = false;
+    void (async () => {
+      try {
+        const data = await empresaPortalApi.listarEmpresas(token);
+        if (cancelado) return;
+        setEmitentes(
+          (data.itens ?? []).map((e) => ({
+            id: e.id,
+            nome: e.nome,
+            documento: e.cnpj,
+          })),
+        );
+      } catch {
+        /* select fica vazio até a 1ª consulta */
+      }
+    })();
+    return () => {
+      cancelado = true;
     };
-    window.addEventListener(PORTAL_EMPRESA_EVENT, onTroca);
-    return () => window.removeEventListener(PORTAL_EMPRESA_EVENT, onTroca);
-  }, [carregar]);
+  }, [token]);
+
+  useEffect(() => {
+    const alvo = fimLista.current;
+    if (!alvo || !consultaFeita || !hasMore) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) void carregarMais();
+      },
+      { rootMargin: "240px" },
+    );
+    obs.observe(alvo);
+    return () => obs.disconnect();
+  }, [hasMore, carregarMais, itens.length, consultaFeita]);
 
   const aplicarFiltros = () => {
     setFiltrosAplicados({ ...filtros });
@@ -184,10 +253,18 @@ export function NfeNotasEmitidas() {
   };
 
   const limparFiltros = () => {
-    const vazio = { ...FILTROS_VAZIOS, de: inicioAnoIso(), ate: hojeIso() };
+    const vazio = { ...FILTROS_VAZIOS };
     setFiltros(vazio);
     setFiltrosAplicados(vazio);
-    void carregar(vazio);
+    setItens([]);
+    setHasMore(false);
+    setTotalElements(0);
+    setValorTotalSomado(0);
+    setTotalHomologacao(0);
+    setSelecionados(new Set());
+    setConsultaFeita(false);
+    setErro("");
+    setPagina(0);
   };
 
   const abrirDanfe = async (chave: string, status?: string) => {
@@ -266,7 +343,7 @@ export function NfeNotasEmitidas() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `nfe-xmls-${empresaCnpj?.replace(/\D/g, "") ?? "emitente"}.zip`;
+      a.download = "nfe-xmls.zip";
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -300,18 +377,15 @@ export function NfeNotasEmitidas() {
 
   return (
     <div className="space-y-4">
-      <EmitenteEmissaoBar dica="Lista, filtra e exporta XMLs das NF-e do emitente ativo. Imprima o DANFE de cada nota." />
+      <EmitenteEmissaoBar dica="A lista só carrega depois de Filtrar. Role a página para lazy load das próximas notas." />
 
       <div className="fiscal-card">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="m-0 text-2xl font-semibold text-slate-800">NF-e — XMLs e DANFE</h1>
-            {empresaNome && (
-              <p className="mt-1 text-sm text-slate-500">
-                Emitente: <span className="font-medium text-slate-700">{empresaNome}</span>
-                {empresaCnpj ? ` · ${empresaCnpj}` : ""}
-              </p>
-            )}
+            <p className="mt-1 text-sm text-slate-500">
+              Defina os filtros e clique em Filtrar. Nada é carregado ao abrir a tela.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -330,7 +404,7 @@ export function NfeNotasEmitidas() {
             <button
               type="button"
               className="fiscal-btn-secondary inline-flex items-center gap-2"
-              disabled={!!exportando}
+              disabled={!!exportando || !consultaFeita}
               onClick={() => void exportarZip()}
             >
               {exportando === "filtrados" ? (
@@ -343,6 +417,7 @@ export function NfeNotasEmitidas() {
             <button
               type="button"
               className="fiscal-btn-primary inline-flex items-center gap-2"
+              disabled={!consultaFeita || loading}
               onClick={() => void carregar()}
             >
               <RefreshCw className="h-4 w-4" /> Atualizar
@@ -352,7 +427,22 @@ export function NfeNotasEmitidas() {
 
         <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
           <p className="mb-3 text-sm font-medium text-slate-700">Filtros</p>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block text-slate-500">Emitente</span>
+              <select
+                className="fiscal-input w-full"
+                value={filtros.emitente}
+                onChange={(e) => setFiltros((f) => ({ ...f, emitente: e.target.value }))}
+              >
+                <option value="">Todos os emitentes</option>
+                {emitentes.map((em) => (
+                  <option key={em.id} value={String(em.id)}>
+                    {em.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="block text-sm">
               <span className="mb-1 block text-slate-500">Data de</span>
               <input
@@ -382,6 +472,18 @@ export function NfeNotasEmitidas() {
               />
             </label>
             <label className="block text-sm">
+              <span className="mb-1 block text-slate-500">Ambiente</span>
+              <select
+                className="fiscal-input w-full"
+                value={filtros.ambiente}
+                onChange={(e) => setFiltros((f) => ({ ...f, ambiente: e.target.value }))}
+              >
+                <option value="todos">Todos</option>
+                <option value="1">Produção</option>
+                <option value="2">Homologação</option>
+              </select>
+            </label>
+            <label className="block text-sm">
               <span className="mb-1 block text-slate-500">Status</span>
               <select
                 className="fiscal-input w-full"
@@ -401,7 +503,7 @@ export function NfeNotasEmitidas() {
                 <input
                   type="search"
                   className="fiscal-input w-full !pl-9"
-                  placeholder="Chave, número ou série…"
+                  placeholder="Chave, número, série ou cliente…"
                   value={filtros.q}
                   onChange={(e) => setFiltros((f) => ({ ...f, q: e.target.value }))}
                   onKeyDown={(e) => e.key === "Enter" && aplicarFiltros()}
@@ -421,6 +523,25 @@ export function NfeNotasEmitidas() {
 
         {erro && <p className="mb-3 text-sm text-red-600">{erro}</p>}
 
+        {consultaFeita ? (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#3d6b2f]/30 bg-[#3d6b2f]/5 px-4 py-3">
+            <div className="text-sm text-slate-600">
+              {loading ? "Calculando…" : (
+                <>
+                  {totalElements} nota{totalElements !== 1 ? "s" : ""}
+                  {filtrosAplicados.status === "100" ? " autorizada(s)" : " no filtro"}
+                </>
+              )}
+            </div>
+            <div className="text-right">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Somatório</p>
+              <p className="text-lg font-semibold text-[#3d6b2f]">
+                {loading ? "…" : formatarValor(valorTotalSomado)}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <div className="overflow-x-auto">
           <table className="fiscal-table striped">
             <thead>
@@ -433,9 +554,14 @@ export function NfeNotasEmitidas() {
                     aria-label="Selecionar todos"
                   />
                 </th>
+                <th>Emitente</th>
                 <th>Número</th>
                 <th>Série</th>
-                <th>Chave</th>
+                <th>Cliente</th>
+                <th className="text-right">Valor</th>
+                <th>CFOP</th>
+                <th>Tipo</th>
+                <th>Produto</th>
                 <th>Status</th>
                 <th>Data</th>
                 <th style={{ width: "7rem" }} />
@@ -444,98 +570,162 @@ export function NfeNotasEmitidas() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                  <td colSpan={12} className="py-8 text-center text-slate-500">
                     <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
                     Carregando…
                   </td>
                 </tr>
+              ) : !consultaFeita ? (
+                <tr>
+                  <td colSpan={12} className="py-8 text-center text-slate-500">
+                    Escolha os filtros e clique em <strong>Filtrar</strong> para carregar a lista.
+                  </td>
+                </tr>
               ) : itens.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500">
-                    Nenhuma NF-e encontrada para este emitente e filtros
+                  <td colSpan={12} className="py-8 text-center text-slate-500">
+                    {filtrosAplicados.ambiente === "1" && totalHomologacao > 0
+                      ? `Nenhuma NF-e de produção. Há ${totalHomologacao} de homologação — escolha Homologação no filtro Ambiente.`
+                      : "Nenhuma NF-e encontrada para estes filtros"}
                   </td>
                 </tr>
               ) : (
-                itens.map((n) => (
-                  <tr key={n.id}>
-                    <td>
-                      {n.temXml !== false && (
-                        <input
-                          type="checkbox"
-                          checked={selecionados.has(n.chave)}
-                          onChange={() => toggleUm(n.chave)}
-                          aria-label={`Selecionar ${n.numero}`}
-                        />
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap font-medium">{n.numero}</td>
-                    <td>{n.serie ?? "—"}</td>
-                    <td className="max-w-xs font-mono text-xs" title={n.chave}>
-                      {n.chave}
-                    </td>
-                    <td title={n.motivoProtocolo}>
-                      <span
-                        className={
-                          n.statusProtocolo === "100"
-                            ? "text-emerald-700"
-                            : n.statusProtocolo === "101"
-                              ? "text-red-600"
-                              : ""
-                        }
-                      >
-                        {statusLabel(n.statusProtocolo)}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap text-sm text-slate-600">{formatarData(n.createdAt)}</td>
-                    <td>
-                      <div className="flex flex-wrap gap-1">
-                        {n.temXml !== false && (
-                          <button
-                            type="button"
-                            className="fiscal-btn-icon"
-                            title="Baixar XML"
-                            onClick={() => void baixarXml(n.chave)}
+                itens.flatMap((n) => {
+                  const produtos = produtosDaNota(n);
+                  const span = produtos.length;
+                  const cliente = n.cliente || n.destinatarioNome || "—";
+                  const emitente = n.emitenteNome || "—";
+                  return produtos.map((produto, idx) => (
+                    <tr key={`${n.id}-${idx}`}>
+                      {idx === 0 && (
+                        <>
+                          <td rowSpan={span}>
+                            {n.temXml !== false && (
+                              <input
+                                type="checkbox"
+                                checked={selecionados.has(n.chave)}
+                                onChange={() => toggleUm(n.chave)}
+                                aria-label={`Selecionar ${n.numero}`}
+                              />
+                            )}
+                          </td>
+                          <td
+                            rowSpan={span}
+                            className="max-w-[12rem] truncate"
+                            title={[emitente, n.emitenteDocumento].filter(Boolean).join(" · ")}
                           >
-                            <Download className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="fiscal-btn-icon"
-                          title={
-                            n.statusProtocolo === "100" || !n.statusProtocolo
-                              ? "Imprimir DANFE"
-                              : `Status ${statusLabel(n.statusProtocolo)} — DANFE exige autorização (100)`
-                          }
-                          onClick={() => void abrirDanfe(n.chave, n.statusProtocolo)}
-                        >
-                          <Printer className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                            {emitente}
+                          </td>
+                          <td rowSpan={span} className="whitespace-nowrap font-medium">
+                            {n.numero}
+                          </td>
+                          <td rowSpan={span}>{n.serie ?? "—"}</td>
+                          <td rowSpan={span} className="max-w-[14rem] truncate" title={cliente}>
+                            {cliente}
+                          </td>
+                          <td rowSpan={span} className="whitespace-nowrap text-right font-medium">
+                            {formatarValor(n.valorTotal)}
+                          </td>
+                          <td rowSpan={span} className="whitespace-nowrap">
+                            {n.cfop || "—"}
+                          </td>
+                          <td rowSpan={span}>{n.tipoOperacao || "—"}</td>
+                        </>
+                      )}
+                      <td className="max-w-[16rem] truncate" title={produto}>
+                        {produto}
+                      </td>
+                      {idx === 0 && (
+                        <>
+                          <td rowSpan={span} title={n.motivoProtocolo}>
+                            <span
+                              className={
+                                n.statusProtocolo === "100"
+                                  ? "text-emerald-700"
+                                  : n.statusProtocolo === "101"
+                                    ? "text-red-600"
+                                    : ""
+                              }
+                            >
+                              {statusLabel(n.statusProtocolo)}
+                            </span>
+                            {n.ambiente === "2" && (
+                              <span className="ml-2 text-xs text-amber-700">Homologação</span>
+                            )}
+                          </td>
+                          <td rowSpan={span} className="whitespace-nowrap text-sm text-slate-600">
+                            {formatarData(n.createdAt)}
+                          </td>
+                          <td rowSpan={span}>
+                            <div className="flex flex-wrap gap-1">
+                              {n.temXml !== false && (
+                                <button
+                                  type="button"
+                                  className="fiscal-btn-icon"
+                                  title="Baixar XML"
+                                  onClick={() => void baixarXml(n.chave)}
+                                >
+                                  <Download className="h-4 w-4" />
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className="fiscal-btn-icon"
+                                title={
+                                  n.statusProtocolo === "100" || !n.statusProtocolo
+                                    ? "Imprimir DANFE"
+                                    : `Status ${statusLabel(n.statusProtocolo)} — DANFE exige autorização (100)`
+                                }
+                                onClick={() => void abrirDanfe(n.chave, n.statusProtocolo)}
+                              >
+                                <Printer className="h-4 w-4" />
+                              </button>
+                              {n.temXml !== false && (
+                                <button
+                                  type="button"
+                                  className="fiscal-btn-icon"
+                                  title="Clonar nota para uma nova emissão"
+                                  onClick={() =>
+                                    router.push(`/nfe/emissao?clonar=${encodeURIComponent(n.chave)}`)
+                                  }
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ));
+                })
               )}
             </tbody>
           </table>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
-          <span>
-            {totalElements} nota{totalElements !== 1 ? "s" : ""} encontrada{totalElements !== 1 ? "s" : ""}
-            {selecionados.size > 0 ? ` · ${selecionados.size} selecionada(s)` : ""}
-          </span>
-          {hasMore && (
-            <button
-              type="button"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
-              disabled={loadingMore}
-              onClick={() => void carregarMais()}
-            >
-              {loadingMore ? "Carregando…" : "Carregar mais"}
-            </button>
-          )}
-        </div>
+        {consultaFeita ? (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
+            <span>
+              {totalElements} nota{totalElements !== 1 ? "s" : ""} encontrada{totalElements !== 1 ? "s" : ""}
+              {selecionados.size > 0 ? ` · ${selecionados.size} selecionada(s)` : ""}
+              {" · "}
+              <strong className="text-slate-700">
+                Soma{filtrosAplicados.status === "100" ? " (autorizadas)" : ""}: {formatarValor(valorTotalSomado)}
+              </strong>
+            </span>
+            <span>
+              {loadingMore
+                ? "Carregando mais…"
+                : hasMore
+                  ? "Role para carregar mais (lazy load)"
+                  : itens.length > 0
+                    ? "Fim da lista"
+                    : ""}
+            </span>
+          </div>
+        ) : null}
+        <div ref={fimLista} className="h-8" />
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 package br.com.synki.nfse.portal.web;
 
+import br.com.synki.nfse.portal.service.CertificadoLeituraService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -60,8 +61,35 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> generic(Exception e) {
+        if (falhaCertificadoSefaz(e)) {
+            log.warn("SEFAZ recusou o certificado digital: {}", e.toString());
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                    .body(Map.of("erro", CertificadoLeituraService.MENSAGEM_RECUSA_SEFAZ));
+        }
         log.error("Erro nao tratado ao processar requisicao", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("erro", "Erro interno do servidor"));
+    }
+
+    static boolean falhaCertificadoSefaz(Throwable e) {
+        Throwable atual = e;
+        for (int i = 0; atual != null && i < 12; i++) {
+            var msg = atual.getMessage() == null ? "" : atual.getMessage().toLowerCase();
+            var nome = atual.getClass().getName().toLowerCase();
+            if (nome.contains("certificateexpired")
+                    || msg.contains("certificate_expired")
+                    || msg.contains("certificate expired")) {
+                return true;
+            }
+            if (msg.contains("403") && (msg.contains("forbidden") || msg.contains("transport"))) {
+                return true;
+            }
+            var causa = atual.getCause();
+            if (causa == atual) {
+                break;
+            }
+            atual = causa;
+        }
+        return false;
     }
 }

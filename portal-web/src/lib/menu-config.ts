@@ -17,8 +17,8 @@ export function isGestaoPapel(papel?: string | null): boolean {
 const NFE_ITENS: MenuItem[] = [
   { label: "Emitir NF-e", icon: "pencil", href: "/nfe/emissao" },
   { label: "NF-e — XMLs / DANFE", icon: "list", href: "/nfe/notas-emitidas" },
-  { label: "NF-e recebidas (DF-e)", icon: "download", href: "/nfe/notas-entrada" },
-  { label: "Eventos da NF-e", icon: "file-edit", href: "/nfe/eventos-fiscais" },
+  { label: "NF-e recebidas", icon: "download", href: "/nfe/recebidas" },
+  { label: "Cancelamento/Correções/Inut. de NF-e", icon: "file-edit", href: "/nfe/eventos-fiscais" },
 ];
 
 /** NFS-e — nota fiscal de serviço (admin) */

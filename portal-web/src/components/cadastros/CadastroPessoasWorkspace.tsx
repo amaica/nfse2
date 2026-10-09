@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Dialog } from "primereact/dialog";
 import { Loader2, MapPin, Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { ApiError, formatarCnpjCpf } from "@/lib/api";
 import { apenasNumeros, cnpjValido, cpfValido } from "@/lib/cpf-cnpj";
@@ -66,6 +67,8 @@ export function CadastroPessoasWorkspace() {
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<PessoaDto>(emptyPessoa());
   const [endDraft, setEndDraft] = useState<PessoaEnderecoDto>(emptyEndereco());
+  const [endDialog, setEndDialog] = useState(false);
+  const [endEditIndex, setEndEditIndex] = useState<number | null>(null);
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [loadingCnpj, setLoadingCnpj] = useState(false);
@@ -322,13 +325,31 @@ export function CadastroPessoasWorkspace() {
       setErroExtra("Informe o CEP (busca automática) ou preencha IE / logradouro / município.");
       return;
     }
-    setForm((f) => ({
-      ...f,
-      enderecos: [...(f.enderecos ?? []), draft],
-    }));
+    setForm((f) => {
+      const lista = [...(f.enderecos ?? [])];
+      if (endEditIndex == null) lista.push(draft);
+      else lista[endEditIndex] = draft;
+      return { ...f, enderecos: lista };
+    });
     setEndDraft(emptyEndereco());
+    setEndEditIndex(null);
+    setEndDialog(false);
     setErroExtra("");
     setErro("");
+  };
+
+  const abrirEndereco = (index: number | null) => {
+    setErroExtra("");
+    setEndEditIndex(index);
+    setEndDraft(index == null ? emptyEndereco() : { ...emptyEndereco(), ...(form.enderecos ?? [])[index] });
+    setEndDialog(true);
+  };
+
+  const fecharEndereco = () => {
+    setEndDialog(false);
+    setEndEditIndex(null);
+    setEndDraft(emptyEndereco());
+    setErroExtra("");
   };
 
   const handleLatBlur = useCallback(() => {
@@ -560,7 +581,10 @@ export function CadastroPessoasWorkspace() {
                 </FiscalField>
               </FiscalRow>
             </FiscalSection>
+          </div>
+        </div>
 
+        <div className="mt-8 flex w-full flex-col gap-8">
             <FiscalSection title="Mapa">
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <MapPin className="h-4 w-4 text-slate-500" />
@@ -613,9 +637,14 @@ export function CadastroPessoasWorkspace() {
             </FiscalSection>
 
             <FiscalSection title="Endereços adicionais (IE-Endereço)">
-              <p className="mb-3 text-xs text-slate-500">
-                Usados na emissão da NF-e no campo <strong>IE-Endereço</strong>, além do endereço principal acima.
-              </p>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="m-0 text-xs text-slate-500">
+                  Usados na emissão da NF-e no campo <strong>IE-Endereço</strong>.
+                </p>
+                <button type="button" className="fiscal-btn-primary" onClick={() => abrirEndereco(null)}>
+                  <Plus className="h-4 w-4" /> Novo endereço
+                </button>
+              </div>
               <div className="mb-3 overflow-x-auto rounded-lg border border-slate-200">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase text-slate-500">
@@ -652,6 +681,14 @@ export function CadastroPessoasWorkspace() {
                           <td className="px-2 py-1.5 text-right">
                             <button
                               type="button"
+                              className="fiscal-btn-icon"
+                              aria-label="Editar endereço"
+                              onClick={() => abrirEndereco(idx)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
                               className="fiscal-btn-icon danger"
                               aria-label="Remover endereço"
                               onClick={() =>
@@ -670,21 +707,39 @@ export function CadastroPessoasWorkspace() {
                   </tbody>
                 </table>
               </div>
-              <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50/60 p-3">
+            </FiscalSection>
+            <Dialog
+              header={endEditIndex == null ? "Novo endereço" : "Editar endereço"}
+              visible={endDialog}
+              onHide={fecharEndereco}
+              modal
+              draggable={false}
+              style={{ width: "36rem" }}
+              breakpoints={{ "640px": "95vw" }}
+              footer={
+                <div className="flex justify-end gap-2">
+                  <button type="button" className="fiscal-btn-secondary" onClick={fecharEndereco}>
+                    Cancelar
+                  </button>
+                  <button type="button" className="fiscal-btn-primary" onClick={incluirEnderecoExtra}>
+                    Salvar endereço
+                  </button>
+                </div>
+              }
+            >
+              <div className="space-y-3 pt-1">
                 <FiscalRow>
                   <FiscalField label="CEP">
                     <input
                       className="fiscal-input"
                       value={endDraft.cep ?? ""}
-                      placeholder="00000-000 — saia do campo para buscar"
+                      placeholder="00000-000"
                       onChange={(e) => {
                         const raw = e.target.value;
                         setEndDraft((d) => ({ ...d, cep: raw }));
                         setErroExtra("");
                         const digits = raw.replace(/\D/g, "");
-                        if (digits.length === 8) {
-                          void preencherCepExtra(digits);
-                        }
+                        if (digits.length === 8) void preencherCepExtra(digits);
                       }}
                       onBlur={() => void preencherCepExtra(endDraft.cep ?? "")}
                     />
@@ -698,7 +753,7 @@ export function CadastroPessoasWorkspace() {
                   </FiscalField>
                 </FiscalRow>
                 {loadingCepExtra && (
-                  <p className="mb-2 flex items-center gap-2 text-xs text-[var(--primary-700)]">
+                  <p className="flex items-center gap-2 text-xs text-[var(--primary-700)]">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     Buscando endereço pelo CEP…
                   </p>
@@ -756,21 +811,9 @@ export function CadastroPessoasWorkspace() {
                     />
                   </FiscalField>
                 </FiscalRow>
-                {erroExtra && <p className="mt-2 text-sm text-red-600">{erroExtra}</p>}
-                <button
-                  type="button"
-                  className="fiscal-btn-primary mt-2"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    incluirEnderecoExtra();
-                  }}
-                >
-                  <Plus className="h-4 w-4" /> Incluir endereço
-                </button>
+                {erroExtra && <p className="text-sm text-red-600">{erroExtra}</p>}
               </div>
-            </FiscalSection>
-          </div>
+            </Dialog>
         </div>
       </div>
     );

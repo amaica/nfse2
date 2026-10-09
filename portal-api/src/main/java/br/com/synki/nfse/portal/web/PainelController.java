@@ -28,6 +28,6 @@ public class PainelController {
             @AuthenticationPrincipal EmbedSession session,
             @RequestParam(required = false) Integer ano) {
         authz.requireOperador(session);
-        return painelHomeService.home(session.empresaId(), ano);
+        return painelHomeService.home(session.usuarioId(), session.empresaId(), ano);
     }
 }

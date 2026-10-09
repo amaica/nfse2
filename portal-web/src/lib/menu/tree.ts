@@ -11,8 +11,8 @@ export const FALLBACK_MENU: MenuNode[] = [
     children: [
       { id: "fb-nfe-e", label: "Emitir NF-e", icon: "pencil", outcome: "/nfe/emissao", children: [] },
       { id: "fb-nfe-l", label: "NF-e — XMLs / DANFE", icon: "list", outcome: "/nfe/notas-emitidas", children: [] },
-      { id: "fb-nfe-in", label: "NF-e recebidas (DF-e)", icon: "download", outcome: "/nfe/notas-entrada", children: [] },
-      { id: "fb-nfe-ev", label: "Eventos da NF-e", icon: "file-edit", outcome: "/nfe/eventos-fiscais", children: [] },
+      { id: "fb-nfe-in", label: "NF-e recebidas", icon: "download", outcome: "/nfe/recebidas", children: [] },
+      { id: "fb-nfe-ev", label: "Cancelamento/Correções/Inut. de NF-e", icon: "file-edit", outcome: "/nfe/eventos-fiscais", children: [] },
     ],
   },
   {

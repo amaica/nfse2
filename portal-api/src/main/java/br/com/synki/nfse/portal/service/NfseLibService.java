@@ -4,8 +4,13 @@ import br.com.synki.nfse.portal.domain.Certificado;
 import br.com.synki.nfse.portal.domain.ConfiguracaoNfse;
 import br.com.synki.nfse.portal.repository.CertificadoRepository;
 import br.com.synki.nfse.portal.repository.ConfiguracaoNfseRepository;
+import br.com.synki.nfse.portal.repository.EmpresaRepository;
 import io.github.t3wv.nfse.NFSeConfig;
 import io.github.t3wv.nfse.nacional.WSFacade;
+import io.github.t3wv.nfse.nacional.classes.nfsenacional.NFSeSefinNacionalInfPedReg;
+import io.github.t3wv.nfse.nacional.classes.nfsenacional.NFSeSefinNacionalInfPedRegTE101101;
+import io.github.t3wv.nfse.nacional.classes.nfsenacional.NFSeSefinNacionalPedRegEvt;
+import io.github.t3wv.nfse.nacional.classes.nfsenacional.NFSeSefinNacionalTSCodJustCanc;
 import io.github.t3wv.nfse.nacional.danfse.DANFSeJasper;
 import org.springframework.stereotype.Service;
 
@@ -21,16 +26,22 @@ import java.util.Map;
 public class NfseLibService {
 
     private final CertificadoRepository certificadoRepository;
+    private final CertificadoLeituraService certificadoLeituraService;
     private final ConfiguracaoNfseRepository configuracaoRepository;
     private final EmpresaLogoService empresaLogoService;
+    private final EmpresaRepository empresaRepository;
 
     public NfseLibService(
             CertificadoRepository certificadoRepository,
+            CertificadoLeituraService certificadoLeituraService,
             ConfiguracaoNfseRepository configuracaoRepository,
-            EmpresaLogoService empresaLogoService) {
+            EmpresaLogoService empresaLogoService,
+            EmpresaRepository empresaRepository) {
         this.certificadoRepository = certificadoRepository;
+        this.certificadoLeituraService = certificadoLeituraService;
         this.configuracaoRepository = configuracaoRepository;
         this.empresaLogoService = empresaLogoService;
+        this.empresaRepository = empresaRepository;
     }
 
     public WSFacade facadeForEmpresa(Long empresaId) throws Exception {
@@ -72,11 +83,39 @@ public class NfseLibService {
         return facadeForEmpresa(empresaId).emitirNFSe(dps);
     }
 
+    /** Cancela NFS-e nacional (evento e101101 — erro na emissão). */
+    public Map.Entry<Integer, Object> cancelar(Long empresaId, String chave, String motivo) throws Exception {
+        var chaveNorm = chave == null ? "" : chave.replaceAll("\\D", "");
+        if (chaveNorm.length() != 50) {
+            throw new IllegalArgumentException("Chave NFS-e inválida");
+        }
+        var motivoTxt = motivo == null || motivo.isBlank()
+                ? "Erro na emissão — valor incorreto"
+                : motivo.trim();
+        if (motivoTxt.length() < 15) {
+            motivoTxt = (motivoTxt + " - correção de valor da NFS-e").trim();
+        }
+        var empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new IllegalStateException("Empresa não encontrada"));
+        var cnpj = empresa.getCnpj() == null ? "" : empresa.getCnpj().replaceAll("\\D", "");
+        // Não setar nPedRegEvento aqui: no XSD o elemento do evento (e101101…) vem
+        // logo após chNFSe; nPedRegEvento no meio quebra o esquema (E1235).
+        var evento = new NFSeSefinNacionalPedRegEvt().setInfPedReg(
+                new NFSeSefinNacionalInfPedReg()
+                        .setCNPJAutor(cnpj)
+                        .setChaveAcessoNFSE(chaveNorm)
+                        .setEvento(new NFSeSefinNacionalInfPedRegTE101101()
+                                .setcMotivo(NFSeSefinNacionalTSCodJustCanc.ERRO_EMISSAO)
+                                .setxMotivo(motivoTxt)));
+        return facadeForEmpresa(empresaId).cancelarNFSe(evento);
+    }
+
     public boolean temCertificado(Long empresaId) {
         return certificadoRepository.findFirstByEmpresaIdOrderByCreatedAtDesc(empresaId).isPresent();
     }
 
     private NFSeConfig configForEmpresa(Long empresaId) throws Exception {
+        certificadoLeituraService.exigirValido(empresaId);
         var config = configuracaoRepository.findByEmpresaId(empresaId)
                 .orElseThrow(() -> new IllegalStateException("Configuracao NFS-e nao encontrada"));
         var cert = certificadoRepository.findFirstByEmpresaIdOrderByCreatedAtDesc(empresaId)

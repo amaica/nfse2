@@ -4,6 +4,7 @@ import br.com.synki.nfse.portal.domain.ConfiguracaoDocumento;
 import br.com.synki.nfse.portal.web.dto.nfe.*;
 import com.fincatto.documentofiscal.DFModelo;
 import com.fincatto.documentofiscal.nfe.NFTipoEmissao;
+import com.fincatto.documentofiscal.nfe400.classes.evento.NFEnviaEventoRetorno;
 import com.fincatto.documentofiscal.nfe400.classes.lote.envio.NFLoteEnvio;
 import com.fincatto.documentofiscal.nfe400.classes.lote.envio.NFLoteIndicadorProcessamento;
 import com.fincatto.documentofiscal.nfe400.classes.nota.NFNota;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class NfeOperacoesService {
@@ -20,14 +22,17 @@ public class NfeOperacoesService {
     private final NfeLibService nfeLibService;
     private final NfeMontadorService montadorService;
     private final NumeracaoNfeService numeracaoService;
+    private final NfeEventoService nfeEventoService;
 
     public NfeOperacoesService(
             NfeLibService nfeLibService,
             NfeMontadorService montadorService,
-            NumeracaoNfeService numeracaoService) {
+            NumeracaoNfeService numeracaoService,
+            NfeEventoService nfeEventoService) {
         this.nfeLibService = nfeLibService;
         this.montadorService = montadorService;
         this.numeracaoService = numeracaoService;
+        this.nfeEventoService = nfeEventoService;
     }
 
     public Map<String, Object> statusServico(Long empresaId, DFModelo modelo) throws Exception {
@@ -76,14 +81,18 @@ public class NfeOperacoesService {
     public Map<String, Object> cancelar(Long empresaId, DFModelo modelo, NfeCancelarRequest req) throws Exception {
         var ret = nfeLibService.facadeForEmpresa(empresaId, modelo)
                 .cancelaNota(req.chave(), req.protocolo(), req.motivo());
-        return Map.of(
-                "status", String.valueOf(ret.getRetorno().getCodigoStatusReposta()),
-                "motivo", ret.getRetorno().getMotivo());
+        var body = respostaEvento(ret.getRetorno(), "Nota cancelada.");
+        nfeEventoService.registrarCancelamento(
+                empresaId, modelo, req.chave(), String.valueOf(body.get("status")), String.valueOf(body.get("motivo")));
+        return body;
     }
 
     public Map<String, Object> inutilizar(Long empresaId, DFModelo modelo, NfeInutilizarRequest req) throws Exception {
         var empresa = nfeLibService.empresaOrThrow(empresaId);
-        int ano = req.ano() != null ? req.ano() : java.time.Year.now().getValue() % 100;
+        int ano = req.ano() != null ? req.ano() : java.time.Year.now().getValue();
+        if (ano >= 100) {
+            ano = ano % 100;
+        }
         var ret = nfeLibService.facadeForEmpresa(empresaId, modelo).inutilizaNota(
                 ano,
                 empresa.getCnpj(),
@@ -93,19 +102,71 @@ public class NfeOperacoesService {
                 req.justificativa(),
                 modelo);
         var dados = ret.getDados();
-        return Map.of(
-                "status", dados != null ? dados.getStatus() : "",
-                "motivo", dados != null ? dados.getMotivo() : "",
-                "protocolo", dados != null ? dados.getNumeroProtocolo() : "");
+        var status = dados != null ? dados.getStatus() : "";
+        var motivo = dados != null ? dados.getMotivo() : "";
+        var protocolo = dados != null ? dados.getNumeroProtocolo() : "";
+        nfeEventoService.registrarInutilizacao(
+                empresaId, modelo, req.serie(), req.numeroInicial(), req.numeroFinal(),
+                req.justificativa(), status, motivo, protocolo);
+        return montarResposta(status, motivo, protocolo, "102".equals(status), "Numeração inutilizada.");
     }
 
     public Map<String, Object> cartaCorrecao(Long empresaId, DFModelo modelo, NfeCartaCorrecaoRequest req) throws Exception {
         int seq = req.sequencial() != null ? req.sequencial() : 1;
         var ret = nfeLibService.facadeForEmpresa(empresaId, modelo)
                 .corrigeNota(req.chave(), req.texto(), seq);
-        return Map.of(
-                "status", String.valueOf(ret.getCodigoStatusReposta()),
-                "motivo", ret.getMotivo());
+        var body = respostaEvento(ret, "Carta de correção registrada.");
+        nfeEventoService.registrarCarta(
+                empresaId, modelo, req.chave(), seq, req.texto(),
+                String.valueOf(body.get("status")), String.valueOf(body.get("motivo")));
+        return body;
+    }
+
+    private static final Set<String> EVENTO_OK = Set.of("101", "135", "136", "155");
+
+    private static Map<String, Object> respostaEvento(NFEnviaEventoRetorno ret, String sucesso) {
+        var status = ret.getCodigoStatusReposta() == null ? "" : String.valueOf(ret.getCodigoStatusReposta());
+        var motivo = ret.getMotivo() == null ? "" : ret.getMotivo();
+        var protocolo = "";
+        if (ret.getEventoRetorno() != null) {
+            for (var ev : ret.getEventoRetorno()) {
+                var info = ev.getInfoEventoRetorno();
+                if (info == null || info.getCodigoStatus() == null) {
+                    continue;
+                }
+                status = String.valueOf(info.getCodigoStatus());
+                if (info.getMotivo() != null && !info.getMotivo().isBlank()) {
+                    motivo = info.getMotivo();
+                }
+                if (info.getNumeroProtocolo() != null) {
+                    protocolo = info.getNumeroProtocolo();
+                }
+                break;
+            }
+        }
+        return montarResposta(status, motivo, protocolo, EVENTO_OK.contains(status), sucesso);
+    }
+
+    private static Map<String, Object> montarResposta(
+            String status, String motivo, String protocolo, boolean ok, String sucesso) {
+        var st = status == null ? "" : status;
+        var mot = motivo == null ? "" : motivo;
+        var prot = protocolo == null ? "" : protocolo;
+        String mensagem;
+        if (ok) {
+            mensagem = prot.isBlank() ? sucesso : sucesso + " Protocolo " + prot + ".";
+        } else if (!mot.isBlank() && !"Lote de Evento Processado".equalsIgnoreCase(mot.trim())) {
+            mensagem = mot;
+        } else {
+            mensagem = "A SEFAZ não aceitou o evento.";
+        }
+        var body = new LinkedHashMap<String, Object>();
+        body.put("ok", ok);
+        body.put("status", st);
+        body.put("motivo", mot);
+        body.put("protocolo", prot);
+        body.put("mensagem", mensagem);
+        return body;
     }
 
     @Transactional

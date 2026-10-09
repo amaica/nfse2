@@ -53,7 +53,12 @@ public class EmissaoContextoService {
         body.put("codigoMunicipioIbge", cfg.getCodigoMunicipioIbge());
         body.put("ambiente", cfg.getAmbiente());
         body.put("certificadoCadastrado", certificadoOk);
-        body.put("podeEmitir", certificadoOk && !prestadorPf && prestadorDocumento != null && prestadorDocumento.length() == 14);
+        var avisoCert = certificadoLeituraService.avisoEmissao(empresaId);
+        body.put("podeEmitir", avisoCert.isEmpty()
+                && certificadoOk
+                && !prestadorPf
+                && prestadorDocumento != null
+                && prestadorDocumento.length() == 14);
 
         var codigoPadrao = "01.07.01.000";
         var descricaoPadrao = "Analise e desenvolvimento de sistemas";
@@ -98,7 +103,7 @@ public class EmissaoContextoService {
                 .toList();
         body.put("operacoesNfse", operacoesNfse);
 
-        if (certificadoOk) {
+        if (certificadoOk && avisoCert.isEmpty()) {
             try {
                 var aliq = nfseLibService.consultaAliquota(empresaId, cfg.getCodigoMunicipioIbge(), codigoPadrao);
                 body.put("aliquotaPadraoPercentual", aliq);
@@ -106,7 +111,9 @@ public class EmissaoContextoService {
                 body.put("aliquotaPadraoPercentual", null);
             }
         }
-        if (!certificadoOk) {
+        if (avisoCert.isPresent()) {
+            body.put("aviso", avisoCert.get());
+        } else if (!certificadoOk) {
             body.put("aviso", "Cadastre o certificado A1 (.pfx) antes de emitir.");
         } else if (prestadorPf) {
             body.put("aviso", "Certificado de pessoa fisica: emissao como CNPJ exige certificado e-CNPJ A1.");

@@ -86,7 +86,9 @@ public class XmlNotasColetorService {
                 empresaId, inicio, fim);
         var out = new ArrayList<LancamentoLivroCaixa>();
         for (NfeEmissao nota : notas) {
-            if (nota.getXmlProc() == null || nota.getXmlProc().isBlank()) {
+            if (nota.getXmlProc() == null || nota.getXmlProc().isBlank()
+                    || homologacao(nota.getAmbiente(), nota.getXmlProc())
+                    || cancelada(nota.getStatusProtocolo())) {
                 continue;
             }
             NotaXmlExtrator.extrairNfe(nota.getXmlProc(), nota.getChave()).ifPresent(out::add);
@@ -98,12 +100,30 @@ public class XmlNotasColetorService {
         var out = new ArrayList<LancamentoLivroCaixa>();
         for (var nota : nfeEntradaRepository.findByEmpresaIdAndDataEmissaoBetweenOrderByDataEmissaoAscIdAsc(
                 empresaId, de, ate)) {
-            if (nota.getXml() == null || nota.getXml().isBlank()) {
+            if (nota.getXml() == null || nota.getXml().isBlank() || homologacao(null, nota.getXml())) {
                 continue;
             }
             NotaXmlExtrator.extrairNfeDespesa(nota.getXml(), nota.getChave()).ifPresent(out::add);
         }
         return out;
+    }
+
+    private static boolean cancelada(String status) {
+        if (status == null) {
+            return false;
+        }
+        var s = status.trim();
+        return s.equals("101") || s.equals("151") || s.equals("155");
+    }
+
+    private static boolean homologacao(String ambiente, String xml) {
+        if (ambiente != null) {
+            var a = ambiente.trim().toLowerCase();
+            if (a.equals("2") || a.equals("homologacao") || a.equals("homologação") || a.equals("h")) {
+                return true;
+            }
+        }
+        return xml != null && xml.contains("<tpAmb>2</tpAmb>");
     }
 
     private static String extrairChaveNfse(String descricao) {

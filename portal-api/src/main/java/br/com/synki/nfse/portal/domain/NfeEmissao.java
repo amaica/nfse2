@@ -1,6 +1,7 @@
 package br.com.synki.nfse.portal.domain;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -34,6 +35,25 @@ public class NfeEmissao {
     @Column(name = "xml_proc", columnDefinition = "CLOB")
     private String xmlProc;
 
+    /** 1 = produção, 2 = homologação (tpAmb da NF-e). */
+    @Column(nullable = false, length = 1)
+    private String ambiente = "1";
+
+    @Column(name = "valor_total", precision = 15, scale = 2)
+    private BigDecimal valorTotal;
+
+    @Column(name = "destinatario_nome", length = 255)
+    private String destinatarioNome;
+
+    @Column(length = 60)
+    private String cfop;
+
+    @Column(name = "tipo_operacao", length = 20)
+    private String tipoOperacao;
+
+    @Column(name = "produtos_resumo", columnDefinition = "TEXT")
+    private String produtosResumo;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -46,6 +66,12 @@ public class NfeEmissao {
     public String getStatusProtocolo() { return statusProtocolo; }
     public String getMotivoProtocolo() { return motivoProtocolo; }
     public String getXmlProc() { return xmlProc; }
+    public String getAmbiente() { return ambiente; }
+    public BigDecimal getValorTotal() { return valorTotal; }
+    public String getDestinatarioNome() { return destinatarioNome; }
+    public String getCfop() { return cfop; }
+    public String getTipoOperacao() { return tipoOperacao; }
+    public String getProdutosResumo() { return produtosResumo; }
     public java.time.Instant getCreatedAt() { return createdAt; }
 
     public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
@@ -56,4 +82,10 @@ public class NfeEmissao {
     public void setStatusProtocolo(String statusProtocolo) { this.statusProtocolo = statusProtocolo; }
     public void setMotivoProtocolo(String motivoProtocolo) { this.motivoProtocolo = motivoProtocolo; }
     public void setXmlProc(String xmlProc) { this.xmlProc = xmlProc; }
+    public void setAmbiente(String ambiente) { this.ambiente = ambiente; }
+    public void setValorTotal(BigDecimal valorTotal) { this.valorTotal = valorTotal; }
+    public void setDestinatarioNome(String destinatarioNome) { this.destinatarioNome = destinatarioNome; }
+    public void setCfop(String cfop) { this.cfop = cfop; }
+    public void setTipoOperacao(String tipoOperacao) { this.tipoOperacao = tipoOperacao; }
+    public void setProdutosResumo(String produtosResumo) { this.produtosResumo = produtosResumo; }
 }
